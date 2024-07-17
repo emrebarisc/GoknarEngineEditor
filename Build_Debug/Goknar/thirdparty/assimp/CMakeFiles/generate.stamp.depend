@@ -1,0 +1,19 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.25/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+C:/Program Files/CMake/share/cmake-3.25/Modules/CMakePackageConfigHelpers.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/CheckFunctionExists.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/CheckIncludeFileCXX.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/CheckTypeSize.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/FindPkgConfig.cmake
+C:/Program Files/CMake/share/cmake-3.25/Modules/WriteBasicConfigVersionFile.cmake
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/CMakeLists.txt
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/assimp.pc.in
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/cmake-modules/FindPkgMacros.cmake
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/cmake-modules/FindZLIB.cmake
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/cmake-modules/PrecompiledHeader.cmake
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/cmake-modules/assimp-plain-config.cmake.in
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/include/assimp/config.h.in
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/revision.h.in

@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B520A61F-D013-3503-8ABF-60AE79A9D681}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>spdlog_headers_for_ide</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/spdlog/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.25\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.25\Modules\GNUInstallDirs.cmake;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\cmake\sanitizers.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\spdlog\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/spdlog/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.25\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.25\Modules\GNUInstallDirs.cmake;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\cmake\sanitizers.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\spdlog\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/spdlog/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.25\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.25\Modules\GNUInstallDirs.cmake;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\cmake\sanitizers.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\spdlog\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/spdlog/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.25\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.25\Modules\GNUInstallDirs.cmake;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\cmake\sanitizers.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\spdlog\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\async.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\async_logger.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\common.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\async_logger_impl.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\circular_q.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\console_globals.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\file_helper.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\fmt_helper.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\log_msg.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\logger_impl.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\mpmc_blocking_q.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\null_mutex.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\os.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\pattern_formatter.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\periodic_worker.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\registry.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\details\thread_pool.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bin_to_hex.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\chrono.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\color.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\core.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\format-inl.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\format.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\locale.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\ostream.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\posix.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\printf.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\ranges.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\bundled\time.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\fmt.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\fmt\ostr.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\formatter.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\logger.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\android_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\ansicolor_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\base_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\basic_file_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\daily_file_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\dist_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\msvc_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\null_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\ostream_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\rotating_file_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\stdout_color_sinks.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\stdout_sinks.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\syslog_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\systemd_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\sinks\wincolor_sink.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\spdlog.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\tweakme.h">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include\spdlog\version.h">
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\ZERO_CHECK.vcxproj">
+      <Project>{02E0BD6C-28DF-3A21-BB90-9B327E5EA581}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

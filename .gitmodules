@@ -1,0 +1,3 @@
+[submodule "GoknarEngine"]
+	path = GoknarEngine
+	url = https://github.com/emrebarisc/GoknarEngine

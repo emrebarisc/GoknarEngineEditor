@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Game.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Controllers\FreeCameraController.cpp">
+      <Filter>Source\Controllers</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects\AxisObject.cpp">
+      <Filter>Source\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects\FreeCameraObject.cpp">
+      <Filter>Source\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\UI\EditorHUD.cpp">
+      <Filter>Source\UI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Game.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Controllers\FreeCameraController.h">
+      <Filter>Source\Controllers</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects\AxisObject.h">
+      <Filter>Source\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects\FreeCameraObject.h">
+      <Filter>Source\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\UI\EditorHUD.h">
+      <Filter>Source\UI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Components">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Controllers">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\UI">
+      <Filter>Source</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{08B17B97-4095-3DCF-855B-C7C541AE49E9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Controllers">
+      <UniqueIdentifier>{7DFA7786-A2B6-37D8-8FA2-9DF2A0507948}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Objects">
+      <UniqueIdentifier>{E66E975D-E264-3D73-B668-90CB8C999919}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\UI">
+      <UniqueIdentifier>{1575031F-A013-367E-9F5A-6263184B751D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

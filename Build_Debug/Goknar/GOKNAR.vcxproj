@@ -1,0 +1,1040 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{93F6F244-D461-3E06-B5E2-4EDC461DA882}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>GOKNAR</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\lib\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GOKNAR.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GOKNARd</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\lib\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GOKNAR.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GOKNAR</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\lib\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GOKNAR.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">GOKNAR_MinsizeRel</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\lib\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GOKNAR.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">GOKNAR_RelWithDebugInfo</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/Debug/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/";ENGINE_CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/\";ENGINE_CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/\";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/Release/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/";ENGINE_CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/\";ENGINE_CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/\";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/MinSizeRel/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/";ENGINE_CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/\";ENGINE_CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/\";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/RelWithDebInfo/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/";ENGINE_CONTENT_DIR="C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Content/\";ENGINE_CONTENT_DIR=\"C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/EngineContent/\";GOKNAR_PLATFORM_WINDOWS;GOKNAR_BUILD_DEBUG;GOKNAR_ENABLE_ASSERTS;GOKNAR_BUILD_DLL;GLFW_INCLUDE_NONE;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLAD\GLAD\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\GLFW\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\spdlog\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\TinyXML\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\bullet3\src;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\glfw\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\imgui;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\thirdparty\assimp\code\..\include;C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\GOKNAR.dir\cmake_pch.cxx">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/Debug/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/Release/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/MinSizeRel/cmake_pch.pch</PrecompiledHeaderOutputFile>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/GOKNAR.dir/RelWithDebInfo/cmake_pch.pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\pch.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\pch.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Application.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Application.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Camera.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Camera.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Color.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Color.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Containers">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Controller.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Controller.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Core.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Core.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Debug">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Engine.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Engine.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry">
+    </None>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\GoknarAssert.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Helpers">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\IO">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Log.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Log.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\ObjectBase.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\ObjectBase.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics">
+    </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Scene.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Scene.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\TimeDependentObject.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\TimeDependentObject.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Timer.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Timer.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\UI">
+    </None>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\mainThread.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\CameraComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\CameraComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\Component.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\Component.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\Deprecate_2D">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\DynamicMeshComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\DynamicMeshComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\MeshComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\MeshComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\RenderComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\RenderComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\SkeletalMeshComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\SkeletalMeshComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\SocketComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\SocketComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\StaticMeshComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\StaticMeshComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents\Audio.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents\Audio.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents\Content.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents\Content.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents\Image.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Contents\Image.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Containers\List.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Containers\List.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Containers\Node.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Containers\Node.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Debug\DebugDrawer.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Debug\DebugDrawer.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\ArticleSamples.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\Benchmark.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\Delegate.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\DelegateBase.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\DelegateDemo.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\DemoEntryPoint.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\MulticastDelegate.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\stdafx.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\stdafx.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Delegates\targetver.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\Editor.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\Editor.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\EditorCameraController.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\EditorCameraController.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\EditorGroundGrid.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\EditorGroundGrid.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiEditor.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiEditor.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiOpenGL.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiOpenGL.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry\Box.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry\Box.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry\Rect.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry\Rect.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Helpers\SceneParser.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Helpers\SceneParser.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Helpers\tinyxml2.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Helpers\tinyxml2.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\IO\IOManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\IO\IOManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\IO\ModelLoader.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\IO\ModelLoader.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\DirectionalLight.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\DirectionalLight.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\Light.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\Light.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\LightManager">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\PointLight.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\PointLight.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\SpotLight.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\SpotLight.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\LightManager\LightManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\LightManager\LightManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\CameraManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\CameraManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\InputManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\InputManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\ObjectIDManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\ObjectIDManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\ObjectManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\ObjectManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\ResourceManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\ResourceManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\WindowManager.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Managers\WindowManager.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials\Material.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials\Material.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials\MaterialBase.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials\MaterialBase.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials\MaterialInstance.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Materials\MaterialInstance.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\GoknarMath.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\GoknarMath.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\InterpolatingValue.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\MathDefines.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\Matrix.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\Matrix.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\Quaternion.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Math\Quaternion.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\Deprecate_2D">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\DynamicMesh.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\DynamicMesh.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\DynamicMeshInstance.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\DynamicMeshInstance.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\IMeshInstance.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\IMeshInstance.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\Mesh.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\Mesh.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\MeshUnit.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\MeshUnit.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\SkeletalMesh.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\SkeletalMesh.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\SkeletalMeshInstance.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\SkeletalMeshInstance.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\StaticMesh.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\StaticMesh.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\StaticMeshInstance.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Model\StaticMeshInstance.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Character.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Character.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\OverlappingPhysicsObject.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\OverlappingPhysicsObject.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsDebugger.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsDebugger.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsObject.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsObject.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsTypes.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsUtils.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsWorld.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\PhysicsWorld.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\RigidBody.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\RigidBody.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\BoxCollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\BoxCollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\CapsuleCollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\CapsuleCollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\CollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\CollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\MovingTriangleMeshCollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\MovingTriangleMeshCollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\MultipleCollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\MultipleCollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\NonMovingTriangleMeshCollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\NonMovingTriangleMeshCollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\OverlappingTypes.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\OverlappingTypes.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\PhysicsMovementComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\PhysicsMovementComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\SphereCollisionComponent.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Physics\Components\SphereCollisionComponent.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Framebuffer.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Framebuffer.h" />
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\MaterialEditor">
+    </None>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\PostProcessing.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\PostProcessing.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\RenderBuffer.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\RenderBuffer.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Renderer.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Renderer.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Shader.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Shader.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderBuilder.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderBuilder.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderBuilderNew.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderBuilderNew.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderDefaults.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderDefaults.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderTypes.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\ShaderTypes.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Texture.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Texture.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\Types.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Renderer\MaterialEditor\MaterialEditorNode.h" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\UI\HUD.cpp">
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Debug/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/Release/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/MinSizeRel/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/CMakeFiles/GOKNAR.dir/RelWithDebInfo/cmake_pch.hxx;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\UI\HUD.h" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\GOKNAR.dir\Debug\cmake_pch.hxx" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\GOKNAR.dir\Release\cmake_pch.hxx" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\GOKNAR.dir\MinSizeRel\cmake_pch.hxx" />
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\CMakeFiles\GOKNAR.dir\RelWithDebInfo\cmake_pch.hxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\ZERO_CHECK.vcxproj">
+      <Project>{02E0BD6C-28DF-3A21-BB90-9B327E5EA581}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\bullet3\src\BulletCollision\BulletCollision.vcxproj">
+      <Project>{60240B3A-D0BE-32B2-826D-DAE4BD6C948D}</Project>
+      <Name>BulletCollision</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\bullet3\src\BulletDynamics\BulletDynamics.vcxproj">
+      <Project>{E35BC158-63C5-3419-9052-AE97FE948428}</Project>
+      <Name>BulletDynamics</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\GLAD\GLAD.vcxproj">
+      <Project>{012F3DDB-2E59-3CF6-9D53-FC4F698C3A73}</Project>
+      <Name>GLAD</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\imgui\IMGUI.vcxproj">
+      <Project>{9563E2E5-27BF-3000-B0B1-27A7538D10C2}</Project>
+      <Name>IMGUI</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\bullet3\src\LinearMath\LinearMath.vcxproj">
+      <Project>{6926D933-57AA-37F0-B205-5BBF01F20D4E}</Project>
+      <Name>LinearMath</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\TinyXML\TINYXML.vcxproj">
+      <Project>{1776B617-4FEC-370E-94D8-23CB7D282F71}</Project>
+      <Name>TINYXML</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\code\assimp.vcxproj">
+      <Project>{1DE2677A-48E6-35AA-9CD7-45BF5C76C410}</Project>
+      <Name>assimp</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\glfw\src\glfw.vcxproj">
+      <Project>{D377BC5D-9F8C-3561-A29B-CC201074A1EF}</Project>
+      <Name>glfw</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\assimp\contrib\zlib\zlibstatic.vcxproj">
+      <Project>{8C5E9609-8EB6-3878-AF5F-2F5ECF105971}</Project>
+      <Name>zlibstatic</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
