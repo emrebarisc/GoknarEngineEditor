@@ -19,6 +19,7 @@ set(SUBDIRS
     ${SOURCE_DIR_NAME}/Controllers
     ${SOURCE_DIR_NAME}/Objects
     ${SOURCE_DIR_NAME}/UI
+    ${SOURCE_DIR_NAME}/Thirdparty
 )
 set(GAME_SOURCE)
 
@@ -52,6 +53,12 @@ else()
 endif()
 
 add_subdirectory(${ENGINE_PATH} ./Goknar)
+
+add_subdirectory(thirdparty/imgui/)
+target_link_libraries(${APP_NAME} PUBLIC IMGUI)
+target_include_directories(${APP_NAME} PUBLIC 
+    thirdparty/imgui
+)
 
 target_link_libraries(${APP_NAME} PUBLIC GOKNAR)
 

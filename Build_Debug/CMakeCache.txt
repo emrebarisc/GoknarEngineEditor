@@ -519,13 +519,13 @@ GoknarEngineEditor_IS_TOP_LEVEL:STATIC=ON
 GoknarEngineEditor_SOURCE_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor
 
 //Value Computed by CMake
-IMGUI_BINARY_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/imgui
+IMGUI_BINARY_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui
 
 //Value Computed by CMake
 IMGUI_IS_TOP_LEVEL:STATIC=OFF
 
 //Value Computed by CMake
-IMGUI_SOURCE_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/imgui
+IMGUI_SOURCE_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui
 
 //Install generated CMake files
 INSTALL_CMAKE_FILES:BOOL=ON

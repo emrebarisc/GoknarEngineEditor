@@ -38,9 +38,9 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "libassimp5.2.5-dev" OR NOT CMAKE_INSTALL_CO
   elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
     file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/Release/assimp-vc143-mt.lib")
   elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/MinSizeRel/assimp-vc143-mt_MinsizeRel.lib")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/MinSizeRel/assimp-vc143-mt.lib")
   elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/RelWithDebInfo/assimp-vc143-mt_RelWithDebugInfo.lib")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/RelWithDebInfo/assimp-vc143-mt.lib")
   endif()
 endif()
 

@@ -12,6 +12,8 @@
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/WindowManager.h"
 
+#include "UI/EditorHUD.h"
+
 #include <chrono>
 
 Game::Game() : Application()
@@ -28,6 +30,12 @@ Game::Game() : Application()
 	GOKNAR_CORE_WARN("Scene is read in {} seconds.", elapsedTime);
 
 	lastFrameTimePoint = currentTimePoint;
+
+	editorHUD_ = new EditorHUD();
+}
+
+Game::~Game()
+{
 }
 
 void Game::Run()

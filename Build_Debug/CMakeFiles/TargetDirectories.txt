@@ -14,9 +14,6 @@ C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/gl
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/glfw/src/CMakeFiles/glfw.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/glfw/src/CMakeFiles/update_mappings.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/glfw/src/CMakeFiles/INSTALL.dir
-C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/imgui/CMakeFiles/IMGUI.dir
-C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/imgui/CMakeFiles/INSTALL.dir
-C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/imgui/CMakeFiles/ALL_BUILD.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/spdlog_headers_for_ide.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/INSTALL.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/spdlog/CMakeFiles/ALL_BUILD.dir
@@ -59,3 +56,6 @@ C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/bu
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/bullet3/src/LinearMath/CMakeFiles/INSTALL.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/bullet3/src/Bullet3Common/CMakeFiles/Bullet3Common.dir
 C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/bullet3/src/Bullet3Common/CMakeFiles/INSTALL.dir
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/IMGUI.dir
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/INSTALL.dir
+C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/ALL_BUILD.dir

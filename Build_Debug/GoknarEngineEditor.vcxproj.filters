@@ -13,8 +13,11 @@
     <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects\FreeCameraObject.cpp">
       <Filter>Source\Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\Source\UI\EditorHUD.cpp">
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\UI\EditorHUD.cpp">
       <Filter>Source\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Thirdparty\ImGuiOpenGL.cpp">
+      <Filter>Source\Thirdparty</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -30,8 +33,11 @@
     <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects\FreeCameraObject.h">
       <Filter>Source\Objects</Filter>
     </ClInclude>
-    <ClInclude Include="..\Source\UI\EditorHUD.h">
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\UI\EditorHUD.h">
       <Filter>Source\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Thirdparty\ImGuiOpenGL.h">
+      <Filter>Source\Thirdparty</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +53,9 @@
     <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Objects">
       <Filter>Source</Filter>
     </None>
+    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Thirdparty">
+      <Filter>Source</Filter>
+    </None>
     <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\UI">
       <Filter>Source</Filter>
     </None>
@@ -60,6 +69,9 @@
     </Filter>
     <Filter Include="Source\Objects">
       <UniqueIdentifier>{E66E975D-E264-3D73-B668-90CB8C999919}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Thirdparty">
+      <UniqueIdentifier>{F8875DD0-87F5-344C-BA03-7A420DBA30E3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\UI">
       <UniqueIdentifier>{1575031F-A013-367E-9F5A-6263184B751D}</UniqueIdentifier>

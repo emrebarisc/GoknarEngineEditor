@@ -10,6 +10,8 @@ class Image;
 
 class ImGuiContext;
 
+class Folder;
+
 class GOKNAR_API EditorHUD : public HUD
 {
 public:
@@ -38,7 +40,15 @@ protected:
 
 	void DrawEditorHUD();
 
-	void BeginWindow();
+	void DrawSceneWindow();
+
+	void DrawAssetsWindow();
+	void BuildAssetTree(Folder* folder);
+
+	void DrawFileBrowserWindow();
+	void DrawDetailsWindow();
+
+	void BeginWindow(const std::string name);
 	void EndWindow();
     
 private:

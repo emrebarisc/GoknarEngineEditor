@@ -97,12 +97,6 @@
     <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\EditorGroundGrid.cpp">
       <Filter>Source\Goknar\Editor</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiEditor.cpp">
-      <Filter>Source\Goknar\Editor\ImGuiEditor</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiOpenGL.cpp">
-      <Filter>Source\Goknar\Editor\ImGuiEditor</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry\Box.cpp">
       <Filter>Source\Goknar\Geometry</Filter>
     </ClCompile>
@@ -399,12 +393,6 @@
     <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\EditorGroundGrid.h">
       <Filter>Source\Goknar\Editor</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiEditor.h">
-      <Filter>Source\Goknar\Editor\ImGuiEditor</Filter>
-    </ClInclude>
-    <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor\ImGuiOpenGL.h">
-      <Filter>Source\Goknar\Editor\ImGuiEditor</Filter>
-    </ClInclude>
     <ClInclude Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Geometry\Box.h">
       <Filter>Source\Goknar\Geometry</Filter>
     </ClInclude>
@@ -668,9 +656,6 @@
     <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Components\Deprecate_2D">
       <Filter>Source\Goknar\Components</Filter>
     </None>
-    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Editor\ImGuiEditor">
-      <Filter>Source\Goknar\Editor</Filter>
-    </None>
     <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\GoknarEngine\Goknar\Source\Goknar\Lights\LightManager">
       <Filter>Source\Goknar\Lights</Filter>
     </None>
@@ -714,9 +699,6 @@
     </Filter>
     <Filter Include="Source\Goknar\Editor">
       <UniqueIdentifier>{BA331E3B-3381-38A1-ACA6-DE93A5A33863}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Goknar\Editor\ImGuiEditor">
-      <UniqueIdentifier>{1A4AF7FA-4837-3FCA-A5C1-221811360985}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Goknar\Geometry">
       <UniqueIdentifier>{F2ED6810-8D82-377C-B57D-F49ABC67BE10}</UniqueIdentifier>

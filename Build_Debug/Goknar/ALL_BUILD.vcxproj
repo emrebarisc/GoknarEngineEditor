@@ -221,10 +221,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{93F6F244-D461-3E06-B5E2-4EDC461DA882}</Project>
       <Name>GOKNAR</Name>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\imgui\IMGUI.vcxproj">
-      <Project>{9563E2E5-27BF-3000-B0B1-27A7538D10C2}</Project>
-      <Name>IMGUI</Name>
-    </ProjectReference>
     <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\Goknar\thirdparty\bullet3\src\LinearMath\LinearMath.vcxproj">
       <Project>{6926D933-57AA-37F0-B205-5BBF01F20D4E}</Project>
       <Name>LinearMath</Name>
