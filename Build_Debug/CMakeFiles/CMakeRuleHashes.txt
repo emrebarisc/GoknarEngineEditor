@@ -1,0 +1,3 @@
+# Hashes of file build rules.
+48b2ff79181d3cab133cc916585f1b6e Goknar/thirdparty/glfw/CMakeFiles/uninstall
+928100276ae46d8d7a5a989459981cf9 Goknar/thirdparty/glfw/src/CMakeFiles/update_mappings

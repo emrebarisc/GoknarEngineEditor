@@ -1,9 +1,9 @@
-libdir=C:/Program Files (x86)/GoknarEngineEditor/lib
-includedir=C:/Program Files (x86)/GoknarEngineEditor/include
+libdir=/usr/local/lib
+includedir=/usr/local/include
 
 Name: GoknarEngineEditor
 Description: Import various well-known 3D model formats in an uniform manner.
 Version: 5.2.5
 Libs: -L${libdir} -lassimp
-Libs.private:  
+Libs.private: -lstdc++ -lz
 Cflags: -I${includedir}

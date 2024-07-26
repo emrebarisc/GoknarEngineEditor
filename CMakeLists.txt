@@ -54,10 +54,10 @@ endif()
 
 add_subdirectory(${ENGINE_PATH} ./Goknar)
 
-add_subdirectory(thirdparty/imgui/)
+add_subdirectory(Thirdparty/Imgui/)
 target_link_libraries(${APP_NAME} PUBLIC IMGUI)
 target_include_directories(${APP_NAME} PUBLIC 
-    thirdparty/imgui/Repo
+    Thirdparty/Imgui/Repo
 )
 
 target_link_libraries(${APP_NAME} PUBLIC GOKNAR)

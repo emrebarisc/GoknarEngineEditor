@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code
+# Install script for directory: /home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/GoknarEngineEditor")
+  set(CMAKE_INSTALL_PREFIX "/usr/local")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -12,7 +12,7 @@ if(NOT DEFINED CMAKE_INSTALL_CONFIG_NAME)
     string(REGEX REPLACE "^[^A-Za-z0-9_]+" ""
            CMAKE_INSTALL_CONFIG_NAME "${BUILD_TYPE}")
   else()
-    set(CMAKE_INSTALL_CONFIG_NAME "Release")
+    set(CMAKE_INSTALL_CONFIG_NAME "Debug")
   endif()
   message(STATUS "Install configuration: \"${CMAKE_INSTALL_CONFIG_NAME}\"")
 endif()
@@ -27,131 +27,121 @@ if(NOT CMAKE_INSTALL_COMPONENT)
   endif()
 endif()
 
+# Install shared libraries without execute permission?
+if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
+  set(CMAKE_INSTALL_SO_NO_EXE "1")
+endif()
+
 # Is this installation the result of a crosscompile?
 if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
 endif()
 
-if(CMAKE_INSTALL_COMPONENT STREQUAL "libassimp5.2.5-dev" OR NOT CMAKE_INSTALL_COMPONENT)
-  if(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/Debug/assimp-vc143-mtd.lib")
-  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/Release/assimp-vc143-mt.lib")
-  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/MinSizeRel/assimp-vc143-mt_MinsizeRel.lib")
-  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/RelWithDebInfo/assimp-vc143-mt_RelWithDebugInfo.lib")
-  endif()
+# Set default install directory permissions.
+if(NOT DEFINED CMAKE_OBJDUMP)
+  set(CMAKE_OBJDUMP "/usr/bin/objdump")
 endif()
 
-if(CMAKE_INSTALL_COMPONENT STREQUAL "assimp-dev" OR NOT CMAKE_INSTALL_COMPONENT)
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xlibassimp5.2.5-devx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/baris/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/lib/libassimpd.a")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xassimp-devx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/assimp" TYPE FILE FILES
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/anim.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/aabb.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ai_assert.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/camera.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/color4.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/color4.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/code/../include/assimp/config.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ColladaMetaData.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/commonMetaData.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/defs.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/cfileio.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/light.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/material.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/material.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix3x3.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix3x3.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix4x4.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix4x4.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/mesh.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ObjMaterial.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/pbrmaterial.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/GltfMaterial.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/postprocess.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/quaternion.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/quaternion.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/scene.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/metadata.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/texture.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/types.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector2.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector2.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector3.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector3.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/version.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/cimport.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/AssertHandler.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/importerdesc.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Importer.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/DefaultLogger.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ProgressHandler.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/IOStream.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/IOSystem.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Logger.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/LogStream.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/NullLogger.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/cexport.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Exporter.hpp"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/DefaultIOStream.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/DefaultIOSystem.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ZipArchiveIOSystem.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SceneCombiner.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/fast_atof.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/qnan.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/BaseImporter.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Hash.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/MemoryIOWrapper.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ParsingUtils.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StreamReader.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StreamWriter.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StringComparison.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StringUtils.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SGSpatialSort.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/GenericProperty.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SpatialSort.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SkeletonMeshBuilder.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SmallVector.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SmoothingGroups.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SmoothingGroups.inl"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StandardShapes.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/RemoveComments.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Subdivision.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Vertex.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/LineSplitter.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/TinyFormatter.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Profiler.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/LogAux.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Bitmap.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/XMLTools.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/IOStreamBuffer.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/CreateAnimMesh.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/XmlParser.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/BlobIOSystem.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/MathFunctions.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Exceptional.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ByteSwapper.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Base64.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/anim.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/aabb.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ai_assert.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/camera.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/color4.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/color4.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/code/../include/assimp/config.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ColladaMetaData.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/commonMetaData.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/defs.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/cfileio.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/light.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/material.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/material.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix3x3.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix3x3.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix4x4.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/matrix4x4.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/mesh.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ObjMaterial.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/pbrmaterial.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/GltfMaterial.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/postprocess.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/quaternion.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/quaternion.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/scene.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/metadata.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/texture.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/types.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector2.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector2.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector3.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/vector3.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/version.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/cimport.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/AssertHandler.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/importerdesc.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Importer.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/DefaultLogger.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ProgressHandler.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/IOStream.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/IOSystem.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Logger.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/LogStream.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/NullLogger.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/cexport.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Exporter.hpp"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/DefaultIOStream.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/DefaultIOSystem.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ZipArchiveIOSystem.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SceneCombiner.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/fast_atof.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/qnan.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/BaseImporter.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Hash.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/MemoryIOWrapper.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ParsingUtils.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StreamReader.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StreamWriter.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StringComparison.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StringUtils.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SGSpatialSort.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/GenericProperty.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SpatialSort.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SkeletonMeshBuilder.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SmallVector.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SmoothingGroups.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/SmoothingGroups.inl"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/StandardShapes.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/RemoveComments.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Subdivision.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Vertex.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/LineSplitter.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/TinyFormatter.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Profiler.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/LogAux.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Bitmap.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/XMLTools.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/IOStreamBuffer.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/CreateAnimMesh.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/XmlParser.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/BlobIOSystem.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/MathFunctions.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Exceptional.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/ByteSwapper.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Base64.hpp"
     )
 endif()
 
-if(CMAKE_INSTALL_COMPONENT STREQUAL "assimp-dev" OR NOT CMAKE_INSTALL_COMPONENT)
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xassimp-devx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/assimp/Compiler" TYPE FILE FILES
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Compiler/pushpack1.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Compiler/poppack1.h"
-    "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Compiler/pstdint.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Compiler/pushpack1.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Compiler/poppack1.h"
+    "/home/baris/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/code/../include/assimp/Compiler/pstdint.h"
     )
-endif()
-
-if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  if(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE FILE FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/code/Debug/assimp-vc143-mtd.pdb")
-  endif()
-endif()
-
-if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  if(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE FILE FILES "C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/Goknar/thirdparty/assimp/code/RelWithDebInfo/assimp-vc143-mt.pdb")
-  endif()
 endif()
 

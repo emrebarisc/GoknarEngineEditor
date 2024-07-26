@@ -1,9 +1,0 @@
-# CMake generation dependency list for this directory.
-C:/Program Files/CMake/share/cmake-3.25/Modules/CheckCSourceCompiles.cmake
-C:/Program Files/CMake/share/cmake-3.25/Modules/CheckFunctionExists.cmake
-C:/Program Files/CMake/share/cmake-3.25/Modules/CheckIncludeFile.cmake
-C:/Program Files/CMake/share/cmake-3.25/Modules/CheckIncludeFileCXX.cmake
-C:/Program Files/CMake/share/cmake-3.25/Modules/CheckTypeSize.cmake
-C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/contrib/zlib/CMakeLists.txt
-C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/contrib/zlib/zconf.h.cmakein
-C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/GoknarEngine/Goknar/thirdparty/assimp/contrib/zlib/zlib.pc.cmakein
