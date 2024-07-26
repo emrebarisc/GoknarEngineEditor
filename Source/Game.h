@@ -2,6 +2,8 @@
 
 class EditorHUD;
 
+class FreeCameraObject;
+
 class GOKNAR_API Game : public Application
 {
 public:
@@ -13,4 +15,6 @@ public:
 
 private:
 	EditorHUD* editorHUD_;
+
+	FreeCameraObject* freeCameraObject_;
 };

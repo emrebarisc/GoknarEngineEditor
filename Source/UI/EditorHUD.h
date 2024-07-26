@@ -41,8 +41,10 @@ protected:
 	void DrawEditorHUD();
 
 	void DrawSceneWindow();
+	void DrawSceneLights();
+	void DrawSceneObjects();
 
-	void DrawAssetsWindow();
+	void DrawObjectsWindow();
 	void BuildAssetTree(Folder* folder);
 
 	void DrawFileBrowserWindow();

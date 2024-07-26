@@ -12,6 +12,7 @@
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/WindowManager.h"
 
+#include "Objects/FreeCameraObject.h"
 #include "UI/EditorHUD.h"
 
 #include <chrono>
@@ -32,6 +33,10 @@ Game::Game() : Application()
 	lastFrameTimePoint = currentTimePoint;
 
 	editorHUD_ = new EditorHUD();
+	editorHUD_->SetName("__Editor__HUD");
+
+	freeCameraObject_ = new FreeCameraObject();
+	freeCameraObject_->SetName("__Editor__Camera");
 }
 
 Game::~Game()

@@ -5,6 +5,7 @@
 
 #include "Goknar/Camera.h"
 #include "Goknar/Engine.h"
+#include "Goknar/Scene.h"
 
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/InputManager.h"
@@ -15,6 +16,10 @@
 
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Renderer/Texture.h"
+
+#include "Goknar/Lights/DirectionalLight.h"
+#include "Goknar/Lights/PointLight.h"
+#include "Goknar/Lights/SpotLight.h"
 
 #include "Game.h"
 #include "Thirdparty/ImGuiOpenGL.h"
@@ -305,7 +310,7 @@ void EditorHUD::DrawEditorHUD()
 	ImGui::End();
 
 	DrawSceneWindow();
-	DrawAssetsWindow();
+	DrawObjectsWindow();
 	DrawFileBrowserWindow();
 	DrawDetailsWindow();
 }
@@ -313,35 +318,130 @@ void EditorHUD::DrawEditorHUD()
 void EditorHUD::DrawSceneWindow()
 {
 	BeginWindow("Scene");
+	DrawSceneLights();
+	DrawSceneObjects();
 	EndWindow();
+}
+
+void EditorHUD::DrawSceneLights()
+{
+	if (ImGui::TreeNode("Lights"))
+	{
+		Scene* currentScene = engine->GetApplication()->GetMainScene();
+
+		std::vector<DirectionalLight*> directionalLights = currentScene->GetDirectionalLights();
+		int directionalLightCount = directionalLights.size();
+
+		std::vector<PointLight*> pointLights = currentScene->GetPointLights();
+		int pointLightCount = pointLights.size();
+
+		std::vector<SpotLight*> spotLights = currentScene->GetSpotLights();
+		int spotLightCount = spotLights.size();
+
+		if (0 < directionalLightCount)
+		{
+			for (int lightIndex = 0; lightIndex < directionalLightCount; lightIndex++)
+			{
+				DirectionalLight* directionalLight = directionalLights[lightIndex];
+				if (ImGui::Button(directionalLight->GetName().c_str()))
+				{
+
+				}
+			}
+		}
+		if (0 < pointLightCount)
+		{
+			for (int lightIndex = 0; lightIndex < pointLightCount; lightIndex++)
+			{
+				PointLight* pointLight = pointLights[lightIndex];
+				if (ImGui::Button(pointLight->GetName().c_str()))
+				{
+
+				}
+			}
+		}
+		if (0 < spotLightCount)
+		{
+			for (int lightIndex = 0; lightIndex < spotLightCount; lightIndex++)
+			{
+				SpotLight* spotLight = spotLights[lightIndex];
+				if (ImGui::Button(spotLight->GetName().c_str()))
+				{
+
+				}
+			}
+		}
+
+		ImGui::TreePop();
+	}
+}
+
+void EditorHUD::DrawSceneObjects()
+{
+	if (ImGui::TreeNode("Objects"))
+	{
+		std::vector<ObjectBase*> registeredObjects = engine->GetObjectsOfType<ObjectBase>();
+
+		for (ObjectBase* object : registeredObjects)
+		{
+			if (object->GetName().find("__Editor__") != std::string::npos)
+			{
+				continue;
+			}
+
+			if (ImGui::Button(object->GetName().c_str()))
+			{
+				Camera* camera = engine->GetCameraManager()->GetActiveCamera();
+				engine->GetCameraManager()->GetActiveCamera()->SetPosition(camera->GetPosition() - 10.f * camera->GetForwardVector());
+			}
+		}
+
+		ImGui::TreePop();
+	}
 }
 
 void EditorHUD::BuildAssetTree(Folder* folder)
 {
-	for (auto folder : folderMap)
+	for (auto subFolder : folder->subFolders)
 	{
-		for (auto subFolder : folder.second->subFolders)
+		if (ImGui::TreeNode(subFolder->folderName.c_str()))
 		{
-			if (ImGui::TreeNode(subFolder->folderName.c_str()))
-			{
-				int contentPathsSize = contentPaths.size();
-				for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
-				{
-					ImGui::Text(contentPaths[pathIndex].c_str());
-				}
-				ImGui::TreePop();
-			}
+			BuildAssetTree(subFolder);
+			ImGui::TreePop();
 		}
-		for (auto fileName : folder.second->fileNames)
-		{
-			ImGui::Text(fileName.c_str());
-		}
+	}
+	for (auto fileName : folder->fileNames)
+	{
+		ImGui::Text(fileName.c_str());
 	}
 }
 
-void EditorHUD::DrawAssetsWindow()
+void EditorHUD::DrawObjectsWindow()
 {
-	BeginWindow("Assets");
+	BeginWindow("Objects");
+	if (ImGui::TreeNode("Lights"))
+	{
+		if (ImGui::Button("Directional Light"))
+		{
+			new DirectionalLight();
+		}
+		else if (ImGui::Button("Point Light"))
+		{
+			new PointLight();
+		}
+		else if (ImGui::Button("Spot Light"))
+		{
+			new SpotLight();
+		}
+
+		ImGui::TreePop();
+	}
+	EndWindow();
+}
+
+void EditorHUD::DrawFileBrowserWindow()
+{
+	BeginWindow("FileBrowser");
 
 	std::vector<std::string> contentPaths;
 
@@ -360,16 +460,31 @@ void EditorHUD::DrawAssetsWindow()
 		++resourceIndex;
 	}
 
+	resourceIndex = 0;
+	while (Image* image = resourceManager->GetResourceContainer()->GetImage(resourceIndex))
+	{
+#ifdef ENGINE_CONTENT_DIR
+		if (image->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
+		{
+			std::string path = image->GetPath();
+			contentPaths.emplace_back(path.substr(ContentDir.size()));
+		}
+#endif
+		++resourceIndex;
+	}
+
 	std::sort(contentPaths.begin(), contentPaths.end());
 
-	std::map<std::string, Folder*> folderMap;
+	Folder* rootFolder = new Folder();
+	rootFolder->folderName = "Content";
 
+	std::map<std::string, Folder*> folderMap;
 	int contentPathsSize = contentPaths.size();
 	for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
 	{
 		std::string currentPath = contentPaths[pathIndex];
 
-		Folder* parentFolder = nullptr;
+		Folder* parentFolder = rootFolder;
 
 		bool breakTheLoop = false;
 		while (!currentPath.empty())
@@ -393,7 +508,9 @@ void EditorHUD::DrawAssetsWindow()
 					folderMap[folderName]->folderName = folderName;
 				}
 
-				if (parentFolder)
+				if (std::find(parentFolder->subFolders.begin(),
+					parentFolder->subFolders.end(),
+					folderMap[folderName]) == std::end(parentFolder->subFolders))
 				{
 					parentFolder->subFolders.push_back(folderMap[folderName]);
 				}
@@ -411,7 +528,7 @@ void EditorHUD::DrawAssetsWindow()
 
 	if (ImGui::TreeNode("Assets"))
 	{
-		BuildAssetTree();
+		BuildAssetTree(rootFolder);
 		ImGui::TreePop();
 	}
 
@@ -420,12 +537,8 @@ void EditorHUD::DrawAssetsWindow()
 		delete folder.second;
 	}
 
-	EndWindow();
-}
+	delete rootFolder;
 
-void EditorHUD::DrawFileBrowserWindow()
-{
-	BeginWindow("FileBrowser");
 	EndWindow();
 }
 
