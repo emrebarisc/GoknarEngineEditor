@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui
+# Install script for directory: C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/Imgui
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

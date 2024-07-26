@@ -78,7 +78,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -93,10 +93,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GOKNAR_PLATFORM_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -109,7 +109,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -124,10 +124,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GOKNAR_PLATFORM_WINDOWS;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -140,7 +140,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -155,10 +155,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GOKNAR_PLATFORM_WINDOWS;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -171,7 +171,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -185,10 +185,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GOKNAR_PLATFORM_WINDOWS;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -200,9 +200,9 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/Imgui/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
@@ -215,7 +215,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\thirdparty\imgui\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/Imgui/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
@@ -228,7 +228,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\thirdparty\imgui\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/Imgui/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
@@ -241,7 +241,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\thirdparty\imgui\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/Imgui/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
 "C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Ev/Desktop/Projects/GoknarEngineEditor -BC:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug --check-stamp-file C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_Debug/thirdparty/imgui/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
@@ -257,11 +257,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui\imgui.cpp" />
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui\imgui_demo.cpp" />
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui\imgui_draw.cpp" />
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui\imgui_tables.cpp" />
-    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui\Repo\imgui.cpp" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui\Repo\imgui_demo.cpp" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui\Repo\imgui_draw.cpp" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui\Repo\imgui_tables.cpp" />
+    <ClCompile Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\thirdparty\Imgui\Repo\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Build_Debug\ZERO_CHECK.vcxproj">

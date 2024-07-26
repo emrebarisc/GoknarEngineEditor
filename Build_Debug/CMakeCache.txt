@@ -525,7 +525,7 @@ IMGUI_BINARY_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/Build_De
 IMGUI_IS_TOP_LEVEL:STATIC=OFF
 
 //Value Computed by CMake
-IMGUI_SOURCE_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/imgui
+IMGUI_SOURCE_DIR:STATIC=C:/Users/Ev/Desktop/Projects/GoknarEngineEditor/thirdparty/Imgui
 
 //Install generated CMake files
 INSTALL_CMAKE_FILES:BOOL=ON

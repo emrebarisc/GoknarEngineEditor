@@ -1,6 +1,6 @@
 [submodule "GoknarEngine"]
 	path = GoknarEngine
 	url = https://github.com/emrebarisc/GoknarEngine
-[submodule "thirdparty/imgui"]
-	path = thirdparty/imgui
+[submodule "Thirdparty/Imgui/Repo"]
+	path = Thirdparty/Imgui/Repo
 	url = https://github.com/ocornut/imgui

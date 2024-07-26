@@ -44,9 +44,6 @@
     <CustomBuild Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Components">
-      <Filter>Source</Filter>
-    </None>
     <None Include="C:\Users\Ev\Desktop\Projects\GoknarEngineEditor\Source\Controllers">
       <Filter>Source</Filter>
     </None>

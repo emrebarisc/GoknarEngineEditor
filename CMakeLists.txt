@@ -57,7 +57,7 @@ add_subdirectory(${ENGINE_PATH} ./Goknar)
 add_subdirectory(thirdparty/imgui/)
 target_link_libraries(${APP_NAME} PUBLIC IMGUI)
 target_include_directories(${APP_NAME} PUBLIC 
-    thirdparty/imgui
+    thirdparty/imgui/Repo
 )
 
 target_link_libraries(${APP_NAME} PUBLIC GOKNAR)
