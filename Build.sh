@@ -2,7 +2,7 @@ isDebugBuild=false
 cleanBuild=false
 runAfterBuild=false
 directoryName=""
-gameName="GameProject"
+gameName="GoknarEngineEditor"
 
 for argument in "$@"
 do
