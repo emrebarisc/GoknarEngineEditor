@@ -189,7 +189,7 @@ void EditorHUD::OnWindowSizeChanged(int width, int height)
 void EditorHUD::UpdateHUD()
 {
 	HUD::UpdateHUD();
-	
+
     WindowManager* windowManager = engine->GetWindowManager();
 	windowSize_ = windowManager->GetWindowSize();
 
@@ -201,22 +201,11 @@ void EditorHUD::UpdateHUD()
 	ImGui::NewFrame();
 
 	ImGui::StyleColorsDark();
-    ImGuiStyle* style = &ImGui::GetStyle();
 
-	SetupFullscreenWindow();
-	
 	DrawEditorHUD();
 
 	ImGui::Render();
 	ImGui_RenderDrawData(ImGui::GetDrawData());
-}
-
-void EditorHUD::SetupFullscreenWindow()
-{
-	ImVec2 windowSize = ImVec2{(float)windowSize_.x, (float)windowSize_.y};
-	ImGui::SetNextWindowSize(windowSize);
-	ImVec2 windowPosition = ImVec2{0.f, 0.f};//ImVec2{(float)windowSize.x * 0.5f, (float)windowSize.y * 0.5f};
-	ImGui::SetNextWindowPos(windowPosition);
 }
 
 void EditorHUD::DrawEditorHUD()
@@ -224,7 +213,7 @@ void EditorHUD::DrawEditorHUD()
 	static bool p_open = true;
 	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
-	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
 	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 	// because it would be confusing to have two docking targets within each others.

@@ -36,8 +36,6 @@ protected:
 	void OnCharPressed(unsigned int codePoint);
 	void OnWindowSizeChanged(int width, int height);
 
-	void SetupFullscreenWindow();
-
 	void DrawEditorHUD();
 
 	void DrawSceneWindow();
