@@ -12,6 +12,15 @@ class ImGuiContext;
 
 class Folder;
 
+enum class DetailObjectType
+{
+	None = 0,
+	Object,
+	DirectionalLight,
+	PointLight,
+	SpotLight
+};
+
 class GOKNAR_API EditorHUD : public HUD
 {
 public:
@@ -38,6 +47,8 @@ protected:
 
 	void DrawEditorHUD();
 
+	void DrawCameraInfo();
+
 	void DrawSceneWindow();
 	void DrawSceneLights();
 	void DrawSceneObjects();
@@ -47,8 +58,13 @@ protected:
 
 	void DrawFileBrowserWindow();
 	void DrawDetailsWindow();
+	void DrawDetailsWindow_Object();
+	void DrawDetailsWindow_DirectionalLight();
+	void DrawDetailsWindow_PointLight();
+	void DrawDetailsWindow_SpotLight();
 
-	void BeginWindow(const std::string name);
+	void BeginWindow(const std::string& name);
+	void BeginTransparentWindow(const std::string& name);
 	void EndWindow();
     
 private:
@@ -67,4 +83,7 @@ private:
 
 	Image* uiImage_;
 	ImGuiContext* imguiContext_;
+
+	DetailObjectType selectedObjectType_{ DetailObjectType::None };
+	void* selectedObject_;
 };

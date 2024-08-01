@@ -13,6 +13,11 @@ public:
 
 	void Run() override;
 
+	FreeCameraObject* GetFreeCameraObject()
+	{
+		return freeCameraObject_;
+	}
+
 private:
 	EditorHUD* editorHUD_;
 

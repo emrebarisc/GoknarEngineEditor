@@ -22,11 +22,13 @@
 #include "Goknar/Lights/SpotLight.h"
 
 #include "Game.h"
+#include "Objects/FreeCameraObject.h"
 #include "Thirdparty/ImGuiOpenGL.h"
 
 struct Folder
 {
 	std::string folderName;
+	std::string fullPath;
 	std::vector<Folder*> subFolders;
 	std::vector<std::string> fileNames;
 };
@@ -97,8 +99,6 @@ void EditorHUD::BeginGame()
 {
     HUD::BeginGame();
 	
-	engine->SetTimeScale(0.f);
-    
     WindowManager* windowManager = engine->GetWindowManager();
 	windowSize_ = windowManager->GetWindowSize();
 
@@ -298,10 +298,23 @@ void EditorHUD::DrawEditorHUD()
 
 	ImGui::End();
 
+	DrawCameraInfo();
 	DrawSceneWindow();
 	DrawObjectsWindow();
 	DrawFileBrowserWindow();
 	DrawDetailsWindow();
+}
+
+void EditorHUD::DrawCameraInfo()
+{
+	BeginTransparentWindow("CameraInfo");
+
+	FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
+	ImGui::Text((std::string("Position: ") + freeCameraObject->GetWorldPosition().ToString()).c_str());
+	ImGui::Text((std::string("Rotation: ") + freeCameraObject->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
+	ImGui::Text((std::string("Forward Vector: ") + freeCameraObject->GetForwardVector().ToString()).c_str());
+
+	EndWindow();
 }
 
 void EditorHUD::DrawSceneWindow()
@@ -380,8 +393,11 @@ void EditorHUD::DrawSceneObjects()
 
 			if (ImGui::Button(object->GetName().c_str()))
 			{
-				Camera* camera = engine->GetCameraManager()->GetActiveCamera();
-				engine->GetCameraManager()->GetActiveCamera()->SetPosition(camera->GetPosition() - 10.f * camera->GetForwardVector());
+				FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
+				freeCameraObject->SetWorldPosition(object->GetWorldPosition() - 20.f * freeCameraObject->GetForwardVector());
+
+				selectedObject_ = object;
+				selectedObjectType_ = DetailObjectType::Object;
 			}
 		}
 
@@ -495,6 +511,7 @@ void EditorHUD::DrawFileBrowserWindow()
 				{
 					folderMap[folderName] = new Folder();
 					folderMap[folderName]->folderName = folderName;
+					folderMap[folderName]->fullPath = currentPath;
 				}
 
 				if (std::find(parentFolder->subFolders.begin(),
@@ -534,10 +551,59 @@ void EditorHUD::DrawFileBrowserWindow()
 void EditorHUD::DrawDetailsWindow()
 {
 	BeginWindow("Details");
+
+	switch (selectedObjectType_)
+	{
+	case DetailObjectType::None:
+		break;
+	case DetailObjectType::Object:
+		DrawDetailsWindow_Object();
+		break;
+	case DetailObjectType::DirectionalLight:
+		DrawDetailsWindow_DirectionalLight();
+		break;
+	case DetailObjectType::PointLight:
+		DrawDetailsWindow_PointLight();
+		break;
+	case DetailObjectType::SpotLight:
+		DrawDetailsWindow_SpotLight();
+		break;
+	default:
+		break;
+	}
+
 	EndWindow();
 }
 
-void EditorHUD::BeginWindow(const std::string name)
+void EditorHUD::DrawDetailsWindow_Object()
+{
+	ObjectBase* selectedObject = static_cast<ObjectBase*>(selectedObject_);
+
+	Vector3 selectedObjectWorldPosition = selectedObject->GetWorldPosition();
+	Vector3 selectedObjectWorldRotationEulerDegrees = selectedObject->GetWorldRotation().ToEulerDegrees();
+	Vector3 selectedObjectWorldScaling = selectedObject->GetWorldScaling();
+
+	ImGui::Text((std::string("Position: ") + selectedObjectWorldPosition.ToString()).c_str());
+	ImGui::Text((std::string("Rotation: ") + selectedObjectWorldRotationEulerDegrees.ToString()).c_str());
+	ImGui::Text((std::string("Scaling: ") + selectedObjectWorldScaling.ToString()).c_str());
+}
+
+void EditorHUD::DrawDetailsWindow_DirectionalLight()
+{
+
+}
+
+void EditorHUD::DrawDetailsWindow_PointLight()
+{
+
+}
+
+void EditorHUD::DrawDetailsWindow_SpotLight()
+{
+
+}
+
+void EditorHUD::BeginWindow(const std::string& name)
 {
     ImGuiWindowFlags windowFlags = 
         //ImGuiWindowFlags_NoTitleBar          | 
@@ -546,6 +612,15 @@ void EditorHUD::BeginWindow(const std::string name)
         //ImGuiWindowFlags_NoScrollbar		 |
         //ImGuiWindowFlags_NoSavedSettings     |
         0;
+
+	bool isOpen = true;
+	ImGui::Begin(name.c_str(), &isOpen, windowFlags);
+}
+
+void EditorHUD::BeginTransparentWindow(const std::string& name)
+{
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoBackground;
+	windowFlags |= ImGuiWindowFlags_NoTitleBar;
 
 	bool isOpen = true;
 	ImGui::Begin(name.c_str(), &isOpen, windowFlags);
