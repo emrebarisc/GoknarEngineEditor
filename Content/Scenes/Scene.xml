@@ -479,6 +479,7 @@
 	      <WorldScaling>1.0 1.0 1.0</WorldScaling>
 	      <Mesh>6</Mesh>
 	    </StaticMeshObject>
+-->
 
 	    <StaticMeshObject id = "6">
 	      <Name>Cube</Name>
@@ -491,7 +492,6 @@
 	      <WorldScaling>1.0 1.0 1.0</WorldScaling>
 	      <Mesh>5</Mesh>
 	    </StaticMeshObject>
--->
 
 	</Objects>
 

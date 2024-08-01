@@ -63,6 +63,9 @@ protected:
 	void DrawDetailsWindow_PointLight();
 	void DrawDetailsWindow_SpotLight();
 
+	void DrawInputText(const std::string& name, Vector3& vector);
+	void DrawInputText(const std::string& name, Quaternion& quaternion);
+
 	void BeginWindow(const std::string& name);
 	void BeginTransparentWindow(const std::string& name);
 	void EndWindow();
@@ -85,5 +88,5 @@ private:
 	ImGuiContext* imguiContext_;
 
 	DetailObjectType selectedObjectType_{ DetailObjectType::None };
-	void* selectedObject_;
+	void* selectedObject_{ nullptr };
 };

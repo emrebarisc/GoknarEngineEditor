@@ -1,5 +1,7 @@
 #include "EditorHUD.h"
 
+#include <string>
+
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -347,7 +349,8 @@ void EditorHUD::DrawSceneLights()
 				DirectionalLight* directionalLight = directionalLights[lightIndex];
 				if (ImGui::Button(directionalLight->GetName().c_str()))
 				{
-
+					selectedObject_ = directionalLight;
+					selectedObjectType_ = DetailObjectType::DirectionalLight;
 				}
 			}
 		}
@@ -358,7 +361,8 @@ void EditorHUD::DrawSceneLights()
 				PointLight* pointLight = pointLights[lightIndex];
 				if (ImGui::Button(pointLight->GetName().c_str()))
 				{
-
+					selectedObject_ = pointLight;
+					selectedObjectType_ = DetailObjectType::PointLight;
 				}
 			}
 		}
@@ -369,7 +373,8 @@ void EditorHUD::DrawSceneLights()
 				SpotLight* spotLight = spotLights[lightIndex];
 				if (ImGui::Button(spotLight->GetName().c_str()))
 				{
-
+					selectedObject_ = spotLight;
+					selectedObjectType_ = DetailObjectType::SpotLight;
 				}
 			}
 		}
@@ -583,9 +588,24 @@ void EditorHUD::DrawDetailsWindow_Object()
 	Vector3 selectedObjectWorldRotationEulerDegrees = selectedObject->GetWorldRotation().ToEulerDegrees();
 	Vector3 selectedObjectWorldScaling = selectedObject->GetWorldScaling();
 
-	ImGui::Text((std::string("Position: ") + selectedObjectWorldPosition.ToString()).c_str());
-	ImGui::Text((std::string("Rotation: ") + selectedObjectWorldRotationEulerDegrees.ToString()).c_str());
-	ImGui::Text((std::string("Scaling: ") + selectedObjectWorldScaling.ToString()).c_str());
+	ImGui::PushItemWidth(100.f);
+
+	ImGui::Text("Position: ");
+	ImGui::SameLine();
+	DrawInputText("##Position", selectedObjectWorldPosition);
+	selectedObject->SetWorldPosition(selectedObjectWorldPosition);
+
+	ImGui::Text("Rotation: ");
+	ImGui::SameLine();
+	DrawInputText("##Rotation", selectedObjectWorldRotationEulerDegrees);
+	selectedObject->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
+
+	ImGui::Text("Scaling: ");
+	ImGui::SameLine();
+	DrawInputText("##Scaling", selectedObjectWorldScaling);
+	selectedObject->SetWorldScaling(selectedObjectWorldScaling);
+
+	ImGui::PopItemWidth();
 }
 
 void EditorHUD::DrawDetailsWindow_DirectionalLight()
@@ -601,6 +621,85 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 void EditorHUD::DrawDetailsWindow_SpotLight()
 {
 
+}
+
+void EditorHUD::DrawInputText(const std::string& name, Vector3& vector)
+{
+	char positionCharX[64];
+	sprintf(positionCharX, "%.4f", vector.x);
+	ImGui::InputText((name + "X").c_str(), positionCharX, 64);
+	float newPositionX = (float)atof(positionCharX);
+	if (SMALLER_EPSILON < GoknarMath::Abs(vector.x - newPositionX))
+	{
+		vector.x = newPositionX;
+	}
+
+	ImGui::SameLine();
+
+	char positionCharY[64];
+	sprintf(positionCharY, "%.4f", vector.y);
+	ImGui::InputText((name + "Y").c_str(), positionCharY, 64);
+	float newPositionY = (float)atof(positionCharY);
+	if (SMALLER_EPSILON < GoknarMath::Abs(vector.y - newPositionY))
+	{
+		vector.y = newPositionY;
+	}
+
+	ImGui::SameLine();
+
+	char positionCharZ[64];
+	sprintf(positionCharZ, "%.4f", vector.z);
+	ImGui::InputText((name + "Z").c_str(), positionCharZ, 64);
+	float newPositionZ = (float)atof(positionCharZ);
+	if (SMALLER_EPSILON < GoknarMath::Abs(vector.z - newPositionZ))
+	{
+		vector.z = newPositionZ;
+	}
+}
+
+void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
+{
+	char positionCharX[64];
+	sprintf(positionCharX, "%.4f", quaternion.x);
+	ImGui::InputText((name + "X").c_str(), positionCharX, 64);
+	float newQuaternionX = (float)atof(positionCharX);
+	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.x - newQuaternionX))
+	{
+		quaternion.x = newQuaternionX;
+	}
+
+	ImGui::SameLine();
+
+	char positionCharY[64];
+	sprintf(positionCharY, "%.4f", quaternion.y);
+	ImGui::InputText((name + "Y").c_str(), positionCharY, 64);
+	float newQuaternionY = (float)atof(positionCharY);
+	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.y - newQuaternionY))
+	{
+		quaternion.y = newQuaternionY;
+	}
+
+	ImGui::SameLine();
+
+	char positionCharZ[64];
+	sprintf(positionCharZ, "%.4f", quaternion.z);
+	ImGui::InputText((name + "Z").c_str(), positionCharZ, 64);
+	float newQuaternionZ = (float)atof(positionCharZ);
+	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.z - newQuaternionZ))
+	{
+		quaternion.z = newQuaternionZ;
+	}
+
+	ImGui::SameLine();
+
+	char positionCharW[64];
+	sprintf(positionCharW, "%.4f", quaternion.w);
+	ImGui::InputText((name + "W").c_str(), positionCharW, 64);
+	float newQuaternionW = (float)atof(positionCharW);
+	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.w - newQuaternionW))
+	{
+		quaternion.w = newQuaternionW;
+	}
 }
 
 void EditorHUD::BeginWindow(const std::string& name)
