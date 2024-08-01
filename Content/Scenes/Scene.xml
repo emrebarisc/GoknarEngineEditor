@@ -490,7 +490,7 @@
 	      <WorldPosition>0.0 0.0 0.0</WorldPosition>
 	      <WorldRotation>0.0 0.0 0.0</WorldRotation>
 	      <WorldScaling>1.0 1.0 1.0</WorldScaling>
-	      <Mesh>5</Mesh>
+	      <Mesh>Meshes/SM_Cube.fbx</Mesh>
 	    </StaticMeshObject>
 
 	</Objects>
