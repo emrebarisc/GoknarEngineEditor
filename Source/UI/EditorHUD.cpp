@@ -340,14 +340,14 @@ void EditorHUD::DrawEditorHUD()
 		{
 			if (ImGui::MenuItem("Save scene as"))
 			{
-				OnSavePathEmpty();
+				windowOpenMap_["Scene save path"] = true;
 			}
 
 			if (ImGui::MenuItem("Save scene"))
 			{
 				if (sceneSavePath_.empty())
 				{
-					OnSavePathEmpty();
+					windowOpenMap_["Scene save path"] = true;
 				}
 				else
 				{
@@ -393,6 +393,11 @@ void EditorHUD::DrawEditorHUD()
 	DrawObjectsWindow();
 	DrawFileBrowserWindow();
 	DrawDetailsWindow();
+
+	if (windowOpenMap_["Scene save path"])
+	{
+		OnSavePathEmpty();
+	}
 }
 
 void EditorHUD::DrawCameraInfo()
@@ -973,7 +978,7 @@ void EditorHUD::EndWindow()
 	ImGui::End();
 }
 
-bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& buttonText)
+bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText)
 {
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
 
@@ -982,16 +987,16 @@ bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowT
 	ImGui::Text(text.c_str());
 	ImGui::SameLine();
 
-	char input[64];
+	char* input = const_cast<char*>(currentValue.c_str());
 	ImGui::InputText((windowTitle + "_TextBox").c_str(), input, 64);
 
-	bool buttonClicked = ImGui::Button(buttonText.c_str());
-
 	std::string inputString = input;
-	if (buttonClicked && !inputString.empty())
+	bool buttonClicked = ImGui::Button(buttonText.c_str());
+	buttonClicked = buttonClicked && !inputString.empty();
+
+	if (buttonClicked)
 	{
 		sceneSavePath_ = inputString;
-		windowOpenMap_[windowTitle] = false;
 	}
 
 	ImGui::End();
@@ -1007,8 +1012,11 @@ void EditorHUD::FocusToPosition(const Vector3& position)
 
 void EditorHUD::OnSavePathEmpty()
 {
-	if (BeginDialogWindow_OneTextBoxOneButton("Scene save path", "Path: ", "Save"))
+	std::string windowName = "##Scene save path";
+	if (BeginDialogWindow_OneTextBoxOneButton(windowName, "Path: ", sceneSavePath_, "Save"))
 	{
 		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + sceneSavePath_);
+
+		windowOpenMap_[windowName] = false;
 	}
 }

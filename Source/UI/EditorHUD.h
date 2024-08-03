@@ -79,7 +79,7 @@ private:
 	void BeginTransparentWindow(const std::string& name);
 	void EndWindow();
 
-	bool BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& buttonText);
+	bool BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText);
 
 	void FocusToPosition(const Vector3& position);
 	void OnSavePathEmpty();
