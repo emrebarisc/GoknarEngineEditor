@@ -16,12 +16,15 @@
 
 #include "Goknar/Model/MeshUnit.h"
 
+#include "Goknar/Contents/Audio.h"
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Renderer/Texture.h"
 
 #include "Goknar/Lights/DirectionalLight.h"
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
+
+#include "Goknar/Helpers/SceneParser.h"
 
 #include "Game.h"
 #include "Objects/FreeCameraObject.h"
@@ -50,21 +53,28 @@ EditorHUD::EditorHUD() : HUD()
 	onLeftClickReleasedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnLeftClickReleased>(this);
 	onCharPressedDelegate_ = Delegate<void(unsigned int)>::create<EditorHUD, &EditorHUD::OnCharPressed>(this);
 	onWindowSizeChangedDelegate_ = Delegate<void(int, int)>::create<EditorHUD, &EditorHUD::OnWindowSizeChanged>(this);
+	onDeleteInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnDeleteInputPressed>(this);
+	onFocusInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
 
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
 }
 
 EditorHUD::~EditorHUD()
 {
-	engine->GetInputManager()->RemoveKeyboardListener(onKeyboardEventDelegate_);
+	InputManager* inputManager = engine->GetInputManager();
 
-	engine->GetInputManager()->RemoveCursorDelegate(onCursorMoveDelegate_);
-	engine->GetInputManager()->RemoveScrollDelegate(onScrollDelegate_);
+	inputManager->RemoveKeyboardListener(onKeyboardEventDelegate_);
 
-	engine->GetInputManager()->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_PRESS, onLeftClickPressedDelegate_);
-	engine->GetInputManager()->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_RELEASE, onLeftClickReleasedDelegate_);
+	inputManager->RemoveCursorDelegate(onCursorMoveDelegate_);
+	inputManager->RemoveScrollDelegate(onScrollDelegate_);
 
-	engine->GetInputManager()->RemoveCharDelegate(onCharPressedDelegate_);
+	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_PRESS, onLeftClickPressedDelegate_);
+	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_RELEASE, onLeftClickReleasedDelegate_);
+
+	inputManager->RemoveCharDelegate(onCharPressedDelegate_);
+
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 
 	ImGui_DestroyFontsTexture();
 	ImGui_DestroyDeviceObjects();
@@ -76,15 +86,20 @@ void EditorHUD::PreInit()
 {
 	HUD::PreInit();
 
-	engine->GetInputManager()->AddKeyboardListener(onKeyboardEventDelegate_);
+	InputManager* inputManager = engine->GetInputManager();
 
-	engine->GetInputManager()->AddCursorDelegate(onCursorMoveDelegate_);
-	engine->GetInputManager()->AddScrollDelegate(onScrollDelegate_);
+	inputManager->AddKeyboardListener(onKeyboardEventDelegate_);
 
-	engine->GetInputManager()->AddMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_PRESS, onLeftClickPressedDelegate_);
-	engine->GetInputManager()->AddMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_RELEASE, onLeftClickReleasedDelegate_);
+	inputManager->AddCursorDelegate(onCursorMoveDelegate_);
+	inputManager->AddScrollDelegate(onScrollDelegate_);
 
-	engine->GetInputManager()->AddCharDelegate(onCharPressedDelegate_);
+	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_PRESS, onLeftClickPressedDelegate_);
+	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_RELEASE, onLeftClickReleasedDelegate_);
+
+	inputManager->AddCharDelegate(onCharPressedDelegate_);
+
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 }
 
 void EditorHUD::Init()
@@ -188,6 +203,52 @@ void EditorHUD::OnWindowSizeChanged(int width, int height)
 	buttonSize_ = ImVec2(buttonSizeVector.x, buttonSizeVector.y);
 }
 
+void EditorHUD::OnDeleteInputPressed()
+{
+	switch (selectedObjectType_)
+	{
+	case DetailObjectType::Object:
+		((ObjectBase*)selectedObject_)->Destroy();
+		break;
+	case DetailObjectType::DirectionalLight:
+		delete ((DirectionalLight*)selectedObject_);
+		break;
+	case DetailObjectType::PointLight:
+		delete ((PointLight*)selectedObject_);
+		break;
+	case DetailObjectType::SpotLight:
+		delete ((SpotLight*)selectedObject_);
+		break;
+	case DetailObjectType::None:
+	default:
+		return;
+	}
+
+	selectedObjectType_ = DetailObjectType::None;
+	selectedObject_ = nullptr;
+}
+
+void EditorHUD::OnFocusInputPressed()
+{
+	Vector3 position = Vector3::ZeroVector;
+	switch (selectedObjectType_)
+	{
+	case DetailObjectType::Object:
+		position = ((ObjectBase*)selectedObject_)->GetWorldPosition();
+		break;
+	case DetailObjectType::DirectionalLight:
+	case DetailObjectType::PointLight:
+	case DetailObjectType::SpotLight:
+		position = ((Light*)selectedObject_)->GetPosition();
+		break;
+	case DetailObjectType::None:
+	default:
+		return;
+	}
+
+	FocusToPosition(position);
+}
+
 void EditorHUD::UpdateHUD()
 {
 	HUD::UpdateHUD();
@@ -248,7 +309,7 @@ void EditorHUD::DrawEditorHUD()
 	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
 	if (!opt_padding)
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("DockSpace Demo", &p_open, window_flags);
+	ImGui::Begin("Goknar Engine Editor", &p_open, window_flags);
 	if (!opt_padding)
 		ImGui::PopStyleVar();
 
@@ -260,7 +321,7 @@ void EditorHUD::DrawEditorHUD()
 
 	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 	{
-		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+		ImGuiID dockspace_id = ImGui::GetID("Editor");
 		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 	}
 	else
@@ -275,6 +336,33 @@ void EditorHUD::DrawEditorHUD()
 
 	if (ImGui::BeginMenuBar())
 	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Save scene as"))
+			{
+				OnSavePathEmpty();
+			}
+
+			if (ImGui::MenuItem("Save scene"))
+			{
+				if (sceneSavePath_.empty())
+				{
+					OnSavePathEmpty();
+				}
+				else
+				{
+					SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + sceneSavePath_);
+				}
+			}
+
+			if (ImGui::MenuItem("Exit", NULL, false, p_open != NULL))
+			{
+				engine->Exit();
+			}
+
+			ImGui::EndMenu();
+		}
+
 		if (ImGui::BeginMenu("Options"))
 		{
 			// Disabling fullscreen would allow the window to be moved to the front of other windows,
@@ -321,7 +409,7 @@ void EditorHUD::DrawCameraInfo()
 
 void EditorHUD::DrawSceneWindow()
 {
-	BeginWindow("Scene");
+	BeginWindow("Scene", dockableWindowFlags_);
 	DrawSceneLights();
 	DrawSceneObjects();
 	EndWindow();
@@ -347,10 +435,14 @@ void EditorHUD::DrawSceneLights()
 			for (int lightIndex = 0; lightIndex < directionalLightCount; lightIndex++)
 			{
 				DirectionalLight* directionalLight = directionalLights[lightIndex];
-				if (ImGui::Button(directionalLight->GetName().c_str()))
+
+				if (ImGui::Selectable(directionalLight->GetName().c_str(), selectedObject_ == directionalLight, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					selectedObject_ = directionalLight;
 					selectedObjectType_ = DetailObjectType::DirectionalLight;
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+					{
+					}
 				}
 			}
 		}
@@ -359,10 +451,15 @@ void EditorHUD::DrawSceneLights()
 			for (int lightIndex = 0; lightIndex < pointLightCount; lightIndex++)
 			{
 				PointLight* pointLight = pointLights[lightIndex];
-				if (ImGui::Button(pointLight->GetName().c_str()))
+
+				if (ImGui::Selectable(pointLight->GetName().c_str(), selectedObject_ == pointLight, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					selectedObject_ = pointLight;
 					selectedObjectType_ = DetailObjectType::PointLight;
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+					{
+						FocusToPosition(pointLight->GetPosition());
+					}
 				}
 			}
 		}
@@ -371,10 +468,15 @@ void EditorHUD::DrawSceneLights()
 			for (int lightIndex = 0; lightIndex < spotLightCount; lightIndex++)
 			{
 				SpotLight* spotLight = spotLights[lightIndex];
-				if (ImGui::Button(spotLight->GetName().c_str()))
+
+				if (ImGui::Selectable(spotLight->GetName().c_str(), selectedObject_ == spotLight, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					selectedObject_ = spotLight;
 					selectedObjectType_ = DetailObjectType::SpotLight;
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+					{
+						FocusToPosition(spotLight->GetPosition());
+					}
 				}
 			}
 		}
@@ -396,13 +498,16 @@ void EditorHUD::DrawSceneObjects()
 				continue;
 			}
 
-			if (ImGui::Button(object->GetName().c_str()))
+			if (ImGui::Selectable(object->GetName().c_str(), selectedObject_ == object, ImGuiSelectableFlags_AllowDoubleClick))
 			{
-				FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
-				freeCameraObject->SetWorldPosition(object->GetWorldPosition() - 20.f * freeCameraObject->GetForwardVector());
-
 				selectedObject_ = object;
 				selectedObjectType_ = DetailObjectType::Object;
+
+				if (ImGui::IsMouseDoubleClicked(ImGuiButtonFlags_MouseButtonLeft))
+				{
+					FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
+					freeCameraObject->SetWorldPosition(object->GetWorldPosition() - 20.f * freeCameraObject->GetForwardVector());
+				}
 			}
 		}
 
@@ -428,30 +533,31 @@ void EditorHUD::BuildAssetTree(Folder* folder)
 
 void EditorHUD::DrawObjectsWindow()
 {
-	BeginWindow("Objects");
+	BeginWindow("Objects", dockableWindowFlags_);
 	if (ImGui::TreeNode("Lights"))
 	{
 		if (ImGui::Button("Directional Light"))
 		{
-			new DirectionalLight();
+			DirectionalLight* newDirectionalLight = new DirectionalLight();
 		}
 		else if (ImGui::Button("Point Light"))
 		{
-			new PointLight();
+			PointLight* newPointLight = new PointLight();
 		}
 		else if (ImGui::Button("Spot Light"))
 		{
-			new SpotLight();
+			SpotLight* newSpotLight = new SpotLight();
 		}
 
 		ImGui::TreePop();
 	}
+	ImGui::Separator();
 	EndWindow();
 }
 
 void EditorHUD::DrawFileBrowserWindow()
 {
-	BeginWindow("FileBrowser");
+	BeginWindow("FileBrowser", dockableWindowFlags_);
 
 	std::vector<std::string> contentPaths;
 
@@ -477,6 +583,19 @@ void EditorHUD::DrawFileBrowserWindow()
 		if (image->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
 		{
 			std::string path = image->GetPath();
+			contentPaths.emplace_back(path.substr(ContentDir.size()));
+		}
+#endif
+		++resourceIndex;
+	}
+
+	resourceIndex = 0;
+	while (Audio* audio = resourceManager->GetResourceContainer()->GetAudio(resourceIndex))
+	{
+#ifdef ENGINE_CONTENT_DIR
+		if (audio->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
+		{
+			std::string path = audio->GetPath();
 			contentPaths.emplace_back(path.substr(ContentDir.size()));
 		}
 #endif
@@ -555,7 +674,7 @@ void EditorHUD::DrawFileBrowserWindow()
 
 void EditorHUD::DrawDetailsWindow()
 {
-	BeginWindow("Details");
+	BeginWindow("Details", dockableWindowFlags_);
 
 	switch (selectedObjectType_)
 	{
@@ -563,15 +682,19 @@ void EditorHUD::DrawDetailsWindow()
 		break;
 	case DetailObjectType::Object:
 		DrawDetailsWindow_Object();
+		ImGui::Separator();
 		break;
 	case DetailObjectType::DirectionalLight:
 		DrawDetailsWindow_DirectionalLight();
+		ImGui::Separator();
 		break;
 	case DetailObjectType::PointLight:
 		DrawDetailsWindow_PointLight();
+		ImGui::Separator();
 		break;
 	case DetailObjectType::SpotLight:
 		DrawDetailsWindow_SpotLight();
+		ImGui::Separator();
 		break;
 	default:
 		break;
@@ -587,8 +710,18 @@ void EditorHUD::DrawDetailsWindow_Object()
 	Vector3 selectedObjectWorldPosition = selectedObject->GetWorldPosition();
 	Vector3 selectedObjectWorldRotationEulerDegrees = selectedObject->GetWorldRotation().ToEulerDegrees();
 	Vector3 selectedObjectWorldScaling = selectedObject->GetWorldScaling();
+	std::string selectedObjectName = selectedObject->GetNameWithoutId();
 
 	ImGui::PushItemWidth(100.f);
+
+	ImGui::Text("Name: ");
+	ImGui::SameLine();
+	std::string newName = selectedObjectName;
+	DrawInputText("##Name", newName);
+	if (newName != selectedObjectName)
+	{
+		selectedObject->SetName(newName);
+	}
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
@@ -610,12 +743,103 @@ void EditorHUD::DrawDetailsWindow_Object()
 
 void EditorHUD::DrawDetailsWindow_DirectionalLight()
 {
+	DirectionalLight* light = static_cast<DirectionalLight*>(selectedObject_);
 
+	Vector3 lightPosition = light->GetPosition();
+	Vector3 lightDirection = light->GetDirection();
+	Vector3 lightColor = light->GetColor();
+	float lightIntensity = light->GetIntensity();
+	float lightShadowIntensity = light->GetShadowIntensity();
+	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
+
+	ImGui::PushItemWidth(100.f);
+
+	ImGui::Text("Position: ");
+	ImGui::SameLine();
+	DrawInputText("##Position", lightPosition);
+	light->SetPosition(lightPosition);
+
+	ImGui::Text("Direction: ");
+	ImGui::SameLine();
+	DrawInputText("##Direction", lightDirection);
+	light->SetDirection(lightDirection);
+
+	ImGui::Text("Intensity: ");
+	ImGui::SameLine();
+	DrawInputText("##Intensity", lightIntensity);
+	light->SetIntensity(lightIntensity);
+
+	ImGui::Text("Color: ");
+	ImGui::SameLine();
+	DrawInputText("##Color", lightColor);
+	light->SetColor(lightColor);
+
+	ImGui::Text("Cast shadow: ");
+	ImGui::SameLine();
+	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	DrawCheckbox("##IsCastingShadow", lightIsShadowEnabled);
+	ImGui::PopItemFlag();
+	ImGui::PopStyleVar();
+
+	ImGui::Text("Shadow Intensity: ");
+	ImGui::SameLine();
+	DrawInputText("##Shadow Intensity", lightShadowIntensity);
+	light->SetShadowIntensity(lightShadowIntensity);
+
+	light->SetIsShadowEnabled(lightIsShadowEnabled);
+
+	ImGui::PopItemWidth();
 }
 
 void EditorHUD::DrawDetailsWindow_PointLight()
 {
+	PointLight* light = static_cast<PointLight*>(selectedObject_);
 
+	Vector3 lightPosition = light->GetPosition();
+	Vector3 lightColor = light->GetColor();
+	float lightIntensity = light->GetIntensity();
+	float lightRadius = light->GetRadius();
+	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
+	float lightShadowIntensity = light->GetShadowIntensity();
+
+	ImGui::PushItemWidth(100.f);
+
+	ImGui::Text("Position: ");
+	ImGui::SameLine();
+	DrawInputText("##Position", lightPosition);
+	light->SetPosition(lightPosition);
+
+	ImGui::Text("Intensity: ");
+	ImGui::SameLine();
+	DrawInputText("##Intensity", lightIntensity);
+	light->SetIntensity(lightIntensity);
+
+	ImGui::Text("Color: ");
+	ImGui::SameLine();
+	DrawInputText("##Color", lightColor);
+	light->SetColor(lightColor);
+
+	ImGui::Text("Radius: ");
+	ImGui::SameLine();
+	DrawInputText("##Radius", lightRadius);
+	light->SetRadius(lightRadius);
+
+	ImGui::Text("Cast shadow: ");
+	ImGui::SameLine();
+	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	DrawCheckbox("##IsCastingShadow", lightIsShadowEnabled);
+	ImGui::PopItemFlag();
+	ImGui::PopStyleVar();
+	light->SetIsShadowEnabled(lightIsShadowEnabled);
+
+	ImGui::Text("Shadow Intensity: ");
+	ImGui::SameLine();
+	DrawInputText("##Shadow Intensity", lightShadowIntensity);
+	light->SetShadowIntensity(lightShadowIntensity);
+
+	ImGui::PopItemWidth();
 }
 
 void EditorHUD::DrawDetailsWindow_SpotLight()
@@ -623,46 +847,65 @@ void EditorHUD::DrawDetailsWindow_SpotLight()
 
 }
 
+void EditorHUD::DrawInputText(const std::string& name, std::string& value)
+{
+	char* valueChar = const_cast<char*>(value.c_str());
+	ImGui::InputText(name.c_str(), valueChar, 64);
+	value = std::string(valueChar);
+}
+
+void EditorHUD::DrawInputText(const std::string& name, float& value)
+{
+	char valueChar[64];
+	sprintf(valueChar, "%.4f", value);
+	ImGui::InputText((name + "X").c_str(), valueChar, 64);
+	float newValue = (float)atof(valueChar);
+	if (SMALLER_EPSILON < GoknarMath::Abs(value - newValue))
+	{
+		value = newValue;
+	}
+}
+
 void EditorHUD::DrawInputText(const std::string& name, Vector3& vector)
 {
-	char positionCharX[64];
-	sprintf(positionCharX, "%.4f", vector.x);
-	ImGui::InputText((name + "X").c_str(), positionCharX, 64);
-	float newPositionX = (float)atof(positionCharX);
-	if (SMALLER_EPSILON < GoknarMath::Abs(vector.x - newPositionX))
+	char valueCharX[64];
+	sprintf(valueCharX, "%.4f", vector.x);
+	ImGui::InputText((name + "X").c_str(), valueCharX, 64);
+	float newValueX = (float)atof(valueCharX);
+	if (SMALLER_EPSILON < GoknarMath::Abs(vector.x - newValueX))
 	{
-		vector.x = newPositionX;
+		vector.x = newValueX;
 	}
 
 	ImGui::SameLine();
 
-	char positionCharY[64];
-	sprintf(positionCharY, "%.4f", vector.y);
-	ImGui::InputText((name + "Y").c_str(), positionCharY, 64);
-	float newPositionY = (float)atof(positionCharY);
-	if (SMALLER_EPSILON < GoknarMath::Abs(vector.y - newPositionY))
+	char valueCharY[64];
+	sprintf(valueCharY, "%.4f", vector.y);
+	ImGui::InputText((name + "Y").c_str(), valueCharY, 64);
+	float newValueY = (float)atof(valueCharY);
+	if (SMALLER_EPSILON < GoknarMath::Abs(vector.y - newValueY))
 	{
-		vector.y = newPositionY;
+		vector.y = newValueY;
 	}
 
 	ImGui::SameLine();
 
-	char positionCharZ[64];
-	sprintf(positionCharZ, "%.4f", vector.z);
-	ImGui::InputText((name + "Z").c_str(), positionCharZ, 64);
-	float newPositionZ = (float)atof(positionCharZ);
-	if (SMALLER_EPSILON < GoknarMath::Abs(vector.z - newPositionZ))
+	char valueCharZ[64];
+	sprintf(valueCharZ, "%.4f", vector.z);
+	ImGui::InputText((name + "Z").c_str(), valueCharZ, 64);
+	float newValueZ = (float)atof(valueCharZ);
+	if (SMALLER_EPSILON < GoknarMath::Abs(vector.z - newValueZ))
 	{
-		vector.z = newPositionZ;
+		vector.z = newValueZ;
 	}
 }
 
 void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 {
-	char positionCharX[64];
-	sprintf(positionCharX, "%.4f", quaternion.x);
-	ImGui::InputText((name + "X").c_str(), positionCharX, 64);
-	float newQuaternionX = (float)atof(positionCharX);
+	char valueX[64];
+	sprintf(valueX, "%.4f", quaternion.x);
+	ImGui::InputText((name + "X").c_str(), valueX, 64);
+	float newQuaternionX = (float)atof(valueX);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.x - newQuaternionX))
 	{
 		quaternion.x = newQuaternionX;
@@ -670,10 +913,10 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 
 	ImGui::SameLine();
 
-	char positionCharY[64];
-	sprintf(positionCharY, "%.4f", quaternion.y);
-	ImGui::InputText((name + "Y").c_str(), positionCharY, 64);
-	float newQuaternionY = (float)atof(positionCharY);
+	char valueCharY[64];
+	sprintf(valueCharY, "%.4f", quaternion.y);
+	ImGui::InputText((name + "Y").c_str(), valueCharY, 64);
+	float newQuaternionY = (float)atof(valueCharY);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.y - newQuaternionY))
 	{
 		quaternion.y = newQuaternionY;
@@ -681,10 +924,10 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 
 	ImGui::SameLine();
 
-	char positionCharZ[64];
-	sprintf(positionCharZ, "%.4f", quaternion.z);
-	ImGui::InputText((name + "Z").c_str(), positionCharZ, 64);
-	float newQuaternionZ = (float)atof(positionCharZ);
+	char valueCharZ[64];
+	sprintf(valueCharZ, "%.4f", quaternion.z);
+	ImGui::InputText((name + "Z").c_str(), valueCharZ, 64);
+	float newQuaternionZ = (float)atof(valueCharZ);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.z - newQuaternionZ))
 	{
 		quaternion.z = newQuaternionZ;
@@ -692,28 +935,29 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 
 	ImGui::SameLine();
 
-	char positionCharW[64];
-	sprintf(positionCharW, "%.4f", quaternion.w);
-	ImGui::InputText((name + "W").c_str(), positionCharW, 64);
-	float newQuaternionW = (float)atof(positionCharW);
+	char valueW[64];
+	sprintf(valueW, "%.4f", quaternion.w);
+	ImGui::InputText((name + "W").c_str(), valueW, 64);
+	float newQuaternionW = (float)atof(valueW);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.w - newQuaternionW))
 	{
 		quaternion.w = newQuaternionW;
 	}
 }
 
-void EditorHUD::BeginWindow(const std::string& name)
+void EditorHUD::DrawCheckbox(const std::string& name, bool& value)
 {
-    ImGuiWindowFlags windowFlags = 
-        //ImGuiWindowFlags_NoTitleBar          | 
-        //ImGuiWindowFlags_NoResize            |
-        //ImGuiWindowFlags_NoMove              |
-        //ImGuiWindowFlags_NoScrollbar		 |
-        //ImGuiWindowFlags_NoSavedSettings     |
-        0;
+	ImGui::Checkbox(name.c_str(), &value);
+}
 
-	bool isOpen = true;
-	ImGui::Begin(name.c_str(), &isOpen, windowFlags);
+void EditorHUD::BeginWindow(const std::string& name, ImGuiWindowFlags flags)
+{
+	if (windowOpenMap_.find(name) == windowOpenMap_.end())
+	{
+		windowOpenMap_[name] = true;
+	}
+
+	ImGui::Begin(name.c_str(), &windowOpenMap_[name], flags);
 }
 
 void EditorHUD::BeginTransparentWindow(const std::string& name)
@@ -721,11 +965,50 @@ void EditorHUD::BeginTransparentWindow(const std::string& name)
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoBackground;
 	windowFlags |= ImGuiWindowFlags_NoTitleBar;
 
-	bool isOpen = true;
-	ImGui::Begin(name.c_str(), &isOpen, windowFlags);
+	BeginWindow(name, windowFlags);
 }
 
 void EditorHUD::EndWindow()
 {
 	ImGui::End();
+}
+
+bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& buttonText)
+{
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
+
+	BeginWindow(windowTitle, windowFlags);
+
+	ImGui::Text(text.c_str());
+	ImGui::SameLine();
+
+	char input[64];
+	ImGui::InputText((windowTitle + "_TextBox").c_str(), input, 64);
+
+	bool buttonClicked = ImGui::Button(buttonText.c_str());
+
+	std::string inputString = input;
+	if (buttonClicked && !inputString.empty())
+	{
+		sceneSavePath_ = inputString;
+		windowOpenMap_[windowTitle] = false;
+	}
+
+	ImGui::End();
+
+	return buttonClicked;
+}
+
+void EditorHUD::FocusToPosition(const Vector3& position)
+{
+	FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
+	freeCameraObject->SetWorldPosition(position - 20.f * freeCameraObject->GetForwardVector());
+}
+
+void EditorHUD::OnSavePathEmpty()
+{
+	if (BeginDialogWindow_OneTextBoxOneButton("Scene save path", "Path: ", "Save"))
+	{
+		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + sceneSavePath_);
+	}
 }

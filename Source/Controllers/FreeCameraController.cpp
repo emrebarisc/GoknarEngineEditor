@@ -6,15 +6,16 @@
 
 #include "Goknar/Application.h"
 #include "Goknar/Camera.h"
-#include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Engine.h"
 #include "Goknar/GoknarAssert.h"
+#include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Debug/DebugDrawer.h"
+#include "Goknar/Managers/CameraManager.h"
+#include "Goknar/Managers/InputManager.h"
+#include "Goknar/Managers/WindowManager.h"
 #include "Goknar/Materials/MaterialBase.h"
 #include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/IMeshInstance.h"
-#include "Goknar/Managers/InputManager.h"
-#include "Goknar/Managers/WindowManager.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
@@ -108,13 +109,13 @@ void FreeCameraController::ScrollListener(double x, double y)
 
 void FreeCameraController::Yaw(float value)
 {
-	Vector3 newForwardVector = freeCameraObject_->GetForwardVector().RotateVector(Vector3::UpVector * value);
-	freeCameraObject_->SetWorldRotation(Quaternion::FromTwoVectors(Vector3::ForwardVector, newForwardVector));
+	Vector3 newForwardVector = freeCameraObject_->GetWorldRotation().ToEulerRadians();
+	freeCameraObject_->SetWorldRotation(Quaternion::FromEulerRadians(newForwardVector + Vector3{ 0.f, 0.f, value }));
 }
 
 void FreeCameraController::Pitch(float value)
 {
-	Vector3 newForwardVector = freeCameraObject_->GetForwardVector().RotateVector(freeCameraObject_->GetLeftVector() * value);
+	Vector3 newForwardVector = freeCameraObject_->GetForwardVector().RotateVectorAroundAxis(freeCameraObject_->GetLeftVector(), value);
 	freeCameraObject_->SetWorldRotation(Quaternion::FromTwoVectors(Vector3::ForwardVector, newForwardVector));
 }
 
@@ -164,10 +165,10 @@ void FreeCameraController::BindInputDelegates()
 	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_MIDDLE, INPUT_ACTION::G_PRESS, onMouseMiddleClickPressedDelegate_);
 	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_MIDDLE, INPUT_ACTION::G_RELEASE, onMouseMiddleClickReleasedDelegate_);
 
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::LEFT, INPUT_ACTION::G_REPEAT, moveLeftDelegate_);
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::RIGHT, INPUT_ACTION::G_REPEAT, moveRightDelegate_);
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::UP, INPUT_ACTION::G_REPEAT, moveForwardDelegate_);
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::DOWN, INPUT_ACTION::G_REPEAT, moveBackwardDelegate_);
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::A, INPUT_ACTION::G_REPEAT, moveLeftDelegate_);
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::D, INPUT_ACTION::G_REPEAT, moveRightDelegate_);
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::W, INPUT_ACTION::G_REPEAT, moveForwardDelegate_);
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::S, INPUT_ACTION::G_REPEAT, moveBackwardDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::SPACE, INPUT_ACTION::G_REPEAT, moveUpDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::LEFT_CONTROL, INPUT_ACTION::G_REPEAT, moveDownDelegate_);
 

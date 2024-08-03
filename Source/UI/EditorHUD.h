@@ -36,6 +36,8 @@ public:
     virtual void UpdateHUD() override;
 
 protected:
+
+private:
 	void OnKeyboardEvent(int key, int scanCode, int action, int mod);
 
 	void OnCursorMove(double xPosition, double yPosition);
@@ -44,6 +46,9 @@ protected:
 	void OnLeftClickReleased();
 	void OnCharPressed(unsigned int codePoint);
 	void OnWindowSizeChanged(int width, int height);
+
+	void OnDeleteInputPressed();
+	void OnFocusInputPressed();
 
 	void DrawEditorHUD();
 
@@ -63,14 +68,22 @@ protected:
 	void DrawDetailsWindow_PointLight();
 	void DrawDetailsWindow_SpotLight();
 
+	void DrawInputText(const std::string& name, std::string& value);
+	void DrawInputText(const std::string& name, float& value);
 	void DrawInputText(const std::string& name, Vector3& vector);
 	void DrawInputText(const std::string& name, Quaternion& quaternion);
 
-	void BeginWindow(const std::string& name);
+	void DrawCheckbox(const std::string& name, bool& value);
+
+	void BeginWindow(const std::string& name, ImGuiWindowFlags flags);
 	void BeginTransparentWindow(const std::string& name);
 	void EndWindow();
-    
-private:
+
+	bool BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& buttonText);
+
+	void FocusToPosition(const Vector3& position);
+	void OnSavePathEmpty();
+
 	Delegate<void(int, int, int, int)> onKeyboardEventDelegate_;
 	Delegate<void(double, double)> onCursorMoveDelegate_;
 	Delegate<void(double, double)> onScrollDelegate_;
@@ -79,6 +92,9 @@ private:
 	Delegate<void(unsigned int)> onCharPressedDelegate_;
 
 	Delegate<void(int, int)> onWindowSizeChangedDelegate_;
+
+	Delegate<void()> onDeleteInputPressedDelegate_;
+	Delegate<void()> onFocusInputPressedDelegate_;
 
 	Vector2i windowSize_;
 
@@ -89,4 +105,10 @@ private:
 
 	DetailObjectType selectedObjectType_{ DetailObjectType::None };
 	void* selectedObject_{ nullptr };
+
+	std::string sceneSavePath_{};
+
+	std::unordered_map<std::string, bool> windowOpenMap_;
+
+	ImGuiWindowFlags dockableWindowFlags_{ ImGuiWindowFlags_None };
 };

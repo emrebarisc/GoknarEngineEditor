@@ -16,6 +16,11 @@ public:
 		return freeCameraController_;
 	}
 
+	CameraComponent* GetCameraComponent() const
+	{
+		return cameraComponent_;
+	}
+
 protected:
 	virtual void BeginGame() override;
 	virtual void Tick(float deltaTime) override;

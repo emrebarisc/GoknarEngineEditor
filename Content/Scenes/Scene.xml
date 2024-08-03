@@ -1,7 +1,7 @@
 <Scene>
 	<BackgroundColor>50 50 50</BackgroundColor>
 	<Cameras>
-<!-- 		<Camera id = "0">
+<!-- 		<Camera>
 			<Position>0.0 0.0 1.75</Position>
 			<Gaze>0.0 0.9999999403953552 0.0</Gaze>
 			<Up>0.0 0.0 0.9999999403953552</Up>
@@ -19,10 +19,10 @@
 			<Direction>0.57735 0.57735 -0.57735</Direction>
 			<Color>1.0 0.99 0.83</Color>
 			<Intensity>0.5</Intensity>
-			<IsCastingShadow>0</IsCastingShadow>
+			<IsCastingShadow>1</IsCastingShadow>
 			<ShadowMapResolution>4096 4096</ShadowMapResolution>
 		</DirectionalLight>
-		<PointLight id = "0">
+		<PointLight>
 			<Position>2.0 6.75 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -30,7 +30,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "1">
+		<PointLight>
 			<Position>-2.0 6.75 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -38,7 +38,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "2">
+		<PointLight>
 			<Position>-4.75 4.0 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -46,7 +46,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "3">
+		<PointLight>
 			<Position>-4.75 0.0 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -54,7 +54,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "4">
+		<PointLight>
 			<Position>-4.75 -4.0 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -62,7 +62,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "5">
+		<PointLight>
 			<Position>4.75 4.0 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -70,7 +70,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "6">
+		<PointLight>
 			<Position>4.75 0.0 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -78,7 +78,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "7">
+		<PointLight>
 			<Position>4.75 -4.0 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -86,7 +86,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "8">
+		<PointLight>
 			<Position>2.0 -6.75 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -94,7 +94,7 @@
 			<IsCastingShadow>0</IsCastingShadow>
 			<ShadowMapResolution>2048 2048</ShadowMapResolution>
 		</PointLight>
-		<PointLight id = "9">
+		<PointLight>
 			<Position>-2.0 -6.75 2.0</Position>
 			<Color>0.7605246901512146 0.09758714586496353 0.015996338799595833</Color>
 			<Intensity>10.0</Intensity>
@@ -108,44 +108,35 @@
 	</Materials>
 
 	<Meshes>
-		<StaticMesh id = "0">
+		<StaticMesh>
 			<Name>BuildingWall</Name>
 			<Path>Meshes/SM_BuildingWall.fbx</Path>
 		</StaticMesh>
-		<StaticMesh id = "1">
+		<StaticMesh>
 			<Name>FloorAndCeil</Name>
 			<Path>Meshes/SM_FloorAndCeil.fbx</Path>
 		</StaticMesh>
-		<StaticMesh id = "2">
-			<Name>Arrow</Name>
-			<Path>Meshes/SM_Arrow.fbx</Path>
-		</StaticMesh>
-	    <StaticMesh id = "3">
+	    <StaticMesh>
 	      <Name>Floor</Name>
 	      <Path>Meshes/SM_Floor.fbx</Path>
 	    </StaticMesh>
-	    <StaticMesh id = "4">
+	    <StaticMesh>
 	      <Name>Wall</Name>
 	      <Path>Meshes/SM_Wall.fbx</Path>
 	    </StaticMesh>
-	    <StaticMesh id = "5">
+	    <StaticMesh>
 	      <Name>Cube</Name>
 	      <Path>Meshes/SM_Cube.fbx</Path>
 	    </StaticMesh>
-	    <StaticMesh id = "6">
+	    <StaticMesh>
 	      <Name>CylinderWithAHole</Name>
 	      <Path>Meshes/SM_CylinderWithAHole.fbx</Path>
 	    </StaticMesh>
-		<SkeletalMesh id = "7">
-			<Name>Axis</Name>
-			<Path>Meshes/SkeletalMesh_Bow.fbx</Path>
-		</SkeletalMesh>
 	</Meshes>
 
 	<Objects>
-<!-- 		
-	<StaticMeshObject id = "0">
-			<Mesh>0</Mesh>
+	<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -156,8 +147,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "1">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -168,8 +159,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "2">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -180,8 +171,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "3">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -192,8 +183,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "4">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -204,8 +195,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "5">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -216,8 +207,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "6">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -228,8 +219,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "7">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -240,8 +231,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "8">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -252,8 +243,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "9">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -264,8 +255,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "10">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -276,8 +267,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "11">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -288,8 +279,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "12">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -300,8 +291,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "13">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -312,8 +303,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "14">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -324,8 +315,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "15">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -336,8 +327,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "16">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -348,8 +339,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "17">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -360,8 +351,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "18">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -372,8 +363,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "19">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -384,8 +375,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "20">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -396,8 +387,8 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "21">
-			<Mesh>0</Mesh>
+		<StaticMeshObject>
+			<Mesh>Meshes/SM_BuildingWall.fbx</Mesh>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -408,32 +399,9 @@
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
 		</StaticMeshObject>
 
-		<StaticMeshObject id = "22">
-			<Mesh>1</Mesh>
-			<Name>FloorAndCeil</Name>
-			<PivotPoint>0.0 0.0 0.0</PivotPoint>
-			<RelativePosition>0.0 0.0 0.0</RelativePosition>
-			<RelativeRotation>0.0 0.0 0.0</RelativeRotation>
-			<RelativeScaling>1.0 1.0 1.0</RelativeScaling>
-			<WorldPosition>0.0 0.0 0.0</WorldPosition>
-			<WorldRotation>0.0 0.0 0.0</WorldRotation>
-			<WorldScaling>1.0 1.0 1.0</WorldScaling>
-		</StaticMeshObject>
-
-		<StaticMeshObject id = "23">
-			<Mesh>0</Mesh>
-			<Name>Wall</Name>
-			<PivotPoint>0.0 0.0 0.0</PivotPoint>
-			<RelativePosition>0.0 0.0 0.0</RelativePosition>
-			<RelativeRotation>0.0 0.0 0.0</RelativeRotation>
-			<RelativeScaling>1.0 1.0 1.0</RelativeScaling>
-			<WorldPosition>-5.0 2.0 0.0</WorldPosition>
-			<WorldRotation>0.0 0.0 0.0</WorldRotation>
-			<WorldScaling>1.0 1.0 1.0</WorldScaling>
-		</StaticMeshObject>
-
-		<StaticMeshObject id = "3">
+		<StaticMeshObject>
 			<Name>Floor</Name>
+			<Mesh>Meshes/SM_Floor.fbx</Mesh>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
 			<RelativeRotation>0.0 0.0 0.0</RelativeRotation>
@@ -441,10 +409,9 @@
 			<WorldPosition>0.0 0.0 -0.05</WorldPosition>
 			<WorldRotation>0.0 0.0 0.0</WorldRotation>
 			<WorldScaling>100.0 100.0 1.0</WorldScaling>
-			<Mesh>3</Mesh>
 		</StaticMeshObject>
 
-	    <StaticMeshObject id = "4">
+	    <StaticMeshObject>
 	      <Name>Wall</Name>
 	      <PivotPoint>0.0 0.0 0.0</PivotPoint>
 	      <RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -453,10 +420,10 @@
 	      <WorldPosition>20.0 5.0 0.0</WorldPosition>
 	      <WorldRotation>0.0 0.0 0.0</WorldRotation>
 	      <WorldScaling>1.0 1.0 1.0</WorldScaling>
-	      <Mesh>4</Mesh>
+	      <Mesh>Meshes/SM_Wall.fbx</Mesh>
 	    </StaticMeshObject>
 
-		<StaticMeshObject id = "5">
+		<StaticMeshObject>
 			<Name>Wall</Name>
 			<PivotPoint>0.0 0.0 0.0</PivotPoint>
 			<RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -465,10 +432,10 @@
 			<WorldPosition>25.0 0.0 0.0</WorldPosition>
 			<WorldRotation>0.0 0.0 90.0</WorldRotation>
 			<WorldScaling>1.0 1.0 1.0</WorldScaling>
-			<Mesh>4</Mesh>
+			<Mesh>Meshes/SM_Wall.fbx</Mesh>
 		</StaticMeshObject>
 
-	    <StaticMeshObject id = "7">
+	    <StaticMeshObject>
 	      <Name>Cylinder</Name>
 	      <PivotPoint>0.0 0.0 0.0</PivotPoint>
 	      <RelativePosition>0.0 0.0 0.0</RelativePosition>
@@ -477,17 +444,16 @@
 	      <WorldPosition>20.0 0.0 5.0</WorldPosition>
 	      <WorldRotation>0.0 0.0 0.0</WorldRotation>
 	      <WorldScaling>1.0 1.0 1.0</WorldScaling>
-	      <Mesh>6</Mesh>
+	      <Mesh>Meshes/SM_CylinderWithAHole.fbx</Mesh>
 	    </StaticMeshObject>
--->
 
-	    <StaticMeshObject id = "6">
+	    <StaticMeshObject>
 	      <Name>Cube</Name>
 	      <PivotPoint>0.0 0.0 0.0</PivotPoint>
 	      <RelativePosition>0.0 0.0 0.0</RelativePosition>
 	      <RelativeRotation>0.0 0.0 0.0</RelativeRotation>
 	      <RelativeScaling>1.0 1.0 1.0</RelativeScaling>
-	      <WorldPosition>0.0 0.0 0.0</WorldPosition>
+	      <WorldPosition>20.0 0.0 1.0</WorldPosition>
 	      <WorldRotation>0.0 0.0 0.0</WorldRotation>
 	      <WorldScaling>1.0 1.0 1.0</WorldScaling>
 	      <Mesh>Meshes/SM_Cube.fbx</Mesh>

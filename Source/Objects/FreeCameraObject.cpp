@@ -14,6 +14,7 @@ FreeCameraObject::FreeCameraObject() : ObjectBase()
 	SetRootComponent(cameraComponent_);
 
 	freeCameraController_ = new FreeCameraController(this);
+	freeCameraController_->SetName("__Editor__FreeCameraController");
 }
 
 void FreeCameraObject::BeginGame()
@@ -23,7 +24,7 @@ void FreeCameraObject::BeginGame()
 	cameraComponent_->GetCamera()->SetImageHeight(windowManager->GetWindowSize().y);
 
 	SetWorldPosition(Vector3{ -20.f, -20.f, 15.f });
-	SetWorldRotation(Quaternion::FromEulerDegrees({ 0.f, 30.f, 45.f }));
+	SetWorldRotation(Quaternion::FromEulerDegrees({ 5.f, 20.f, 30.f }));
 }
 
 void FreeCameraObject::Tick(float deltaTime)
