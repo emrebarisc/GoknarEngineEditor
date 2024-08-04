@@ -9,6 +9,11 @@
 #include "Goknar/Engine.h"
 #include "Goknar/Scene.h"
 
+#include "Goknar/Contents/Audio.h"
+#include "Goknar/Contents/Image.h"
+
+#include "Goknar/Components/StaticMeshComponent.h"
+
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Managers/ResourceManager.h"
@@ -16,8 +21,14 @@
 
 #include "Goknar/Model/MeshUnit.h"
 
-#include "Goknar/Contents/Audio.h"
-#include "Goknar/Contents/Image.h"
+#include "Goknar/Physics/RigidBody.h"
+#include "Goknar/Physics/Components/BoxCollisionComponent.h"
+#include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
+#include "Goknar/Physics/Components/SphereCollisionComponent.h"
+#include "Goknar/Physics/Components/NonMovingTriangleMeshCollisionComponent.h"
+#include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
+#include "Goknar/Physics/Components/PhysicsMovementComponent.h"
+
 #include "Goknar/Renderer/Texture.h"
 
 #include "Goknar/Lights/DirectionalLight.h"
@@ -29,14 +40,6 @@
 #include "Game.h"
 #include "Objects/FreeCameraObject.h"
 #include "Thirdparty/ImGuiOpenGL.h"
-
-struct Folder
-{
-	std::string folderName;
-	std::string fullPath;
-	std::vector<Folder*> subFolders;
-	std::vector<std::string> fileNames;
-};
 
 EditorHUD::EditorHUD() : HUD()
 {
@@ -57,6 +60,8 @@ EditorHUD::EditorHUD() : HUD()
 	onFocusInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
 
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
+
+	BuildFileTree();
 }
 
 EditorHUD::~EditorHUD()
@@ -80,6 +85,13 @@ EditorHUD::~EditorHUD()
 	ImGui_DestroyDeviceObjects();
 	ImGui_Shutdown();
 	ImGui::DestroyContext(imguiContext_);
+
+	for (auto folder : folderMap)
+	{
+		delete folder.second;
+	}
+
+	delete rootFolder;
 }
 
 void EditorHUD::PreInit()
@@ -520,13 +532,13 @@ void EditorHUD::DrawSceneObjects()
 	}
 }
 
-void EditorHUD::BuildAssetTree(Folder* folder)
+void EditorHUD::DrawFileTree(Folder* folder)
 {
 	for (auto subFolder : folder->subFolders)
 	{
 		if (ImGui::TreeNode(subFolder->folderName.c_str()))
 		{
-			BuildAssetTree(subFolder);
+			DrawFileTree(subFolder);
 			ImGui::TreePop();
 		}
 	}
@@ -534,6 +546,35 @@ void EditorHUD::BuildAssetTree(Folder* folder)
 	{
 		ImGui::Text(fileName.c_str());
 	}
+}
+
+void EditorHUD::DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected)
+{
+	for (auto subFolder : folder->subFolders)
+	{
+		if (ImGui::TreeNode(subFolder->folderName.c_str()))
+		{
+			DrawFileGrid(subFolder, selectedFileName, isAFileSelected);
+			ImGui::TreePop();
+		}
+	}
+
+	ImGui::Columns(4, nullptr, false);
+
+	int fileCount = folder->fileNames.size();
+	for (int fileIndex = 0; fileIndex < fileCount; ++fileIndex)
+	{
+		std::string fileName = folder->fileNames[fileIndex];
+		if (ImGui::Button(fileName.c_str()))
+		{
+			selectedFileName = folder->fullPath + fileName;
+			isAFileSelected = true;
+		}
+
+		ImGui::NextColumn();
+	}
+
+	ImGui::Columns(1, nullptr, false);
 }
 
 void EditorHUD::DrawObjectsWindow()
@@ -557,13 +598,26 @@ void EditorHUD::DrawObjectsWindow()
 		ImGui::TreePop();
 	}
 	ImGui::Separator();
+	if (ImGui::TreeNode("Objects"))
+	{
+		if (ImGui::Button("ObjectBase"))
+		{
+			ObjectBase* newObjectBase = new ObjectBase();
+		}
+
+		if (ImGui::Button("RigidBody"))
+		{
+			RigidBody* newRigidBody = new RigidBody();
+		}
+
+		ImGui::TreePop();
+	}
+	ImGui::Separator();
 	EndWindow();
 }
 
-void EditorHUD::DrawFileBrowserWindow()
+void EditorHUD::BuildFileTree()
 {
-	BeginWindow("FileBrowser", dockableWindowFlags_);
-
 	std::vector<std::string> contentPaths;
 
 	ResourceManager* resourceManager = engine->GetResourceManager();
@@ -609,10 +663,9 @@ void EditorHUD::DrawFileBrowserWindow()
 
 	std::sort(contentPaths.begin(), contentPaths.end());
 
-	Folder* rootFolder = new Folder();
+	rootFolder = new Folder();
 	rootFolder->folderName = "Content";
 
-	std::map<std::string, Folder*> folderMap;
 	int contentPathsSize = contentPaths.size();
 	for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
 	{
@@ -640,7 +693,7 @@ void EditorHUD::DrawFileBrowserWindow()
 				{
 					folderMap[folderName] = new Folder();
 					folderMap[folderName]->folderName = folderName;
-					folderMap[folderName]->fullPath = currentPath;
+					folderMap[folderName]->fullPath = currentPath.substr(0, currentPath.find_last_of('/') + 1);
 				}
 
 				if (std::find(parentFolder->subFolders.begin(),
@@ -660,19 +713,17 @@ void EditorHUD::DrawFileBrowserWindow()
 			currentPath = currentPath.substr(folderName.size() + 1);
 		}
 	}
+}
+
+void EditorHUD::DrawFileBrowserWindow()
+{
+	BeginWindow("FileBrowser", dockableWindowFlags_);
 
 	if (ImGui::TreeNode("Assets"))
 	{
-		BuildAssetTree(rootFolder);
+		DrawFileTree(rootFolder);
 		ImGui::TreePop();
 	}
-
-	for (auto folder : folderMap)
-	{
-		delete folder.second;
-	}
-
-	delete rootFolder;
 
 	EndWindow();
 }
@@ -687,19 +738,15 @@ void EditorHUD::DrawDetailsWindow()
 		break;
 	case DetailObjectType::Object:
 		DrawDetailsWindow_Object();
-		ImGui::Separator();
 		break;
 	case DetailObjectType::DirectionalLight:
 		DrawDetailsWindow_DirectionalLight();
-		ImGui::Separator();
 		break;
 	case DetailObjectType::PointLight:
 		DrawDetailsWindow_PointLight();
-		ImGui::Separator();
 		break;
 	case DetailObjectType::SpotLight:
 		DrawDetailsWindow_SpotLight();
-		ImGui::Separator();
 		break;
 	default:
 		break;
@@ -717,7 +764,15 @@ void EditorHUD::DrawDetailsWindow_Object()
 	Vector3 selectedObjectWorldScaling = selectedObject->GetWorldScaling();
 	std::string selectedObjectName = selectedObject->GetNameWithoutId();
 
-	ImGui::PushItemWidth(100.f);
+	ImGui::Text(selectedObjectName.c_str());
+	ImGui::Separator();
+
+	ImGui::Text("Add Component: ");
+	ImGui::SameLine();
+
+	DrawDetailsWindow_AddComponentOptions(selectedObject);
+
+	ImGui::PushItemWidth(50.f);
 
 	ImGui::Text("Name: ");
 	ImGui::SameLine();
@@ -743,7 +798,131 @@ void EditorHUD::DrawDetailsWindow_Object()
 	DrawInputText("##Scaling", selectedObjectWorldScaling);
 	selectedObject->SetWorldScaling(selectedObjectWorldScaling);
 
+	ImGui::Separator();
+
+	const std::vector<Component*>& components = selectedObject->GetComponents();
+	for (Component* component : components)
+	{
+		DrawDetailsWindow_Component(component);
+		ImGui::Separator();
+	}
+
 	ImGui::PopItemWidth();
+}
+
+void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
+{
+	static const char* objectBaseComponents[]{ "", "StaticMeshComponent" };
+	static const char* physicsObjectComponents[]{ "", "BoxCollisionComponent", "CapsuleCollisionComponent", "SphereCollisionComponent" };
+
+	PhysicsObject* physicsObject = dynamic_cast<PhysicsObject*>(object);
+
+	if (physicsObject)
+	{
+		static int selecteditem = 0;
+		bool check = ImGui::Combo("##AddComponent", &selecteditem, physicsObjectComponents, IM_ARRAYSIZE(physicsObjectComponents));
+		if (check)
+		{
+			switch (selecteditem)
+			{
+			case 1:
+				physicsObject->AddSubComponent<BoxCollisionComponent>();
+				break;
+			case 2:
+				physicsObject->AddSubComponent<CapsuleCollisionComponent>();
+				break;
+			case 3:
+				physicsObject->AddSubComponent<SphereCollisionComponent>();
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	else
+	{
+		static int selecteditem = 0;
+		bool check = ImGui::Combo("##AddComponent", &selecteditem, objectBaseComponents, IM_ARRAYSIZE(objectBaseComponents));
+		if (check)
+		{
+			switch (selecteditem)
+			{
+			case 1:
+				object->AddSubComponent<StaticMeshComponent>();
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+void EditorHUD::DrawDetailsWindow_Component(Component* component)
+{
+	if (!component)
+	{
+		return;
+	}
+
+	StaticMeshComponent* staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+
+	if (staticMeshComponent)
+	{
+		ImGui::Text("StaticMeshComponent");
+	}
+	else
+	{
+		ImGui::Text("Component");
+	}
+	ImGui::Separator();
+
+	Vector3 componentRelativePosition = component->GetRelativePosition();
+	Vector3 componentRelativeRotationEulerDegrees = component->GetRelativeRotation().ToEulerDegrees();
+	Vector3 componentRelativeScaling = component->GetRelativeScaling();
+
+	ImGui::Text("RelativePosition: ");
+	ImGui::SameLine();
+	DrawInputText("##RelativePosition", componentRelativePosition);
+	component->SetRelativePosition(componentRelativePosition);
+
+	ImGui::Text("RelativeRotation: ");
+	ImGui::SameLine();
+	DrawInputText("##RelativeRotation", componentRelativeRotationEulerDegrees);
+	component->SetRelativeRotation(Quaternion::FromEulerDegrees(componentRelativeRotationEulerDegrees));
+
+	ImGui::Text("RelativeScaling: ");
+	ImGui::SameLine();
+	DrawInputText("##RelativeScaling", componentRelativeScaling);
+	component->SetRelativeScaling(componentRelativeScaling);
+
+	if (staticMeshComponent)
+	{
+		std::string meshPath;
+		ImGui::Text("Mesh: ");
+
+		ImGui::SameLine();
+		StaticMesh* staticMesh = staticMeshComponent->GetMeshInstance()->GetMesh();
+		ImGui::Text(staticMesh ? staticMesh->GetPath().substr(ContentDir.size()).c_str() : "");
+
+		ImGui::SameLine();
+		if (ImGui::Button("Select asset"))
+		{
+			windowOpenMap_["Asset Selector"] = true;
+		}
+
+		if (windowOpenMap_["Asset Selector"])
+		{
+			std::string selectedAssetPath;
+			if (DrawAssetSelector(selectedAssetPath))
+			{
+				StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(selectedAssetPath);
+				if (newStaticMesh)
+				{
+					staticMeshComponent->SetMesh(newStaticMesh);
+				}
+			}
+		}
+	}
 }
 
 void EditorHUD::DrawDetailsWindow_DirectionalLight()
@@ -757,7 +936,7 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 	float lightShadowIntensity = light->GetShadowIntensity();
 	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
 
-	ImGui::PushItemWidth(100.f);
+	ImGui::PushItemWidth(50.f);
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
@@ -808,7 +987,7 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
 	float lightShadowIntensity = light->GetShadowIntensity();
 
-	ImGui::PushItemWidth(100.f);
+	ImGui::PushItemWidth(50.f);
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
@@ -953,6 +1132,28 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 void EditorHUD::DrawCheckbox(const std::string& name, bool& value)
 {
 	ImGui::Checkbox(name.c_str(), &value);
+}
+
+bool EditorHUD::DrawAssetSelector(std::string& selectedAssetPath)
+{
+	ImVec2 assetPickerWindowSize(400.f, 400.f);
+	ImGui::SetNextWindowPos(ImVec2((windowSize_.x - assetPickerWindowSize.x) * 0.5f, (windowSize_.y - assetPickerWindowSize.y) * 0.5f));
+	ImGui::SetNextWindowSize(assetPickerWindowSize);
+	BeginWindow("Asset Selector", ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize);
+
+	std::string selectedAssetPathFromGrid;
+	bool isAFileSelected = false;
+	DrawFileGrid(rootFolder, selectedAssetPathFromGrid, isAFileSelected);
+
+	if (isAFileSelected)
+	{
+		selectedAssetPath = selectedAssetPathFromGrid;
+		windowOpenMap_["Asset Selector"] = false;
+	}
+
+	EndWindow();
+
+	return isAFileSelected;
 }
 
 void EditorHUD::BeginWindow(const std::string& name, ImGuiWindowFlags flags)

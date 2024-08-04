@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "Goknar/Core.h"
 #include "Goknar/Delegates/Delegate.h"
 #include "Goknar/UI/HUD.h"
@@ -38,6 +40,19 @@ public:
 protected:
 
 private:
+
+
+	struct Folder
+	{
+		std::string folderName;
+		std::string fullPath;
+		std::vector<Folder*> subFolders;
+		std::vector<std::string> fileNames;
+	};
+
+	Folder* rootFolder;
+	std::unordered_map<std::string, Folder*> folderMap;
+
 	void OnKeyboardEvent(int key, int scanCode, int action, int mod);
 
 	void OnCursorMove(double xPosition, double yPosition);
@@ -59,11 +74,15 @@ private:
 	void DrawSceneObjects();
 
 	void DrawObjectsWindow();
-	void BuildAssetTree(Folder* folder);
+	void BuildFileTree();
+	void DrawFileTree(Folder* folder);
+	void DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
 
 	void DrawFileBrowserWindow();
 	void DrawDetailsWindow();
 	void DrawDetailsWindow_Object();
+	void DrawDetailsWindow_AddComponentOptions(ObjectBase* object);
+	void DrawDetailsWindow_Component(Component* component);
 	void DrawDetailsWindow_DirectionalLight();
 	void DrawDetailsWindow_PointLight();
 	void DrawDetailsWindow_SpotLight();
@@ -74,6 +93,8 @@ private:
 	void DrawInputText(const std::string& name, Quaternion& quaternion);
 
 	void DrawCheckbox(const std::string& name, bool& value);
+
+	bool DrawAssetSelector(std::string& selectedPath);
 
 	void BeginWindow(const std::string& name, ImGuiWindowFlags flags);
 	void BeginTransparentWindow(const std::string& name);

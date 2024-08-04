@@ -23,8 +23,8 @@ void FreeCameraObject::BeginGame()
 	cameraComponent_->GetCamera()->SetImageWidth(windowManager->GetWindowSize().x);
 	cameraComponent_->GetCamera()->SetImageHeight(windowManager->GetWindowSize().y);
 
-	SetWorldPosition(Vector3{ -20.f, -20.f, 15.f });
-	SetWorldRotation(Quaternion::FromEulerDegrees({ 5.f, 20.f, 30.f }));
+	SetWorldPosition(Vector3{ -15.f, -16.f, 12.5f });
+	SetWorldRotation(Quaternion::FromEulerDegrees({ 5.f, 20.f, 25.f }));
 }
 
 void FreeCameraObject::Tick(float deltaTime)
