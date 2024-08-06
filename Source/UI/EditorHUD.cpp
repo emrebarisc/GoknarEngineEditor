@@ -1,6 +1,7 @@
 #include "EditorHUD.h"
 
 #include <string>
+#include <unordered_map>
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -14,6 +15,8 @@
 
 #include "Goknar/Components/StaticMeshComponent.h"
 
+#include "Goknar/Debug/DebugDrawer.h"
+
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Managers/ResourceManager.h"
@@ -21,6 +24,7 @@
 
 #include "Goknar/Model/MeshUnit.h"
 
+#include "Goknar/Physics/PhysicsDebugger.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
@@ -40,6 +44,17 @@
 #include "Game.h"
 #include "Objects/FreeCameraObject.h"
 #include "Thirdparty/ImGuiOpenGL.h"
+
+template <class T>
+void AddCollisionComponent(PhysicsObject* physicsObject)
+{
+	if (physicsObject->GetFirstComponentOfType<CollisionComponent>())
+	{
+		return;
+	}
+
+	T* collisionComponent = physicsObject->AddSubComponent<T>();
+}
 
 EditorHUD::EditorHUD() : HUD()
 {
@@ -62,6 +77,29 @@ EditorHUD::EditorHUD() : HUD()
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
 
 	BuildFileTree();
+
+	objectBaseReflections["StaticMeshComponent"] = [](ObjectBase* objectBase) { objectBase->AddSubComponent<StaticMeshComponent>(); };
+	physicsObjectReflections["BoxCollisionComponent"] = 
+		[this](PhysicsObject* physicsObject)
+		{ 
+			AddCollisionComponent<BoxCollisionComponent>(physicsObject);
+		};
+	physicsObjectReflections["CapsuleCollisionComponent"] = 
+		[](PhysicsObject* physicsObject)
+		{
+			AddCollisionComponent<CapsuleCollisionComponent>(physicsObject);
+		};
+	physicsObjectReflections["SphereCollisionComponent"] = 
+		[](PhysicsObject* physicsObject)
+		{
+			AddCollisionComponent<SphereCollisionComponent>(physicsObject);
+		};
+
+	windowOpenMap_[gameOptionsWindowName_] = true;
+	windowOpenMap_[sceneWindowName_] = true;
+	windowOpenMap_[objectsWindowName_] = true;
+	windowOpenMap_[fileBrowserWindowName_] = true;
+	windowOpenMap_[detailsWindowName_] = true;
 }
 
 EditorHUD::~EditorHUD()
@@ -281,6 +319,11 @@ void EditorHUD::UpdateHUD()
 
 	ImGui::Render();
 	ImGui_RenderDrawData(ImGui::GetDrawData());
+
+	if (drawCollisionWorld_)
+	{
+		engine->GetPhysicsWorld()->GetBulletPhysicsWorld()->debugDrawWorld();
+	}
 }
 
 void EditorHUD::DrawEditorHUD()
@@ -352,14 +395,14 @@ void EditorHUD::DrawEditorHUD()
 		{
 			if (ImGui::MenuItem("Save scene as"))
 			{
-				windowOpenMap_["Scene save path"] = true;
+				windowOpenMap_[saveSceneDialogWindowName_] = true;
 			}
 
 			if (ImGui::MenuItem("Save scene"))
 			{
 				if (sceneSavePath_.empty())
 				{
-					windowOpenMap_["Scene save path"] = true;
+					windowOpenMap_[saveSceneDialogWindowName_] = true;
 				}
 				else
 				{
@@ -370,6 +413,42 @@ void EditorHUD::DrawEditorHUD()
 			if (ImGui::MenuItem("Exit", NULL, false, p_open != NULL))
 			{
 				engine->Exit();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Debug"))
+		{
+			if (ImGui::MenuItem("Draw Collision Components"))
+			{
+				drawCollisionWorld_ = !drawCollisionWorld_;
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Window"))
+		{
+			if (ImGui::MenuItem((std::string(windowOpenMap_[gameOptionsWindowName_] ? "+ " : "- ") + "Game Options").c_str()))
+			{
+				windowOpenMap_[gameOptionsWindowName_] = !windowOpenMap_[gameOptionsWindowName_];
+			}
+			if (ImGui::MenuItem((std::string(windowOpenMap_[sceneWindowName_] ? "+ " : "- ") + "Scene Window").c_str()))
+			{
+				windowOpenMap_[sceneWindowName_] = !windowOpenMap_[sceneWindowName_];
+			}
+			if (ImGui::MenuItem((std::string(windowOpenMap_[objectsWindowName_] ? "+ " : "- ") + "Objects").c_str()))
+			{
+				windowOpenMap_[objectsWindowName_] = !windowOpenMap_[objectsWindowName_];
+			}
+			if (ImGui::MenuItem((std::string(windowOpenMap_[fileBrowserWindowName_] ? "+ " : "- ") + "File Browser").c_str()))
+			{
+				windowOpenMap_[fileBrowserWindowName_] = !windowOpenMap_[fileBrowserWindowName_];
+			}
+			if (ImGui::MenuItem((std::string(windowOpenMap_[detailsWindowName_] ? "+ " : "- ") + "Details").c_str()))
+			{
+				windowOpenMap_[detailsWindowName_] = !windowOpenMap_[detailsWindowName_];
 			}
 
 			ImGui::EndMenu();
@@ -401,14 +480,35 @@ void EditorHUD::DrawEditorHUD()
 	ImGui::End();
 
 	DrawCameraInfo();
-	DrawSceneWindow();
-	DrawObjectsWindow();
-	DrawFileBrowserWindow();
-	DrawDetailsWindow();
-
-	if (windowOpenMap_["Scene save path"])
+	
+	if (windowOpenMap_[sceneWindowName_])
 	{
-		OnSavePathEmpty();
+		DrawSceneWindow();
+	}
+
+	if (windowOpenMap_[objectsWindowName_])
+	{
+		DrawObjectsWindow();
+	}
+
+	if (windowOpenMap_[fileBrowserWindowName_])
+	{
+		DrawFileBrowserWindow();
+	}
+
+	if (windowOpenMap_[detailsWindowName_])
+	{
+		DrawDetailsWindow();
+	}
+	
+	if (windowOpenMap_[gameOptionsWindowName_])
+	{
+		DrawGameOptionsBar();
+	}
+
+	if (windowOpenMap_[saveSceneDialogWindowName_])
+	{
+		OpenSaveSceneDialog();
 	}
 }
 
@@ -426,7 +526,7 @@ void EditorHUD::DrawCameraInfo()
 
 void EditorHUD::DrawSceneWindow()
 {
-	BeginWindow("Scene", dockableWindowFlags_);
+	BeginWindow(sceneWindowName_, dockableWindowFlags_);
 	DrawSceneLights();
 	DrawSceneObjects();
 	EndWindow();
@@ -579,20 +679,23 @@ void EditorHUD::DrawFileGrid(Folder* folder, std::string& selectedFileName, bool
 
 void EditorHUD::DrawObjectsWindow()
 {
-	BeginWindow("Objects", dockableWindowFlags_);
+	BeginWindow(objectsWindowName_, dockableWindowFlags_);
 	if (ImGui::TreeNode("Lights"))
 	{
 		if (ImGui::Button("Directional Light"))
 		{
 			DirectionalLight* newDirectionalLight = new DirectionalLight();
+			newDirectionalLight->SetIsShadowEnabled(true);
 		}
 		else if (ImGui::Button("Point Light"))
 		{
 			PointLight* newPointLight = new PointLight();
+			newPointLight->SetIsShadowEnabled(true);
 		}
 		else if (ImGui::Button("Spot Light"))
 		{
 			SpotLight* newSpotLight = new SpotLight();
+			newSpotLight->SetIsShadowEnabled(true);
 		}
 
 		ImGui::TreePop();
@@ -670,6 +773,7 @@ void EditorHUD::BuildFileTree()
 	for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
 	{
 		std::string currentPath = contentPaths[pathIndex];
+		std::string fullPath = currentPath;
 
 		Folder* parentFolder = rootFolder;
 
@@ -693,7 +797,7 @@ void EditorHUD::BuildFileTree()
 				{
 					folderMap[folderName] = new Folder();
 					folderMap[folderName]->folderName = folderName;
-					folderMap[folderName]->fullPath = currentPath.substr(0, currentPath.find_last_of('/') + 1);
+					folderMap[folderName]->fullPath = fullPath.substr(0, fullPath.find(folderName) + folderName.size() + 1);
 				}
 
 				if (std::find(parentFolder->subFolders.begin(),
@@ -717,7 +821,7 @@ void EditorHUD::BuildFileTree()
 
 void EditorHUD::DrawFileBrowserWindow()
 {
-	BeginWindow("FileBrowser", dockableWindowFlags_);
+	BeginWindow(fileBrowserWindowName_, dockableWindowFlags_);
 
 	if (ImGui::TreeNode("Assets"))
 	{
@@ -730,7 +834,7 @@ void EditorHUD::DrawFileBrowserWindow()
 
 void EditorHUD::DrawDetailsWindow()
 {
-	BeginWindow("Details", dockableWindowFlags_);
+	BeginWindow(detailsWindowName_, dockableWindowFlags_);
 
 	switch (selectedObjectType_)
 	{
@@ -799,6 +903,16 @@ void EditorHUD::DrawDetailsWindow_Object()
 	selectedObject->SetWorldScaling(selectedObjectWorldScaling);
 
 	ImGui::Separator();
+	RigidBody* rigidBody = dynamic_cast<RigidBody*>(selectedObject);
+	if (rigidBody)
+	{
+		float rigidBodyMass = rigidBody->GetMass();
+		ImGui::Text("Mass: ");
+		ImGui::SameLine();
+		DrawInputText("##Mass", rigidBodyMass);
+		rigidBody->SetMass(rigidBodyMass);
+	}
+	ImGui::Separator();
 
 	const std::vector<Component*>& components = selectedObject->GetComponents();
 	for (Component* component : components)
@@ -810,48 +924,63 @@ void EditorHUD::DrawDetailsWindow_Object()
 	ImGui::PopItemWidth();
 }
 
+void EditorHUD::DrawGameOptionsBar()
+{
+	BeginWindow(gameOptionsWindowName_, ImGuiWindowFlags_NoTitleBar);
+
+	static float timeScale = engine->GetTimeScale();
+
+	if (ImGui::Button("Play", { 50.f, 50.f }))
+	{
+		engine->SetTimeScale(timeScale);
+	}
+	
+	ImGui::SameLine();
+
+	if(ImGui::Button("Pause", { 50.f, 50.f }))
+	{
+		timeScale = engine->GetTimeScale();
+		engine->SetTimeScale(0.f);
+	}
+
+	EndWindow();
+}
+
 void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
 {
 	static const char* objectBaseComponents[]{ "", "StaticMeshComponent" };
-	static const char* physicsObjectComponents[]{ "", "BoxCollisionComponent", "CapsuleCollisionComponent", "SphereCollisionComponent" };
+	static const char* physicsObjectComponents[]{ "", "StaticMeshComponent", "BoxCollisionComponent", "CapsuleCollisionComponent", "SphereCollisionComponent" };
 
 	PhysicsObject* physicsObject = dynamic_cast<PhysicsObject*>(object);
 
+	static int selectedItem = 0;
 	if (physicsObject)
 	{
-		static int selecteditem = 0;
-		bool check = ImGui::Combo("##AddComponent", &selecteditem, physicsObjectComponents, IM_ARRAYSIZE(physicsObjectComponents));
+		bool check = ImGui::Combo("##AddComponent", &selectedItem, physicsObjectComponents, IM_ARRAYSIZE(physicsObjectComponents));
 		if (check)
 		{
-			switch (selecteditem)
+			std::string selectedComponentString = physicsObjectComponents[selectedItem];
+
+			if (objectBaseReflections.find(selectedComponentString) != objectBaseReflections.end())
 			{
-			case 1:
-				physicsObject->AddSubComponent<BoxCollisionComponent>();
-				break;
-			case 2:
-				physicsObject->AddSubComponent<CapsuleCollisionComponent>();
-				break;
-			case 3:
-				physicsObject->AddSubComponent<SphereCollisionComponent>();
-				break;
-			default:
-				break;
+				objectBaseReflections[selectedComponentString](physicsObject);
+			}
+			else if (physicsObjectReflections.find(selectedComponentString) != physicsObjectReflections.end())
+			{
+				physicsObjectReflections[selectedComponentString](physicsObject);
 			}
 		}
 	}
 	else
 	{
-		static int selecteditem = 0;
-		bool check = ImGui::Combo("##AddComponent", &selecteditem, objectBaseComponents, IM_ARRAYSIZE(objectBaseComponents));
+		bool check = ImGui::Combo("##AddComponent", &selectedItem, objectBaseComponents, IM_ARRAYSIZE(objectBaseComponents));
 		if (check)
 		{
-			switch (selecteditem)
+			std::string selectedComponentString = objectBaseComponents[selectedItem];
+
+			if (objectBaseReflections.find(selectedComponentString) != objectBaseReflections.end())
 			{
-			case 1:
-				object->AddSubComponent<StaticMeshComponent>();
-				break;
-			default:
-				break;
+				objectBaseReflections[selectedComponentString](object);
 			}
 		}
 	}
@@ -865,34 +994,75 @@ void EditorHUD::DrawDetailsWindow_Component(Component* component)
 	}
 
 	StaticMeshComponent* staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	BoxCollisionComponent* boxCollisionComponent{ nullptr };
+	SphereCollisionComponent* sphereCollisionComponent{ nullptr };
+	CapsuleCollisionComponent* capsuleCollisionComponent{ nullptr };
+
+	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	if (!staticMeshComponent)
+	{
+		boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
+	}
+	if (!boxCollisionComponent)
+	{
+		sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
+	}
+	if (!sphereCollisionComponent)
+	{
+		capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
+	}
+
+	std::string componentTypeString;
 
 	if (staticMeshComponent)
 	{
-		ImGui::Text("StaticMeshComponent");
+		componentTypeString = "StaticMeshComponent";
+	}
+	else if (boxCollisionComponent)
+	{
+		componentTypeString = "BoxCollisionComponent";
+	}
+	else if (sphereCollisionComponent)
+	{
+		componentTypeString = "SphereCollisionComponent";
+	}
+	else if (capsuleCollisionComponent)
+	{
+		componentTypeString = "CapsuleCollisionComponent";
 	}
 	else
 	{
-		ImGui::Text("Component");
+		componentTypeString = "Component";
 	}
+
+	if (component->GetOwner()->GetRootComponent() == component)
+	{
+		componentTypeString += " (RootComponent)";
+	}
+
+	ImGui::Text(componentTypeString.c_str());
+
 	ImGui::Separator();
 
 	Vector3 componentRelativePosition = component->GetRelativePosition();
 	Vector3 componentRelativeRotationEulerDegrees = component->GetRelativeRotation().ToEulerDegrees();
 	Vector3 componentRelativeScaling = component->GetRelativeScaling();
 
+	std::string specialPostfix = "##" + std::to_string(component->GetGUID());
+
 	ImGui::Text("RelativePosition: ");
 	ImGui::SameLine();
-	DrawInputText("##RelativePosition", componentRelativePosition);
+	DrawInputText(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
 	component->SetRelativePosition(componentRelativePosition);
 
 	ImGui::Text("RelativeRotation: ");
 	ImGui::SameLine();
-	DrawInputText("##RelativeRotation", componentRelativeRotationEulerDegrees);
+	DrawInputText(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
 	component->SetRelativeRotation(Quaternion::FromEulerDegrees(componentRelativeRotationEulerDegrees));
 
 	ImGui::Text("RelativeScaling: ");
 	ImGui::SameLine();
-	DrawInputText("##RelativeScaling", componentRelativeScaling);
+	DrawInputText(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
 
 	if (staticMeshComponent)
@@ -904,13 +1074,15 @@ void EditorHUD::DrawDetailsWindow_Component(Component* component)
 		StaticMesh* staticMesh = staticMeshComponent->GetMeshInstance()->GetMesh();
 		ImGui::Text(staticMesh ? staticMesh->GetPath().substr(ContentDir.size()).c_str() : "");
 
+		std::string specialName = std::string("Select asset") + specialPostfix;
+
 		ImGui::SameLine();
-		if (ImGui::Button("Select asset"))
+		if (ImGui::Button(specialName.c_str()))
 		{
-			windowOpenMap_["Asset Selector"] = true;
+			windowOpenMap_[specialName.c_str()] = true;
 		}
 
-		if (windowOpenMap_["Asset Selector"])
+		if (windowOpenMap_[specialName.c_str()])
 		{
 			std::string selectedAssetPath;
 			if (DrawAssetSelector(selectedAssetPath))
@@ -919,9 +1091,13 @@ void EditorHUD::DrawDetailsWindow_Component(Component* component)
 				if (newStaticMesh)
 				{
 					staticMeshComponent->SetMesh(newStaticMesh);
+					windowOpenMap_[specialName.c_str()] = false;
 				}
 			}
 		}
+	}
+	else if (boxCollisionComponent)
+	{
 	}
 }
 
@@ -960,18 +1136,13 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
-	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 	DrawCheckbox("##IsCastingShadow", lightIsShadowEnabled);
-	ImGui::PopItemFlag();
-	ImGui::PopStyleVar();
+	light->SetIsShadowEnabled(lightIsShadowEnabled);
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
 	DrawInputText("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
-
-	light->SetIsShadowEnabled(lightIsShadowEnabled);
 
 	ImGui::PopItemWidth();
 }
@@ -1011,11 +1182,7 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
-	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 	DrawCheckbox("##IsCastingShadow", lightIsShadowEnabled);
-	ImGui::PopItemFlag();
-	ImGui::PopStyleVar();
 	light->SetIsShadowEnabled(lightIsShadowEnabled);
 
 	ImGui::Text("Shadow Intensity: ");
@@ -1028,7 +1195,60 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 
 void EditorHUD::DrawDetailsWindow_SpotLight()
 {
+	SpotLight* light = static_cast<SpotLight*>(selectedObject_);
 
+	Vector3 lightPosition = light->GetPosition();
+	Vector3 lightDirection = light->GetDirection();
+	Vector3 lightColor = light->GetColor();
+	float lightFalloffAngle = light->GetFalloffAngle();
+	float lightCoverageAngle = light->GetCoverageAngle();
+	float lightIntensity = light->GetIntensity();
+	float lightShadowIntensity = light->GetShadowIntensity();
+	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
+
+	ImGui::PushItemWidth(50.f);
+
+	ImGui::Text("Position: ");
+	ImGui::SameLine();
+	DrawInputText("##Position", lightPosition);
+	light->SetPosition(lightPosition);
+
+	ImGui::Text("Direction: ");
+	ImGui::SameLine();
+	DrawInputText("##Direction", lightDirection);
+	light->SetDirection(lightDirection);
+
+	ImGui::Text("FalloffAngle: ");
+	ImGui::SameLine();
+	DrawInputText("##FalloffAngle", lightFalloffAngle);
+	light->SetFalloffAngle(lightFalloffAngle);
+
+	ImGui::Text("CoverageAngle: ");
+	ImGui::SameLine();
+	DrawInputText("##CoverageAngle", lightCoverageAngle);
+	light->SetCoverageAngle(lightCoverageAngle);
+
+	ImGui::Text("Intensity: ");
+	ImGui::SameLine();
+	DrawInputText("##Intensity", lightIntensity);
+	light->SetIntensity(lightIntensity);
+
+	ImGui::Text("Color: ");
+	ImGui::SameLine();
+	DrawInputText("##Color", lightColor);
+	light->SetColor(lightColor);
+
+	ImGui::Text("Cast shadow: ");
+	ImGui::SameLine();
+	DrawCheckbox("##IsCastingShadow", lightIsShadowEnabled);
+	light->SetIsShadowEnabled(lightIsShadowEnabled);
+
+	ImGui::Text("Shadow Intensity: ");
+	ImGui::SameLine();
+	DrawInputText("##Shadow Intensity", lightShadowIntensity);
+	light->SetShadowIntensity(lightShadowIntensity);
+
+	ImGui::PopItemWidth();
 }
 
 void EditorHUD::DrawInputText(const std::string& name, std::string& value)
@@ -1179,17 +1399,21 @@ void EditorHUD::EndWindow()
 	ImGui::End();
 }
 
-bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText)
+bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText, ImGuiWindowFlags flags)
 {
-	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
+	ImVec2 windowSize(400.f, 400.f);
+	ImGui::SetNextWindowPos(ImVec2((windowSize_.x - windowSize.x) * 0.5f, (windowSize_.y - windowSize.y) * 0.5f));
+	ImGui::SetNextWindowSize(windowSize);
 
-	BeginWindow(windowTitle, windowFlags);
+	flags |= ImGuiWindowFlags_NoDocking;
+
+	BeginWindow(windowTitle, flags);
 
 	ImGui::Text(text.c_str());
 	ImGui::SameLine();
 
 	char* input = const_cast<char*>(currentValue.c_str());
-	ImGui::InputText((windowTitle + "_TextBox").c_str(), input, 64);
+	ImGui::InputText((std::string("##") + windowTitle + "_TextBox").c_str(), input, 64);
 
 	std::string inputString = input;
 	bool buttonClicked = ImGui::Button(buttonText.c_str());
@@ -1211,13 +1435,16 @@ void EditorHUD::FocusToPosition(const Vector3& position)
 	freeCameraObject->SetWorldPosition(position - 20.f * freeCameraObject->GetForwardVector());
 }
 
-void EditorHUD::OnSavePathEmpty()
+void EditorHUD::OpenSaveSceneDialog()
 {
-	std::string windowName = "##Scene save path";
-	if (BeginDialogWindow_OneTextBoxOneButton(windowName, "Path: ", sceneSavePath_, "Save"))
+	ImVec2 windowSize(400.f, 100.f);
+	ImGui::SetNextWindowPos(ImVec2((windowSize_.x - windowSize.x) * 0.5f, (windowSize_.y - windowSize.y) * 0.5f));
+	ImGui::SetNextWindowSize(windowSize);
+
+	if (BeginDialogWindow_OneTextBoxOneButton(saveSceneDialogWindowName_, "Path: ", sceneSavePath_, "Save", ImGuiWindowFlags_NoResize))
 	{
 		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + sceneSavePath_);
 
-		windowOpenMap_[windowName] = false;
+		windowOpenMap_[saveSceneDialogWindowName_] = false;
 	}
 }

@@ -8,11 +8,11 @@
 
 #include "imgui.h"
 
-class Image;
-
 class ImGuiContext;
 
-class Folder;
+class Image;
+class ObjectBase;
+class PhysicsObject;
 
 enum class DetailObjectType
 {
@@ -40,8 +40,6 @@ public:
 protected:
 
 private:
-
-
 	struct Folder
 	{
 		std::string folderName;
@@ -68,6 +66,7 @@ private:
 	void DrawEditorHUD();
 
 	void DrawCameraInfo();
+	void DrawGameOptionsBar();
 
 	void DrawSceneWindow();
 	void DrawSceneLights();
@@ -96,14 +95,17 @@ private:
 
 	bool DrawAssetSelector(std::string& selectedPath);
 
-	void BeginWindow(const std::string& name, ImGuiWindowFlags flags);
+	void BeginWindow(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
 	void BeginTransparentWindow(const std::string& name);
 	void EndWindow();
 
-	bool BeginDialogWindow_OneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText);
+	bool BeginDialogWindow_OneTextBoxOneButton(
+		const std::string& windowTitle, const std::string& text, 
+		const std::string& currentValue, const std::string& buttonText,
+		ImGuiWindowFlags flags);
 
 	void FocusToPosition(const Vector3& position);
-	void OnSavePathEmpty();
+	void OpenSaveSceneDialog();
 
 	Delegate<void(int, int, int, int)> onKeyboardEventDelegate_;
 	Delegate<void(double, double)> onCursorMoveDelegate_;
@@ -121,6 +123,9 @@ private:
 
 	ImVec2 buttonSize_{ 100.f, 40.f };
 
+	std::unordered_map<std::string, std::function<void(ObjectBase*)>> objectBaseReflections;
+	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsObjectReflections;
+
 	Image* uiImage_;
 	ImGuiContext* imguiContext_;
 
@@ -128,8 +133,16 @@ private:
 	void* selectedObject_{ nullptr };
 
 	std::string sceneSavePath_{};
+	std::string saveSceneDialogWindowName_{ "Save Scene" };
+	std::string sceneWindowName_{ "Scene" };
+	std::string objectsWindowName_{ "Objects" };
+	std::string fileBrowserWindowName_{ "FileBrowser" };
+	std::string detailsWindowName_{ "Details" };
+	std::string gameOptionsWindowName_{ "GameOptions" };
 
 	std::unordered_map<std::string, bool> windowOpenMap_;
 
 	ImGuiWindowFlags dockableWindowFlags_{ ImGuiWindowFlags_None };
+
+	bool drawCollisionWorld_{ false };
 };

@@ -5,7 +5,7 @@
             <Color>1.000000 0.990000 0.830000</Color>
             <Intensity>0.5</Intensity>
             <IsCastingShadow>1</IsCastingShadow>
-            <ShadowIntensity>0.1</ShadowIntensity>
+            <ShadowIntensity>0.5</ShadowIntensity>
             <ShadowMapResolution>4096 4096</ShadowMapResolution>
         </DirectionalLight>
         <PointLight>
@@ -14,7 +14,7 @@
             <Intensity>10</Intensity>
             <Radius>25</Radius>
             <IsCastingShadow>1</IsCastingShadow>
-            <ShadowIntensity>0.1</ShadowIntensity>
+            <ShadowIntensity>0</ShadowIntensity>
             <ShadowMapResolution>2048 2048</ShadowMapResolution>
         </PointLight>
         <PointLight>
@@ -22,11 +22,43 @@
             <Color>0.760500 0.097600 0.016000</Color>
             <Intensity>10</Intensity>
             <Radius>25</Radius>
-            <IsCastingShadow>0</IsCastingShadow>
-            <ShadowIntensity>0.1</ShadowIntensity>
+            <IsCastingShadow>1</IsCastingShadow>
+            <ShadowIntensity>0</ShadowIntensity>
             <ShadowMapResolution>2048 2048</ShadowMapResolution>
         </PointLight>
     </Lights>
+
+	<Meshes>
+		<StaticMesh>
+			<Name>BuildingWall</Name>
+			<Path>Meshes/SM_BuildingWall.fbx</Path>
+		</StaticMesh>
+		<StaticMesh>
+			<Name>FloorAndCeil</Name>
+			<Path>Meshes/SM_FloorAndCeil.fbx</Path>
+		</StaticMesh>
+	    <StaticMesh>
+	      <Name>Floor</Name>
+	      <Path>Meshes/SM_Floor.fbx</Path>
+	    </StaticMesh>
+	    <StaticMesh>
+	      <Name>Wall</Name>
+	      <Path>Meshes/SM_Wall.fbx</Path>
+	    </StaticMesh>
+	    <StaticMesh>
+	      <Name>Cube</Name>
+	      <Path>Meshes/SM_Cube.fbx</Path>
+	    </StaticMesh>
+	    <StaticMesh>
+	      <Name>CylinderWithAHole</Name>
+	      <Path>Meshes/SM_CylinderWithAHole.fbx</Path>
+	    </StaticMesh>
+	    <StaticMesh>
+	      <Name>Axis</Name>
+	      <Path>Meshes/Editor/SM_Axis.fbx</Path>
+	    </StaticMesh>
+	</Meshes>
+
     <Objects>
         <Object>
             <Name>Floor</Name>
