@@ -17,6 +17,8 @@
 
 #include "Goknar/Debug/DebugDrawer.h"
 
+#include "Goknar/Factories/DynamicObjectFactory.h"
+
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Managers/ResourceManager.h"
@@ -703,16 +705,18 @@ void EditorHUD::DrawObjectsWindow()
 	ImGui::Separator();
 	if (ImGui::TreeNode("Objects"))
 	{
-		if (ImGui::Button("ObjectBase"))
-		{
-			ObjectBase* newObjectBase = new ObjectBase();
-		}
+		static auto& objects = DynamicObjectFactory::GetInstance()->GetObjectMap();
 
-		if (ImGui::Button("RigidBody"))
+		for (auto object : objects)
 		{
-			RigidBody* newRigidBody = new RigidBody();
+			std::string name = object.first;
+			if (ImGui::Button(name.c_str()))
+			{
+				ObjectBase* newObjectBase = object.second();
+				newObjectBase->SetName(name);
+			}
 		}
-
+		
 		ImGui::TreePop();
 	}
 	ImGui::Separator();

@@ -12,13 +12,20 @@
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/WindowManager.h"
 
+#include "Factories/DynamicObjectFactory.h"
 #include "Objects/FreeCameraObject.h"
 #include "UI/EditorHUD.h"
+
+#include "Physics/RigidBody.h"
 
 #include <chrono>
 
 Game::Game() : Application()
 {
+	DynamicObjectFactory* dynamicObjectFactory = DynamicObjectFactory::GetInstance();
+	dynamicObjectFactory->RegisterClass("ObjectBase", []() -> ObjectBase* { return new ObjectBase(); });
+	dynamicObjectFactory->RegisterClass("RigidBody", []() -> RigidBody* { return new RigidBody(); });
+
 	engine->SetApplication(this);
 
 	engine->GetRenderer()->SetMainRenderType(RenderPassType::Deferred);
