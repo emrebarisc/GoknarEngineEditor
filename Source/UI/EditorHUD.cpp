@@ -27,6 +27,7 @@
 #include "Goknar/Model/MeshUnit.h"
 
 #include "Goknar/Physics/PhysicsDebugger.h"
+#include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
@@ -234,6 +235,11 @@ void EditorHUD::OnLeftClickPressed()
 {
 	ImGuiIO &io = ImGui::GetIO();
 	io.MouseDown[GLFW_MOUSE_BUTTON_1] = true;
+
+	if (objectToCreateType_ != Editor_ObjectType::None)
+	{
+		OnPlaceObject();
+	}
 }
 
 void EditorHUD::OnLeftClickReleased()
@@ -255,28 +261,88 @@ void EditorHUD::OnWindowSizeChanged(int width, int height)
 	buttonSize_ = ImVec2(buttonSizeVector.x, buttonSizeVector.y);
 }
 
+void EditorHUD::OnPlaceObject()
+{
+	Vector3 raycastPosition = RaycastWorld();
+
+	switch (objectToCreateType_)
+	{
+	case Editor_ObjectType::Object:
+	{
+		ObjectBase* object = CreateObject(objectToCreateName_);
+		if (object)
+		{
+			object->SetWorldPosition(raycastPosition);
+		}
+		break;
+	}
+	case Editor_ObjectType::DirectionalLight:
+	{
+		CreateDirectionalLight();
+		break;
+	}
+	case Editor_ObjectType::PointLight:
+	{
+		PointLight* pointLight = CreatePointLight();
+		pointLight->SetPosition(raycastPosition);
+		break;
+	}
+	case Editor_ObjectType::SpotLight:
+	{
+		CreateSpotLight();
+		SpotLight* spotLight = CreateSpotLight();
+		spotLight->SetPosition(raycastPosition);
+		break;
+	}
+	case Editor_ObjectType::None:
+	default:
+		break;
+	}
+
+	objectToCreateType_ = Editor_ObjectType::None;
+	objectToCreateName_ = "";
+}
+
+Vector3 EditorHUD::RaycastWorld()
+{
+	double x, y;
+	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetWindow(), x, y);
+	Vector2i screenCoordinate = Vector2i{ (int)x, (int)y };
+
+	RaycastData raycastData;
+	RaycastSingleResult raycastSingleResult;
+
+	Camera* activeCamera = engine->GetCameraManager()->GetActiveCamera();
+
+	Vector3 cameraPosition = activeCamera->GetPosition();
+	raycastData.from = cameraPosition;
+	raycastData.to = cameraPosition + 1000.f * activeCamera->GetWorldDirectionAtPixel(screenCoordinate);
+	engine->GetPhysicsWorld()->RaycastClosest(raycastData, raycastSingleResult);
+	return raycastSingleResult.hitPosition;
+}
+
 void EditorHUD::OnDeleteInputPressed()
 {
 	switch (selectedObjectType_)
 	{
-	case DetailObjectType::Object:
+	case Editor_ObjectType::Object:
 		((ObjectBase*)selectedObject_)->Destroy();
 		break;
-	case DetailObjectType::DirectionalLight:
+	case Editor_ObjectType::DirectionalLight:
 		delete ((DirectionalLight*)selectedObject_);
 		break;
-	case DetailObjectType::PointLight:
+	case Editor_ObjectType::PointLight:
 		delete ((PointLight*)selectedObject_);
 		break;
-	case DetailObjectType::SpotLight:
+	case Editor_ObjectType::SpotLight:
 		delete ((SpotLight*)selectedObject_);
 		break;
-	case DetailObjectType::None:
+	case Editor_ObjectType::None:
 	default:
 		return;
 	}
 
-	selectedObjectType_ = DetailObjectType::None;
+	selectedObjectType_ = Editor_ObjectType::None;
 	selectedObject_ = nullptr;
 }
 
@@ -285,15 +351,15 @@ void EditorHUD::OnFocusInputPressed()
 	Vector3 position = Vector3::ZeroVector;
 	switch (selectedObjectType_)
 	{
-	case DetailObjectType::Object:
+	case Editor_ObjectType::Object:
 		position = ((ObjectBase*)selectedObject_)->GetWorldPosition();
 		break;
-	case DetailObjectType::DirectionalLight:
-	case DetailObjectType::PointLight:
-	case DetailObjectType::SpotLight:
+	case Editor_ObjectType::DirectionalLight:
+	case Editor_ObjectType::PointLight:
+	case Editor_ObjectType::SpotLight:
 		position = ((Light*)selectedObject_)->GetPosition();
 		break;
-	case DetailObjectType::None:
+	case Editor_ObjectType::None:
 	default:
 		return;
 	}
@@ -482,6 +548,11 @@ void EditorHUD::DrawEditorHUD()
 	ImGui::End();
 
 	DrawCameraInfo();
+
+	if (objectToCreateType_ != Editor_ObjectType::None)
+	{
+		DrawObjectNameToCreateWindow();
+	}
 	
 	if (windowOpenMap_[sceneWindowName_])
 	{
@@ -558,7 +629,7 @@ void EditorHUD::DrawSceneLights()
 				if (ImGui::Selectable(directionalLight->GetName().c_str(), selectedObject_ == directionalLight, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					selectedObject_ = directionalLight;
-					selectedObjectType_ = DetailObjectType::DirectionalLight;
+					selectedObjectType_ = Editor_ObjectType::DirectionalLight;
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
 					{
 					}
@@ -574,7 +645,7 @@ void EditorHUD::DrawSceneLights()
 				if (ImGui::Selectable(pointLight->GetName().c_str(), selectedObject_ == pointLight, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					selectedObject_ = pointLight;
-					selectedObjectType_ = DetailObjectType::PointLight;
+					selectedObjectType_ = Editor_ObjectType::PointLight;
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
 					{
 						FocusToPosition(pointLight->GetPosition());
@@ -591,7 +662,7 @@ void EditorHUD::DrawSceneLights()
 				if (ImGui::Selectable(spotLight->GetName().c_str(), selectedObject_ == spotLight, ImGuiSelectableFlags_AllowDoubleClick))
 				{
 					selectedObject_ = spotLight;
-					selectedObjectType_ = DetailObjectType::SpotLight;
+					selectedObjectType_ = Editor_ObjectType::SpotLight;
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
 					{
 						FocusToPosition(spotLight->GetPosition());
@@ -620,7 +691,7 @@ void EditorHUD::DrawSceneObjects()
 			if (ImGui::Selectable(object->GetName().c_str(), selectedObject_ == object, ImGuiSelectableFlags_AllowDoubleClick))
 			{
 				selectedObject_ = object;
-				selectedObjectType_ = DetailObjectType::Object;
+				selectedObjectType_ = Editor_ObjectType::Object;
 
 				if (ImGui::IsMouseDoubleClicked(ImGuiButtonFlags_MouseButtonLeft))
 				{
@@ -662,12 +733,12 @@ void EditorHUD::DrawFileGrid(Folder* folder, std::string& selectedFileName, bool
 	}
 
 	ImGui::Columns(4, nullptr, false);
-
 	int fileCount = folder->fileNames.size();
 	for (int fileIndex = 0; fileIndex < fileCount; ++fileIndex)
 	{
 		std::string fileName = folder->fileNames[fileIndex];
-		if (ImGui::Button(fileName.c_str()))
+
+		if (ImGui::Button(fileName.c_str(), { 150.f, 30.f }))
 		{
 			selectedFileName = folder->fullPath + fileName;
 			isAFileSelected = true;
@@ -675,7 +746,6 @@ void EditorHUD::DrawFileGrid(Folder* folder, std::string& selectedFileName, bool
 
 		ImGui::NextColumn();
 	}
-
 	ImGui::Columns(1, nullptr, false);
 }
 
@@ -686,18 +756,18 @@ void EditorHUD::DrawObjectsWindow()
 	{
 		if (ImGui::Button("Directional Light"))
 		{
-			DirectionalLight* newDirectionalLight = new DirectionalLight();
-			newDirectionalLight->SetIsShadowEnabled(true);
+			objectToCreateType_ = Editor_ObjectType::DirectionalLight;
+			objectToCreateName_ = "Directional Light";
 		}
 		else if (ImGui::Button("Point Light"))
 		{
-			PointLight* newPointLight = new PointLight();
-			newPointLight->SetIsShadowEnabled(true);
+			objectToCreateType_ = Editor_ObjectType::PointLight;
+			objectToCreateName_ = "Point Light";
 		}
 		else if (ImGui::Button("Spot Light"))
 		{
-			SpotLight* newSpotLight = new SpotLight();
-			newSpotLight->SetIsShadowEnabled(true);
+			objectToCreateType_ = Editor_ObjectType::SpotLight;
+			objectToCreateName_ = "Spot Light";
 		}
 
 		ImGui::TreePop();
@@ -705,15 +775,15 @@ void EditorHUD::DrawObjectsWindow()
 	ImGui::Separator();
 	if (ImGui::TreeNode("Objects"))
 	{
-		static auto& objects = DynamicObjectFactory::GetInstance()->GetObjectMap();
+		static const auto& objects = DynamicObjectFactory::GetInstance()->GetObjectMap();
 
 		for (auto object : objects)
 		{
 			std::string name = object.first;
 			if (ImGui::Button(name.c_str()))
 			{
-				ObjectBase* newObjectBase = object.second();
-				newObjectBase->SetName(name);
+				objectToCreateType_ = Editor_ObjectType::Object;
+				objectToCreateName_ = name;
 			}
 		}
 		
@@ -755,6 +825,17 @@ void EditorHUD::BuildFileTree()
 		++resourceIndex;
 	}
 
+	for (std::string& contentPath : contentPaths)
+	{
+		for (char& c : contentPath)
+		{
+			if (c == '\\')
+			{
+				c = '/';
+			}
+		}
+	}
+
 	resourceIndex = 0;
 	while (Audio* audio = resourceManager->GetResourceContainer()->GetAudio(resourceIndex))
 	{
@@ -785,6 +866,7 @@ void EditorHUD::BuildFileTree()
 		while (!currentPath.empty())
 		{
 			std::string folderName = currentPath.substr(0, currentPath.find_first_of("/"));
+			std::string folderPath = fullPath.substr(0, fullPath.find(folderName) + folderName.size() + 1);
 
 			if (folderName.find('.') != std::string::npos)
 			{
@@ -797,18 +879,18 @@ void EditorHUD::BuildFileTree()
 			}
 			else
 			{
-				if (folderMap.find(folderName) == folderMap.end())
+				if (folderMap.find(folderPath) == folderMap.end())
 				{
-					folderMap[folderName] = new Folder();
-					folderMap[folderName]->folderName = folderName;
-					folderMap[folderName]->fullPath = fullPath.substr(0, fullPath.find(folderName) + folderName.size() + 1);
+					folderMap[folderPath] = new Folder();
+					folderMap[folderPath]->folderName = folderName;
+					folderMap[folderPath]->fullPath = folderPath;
 				}
 
 				if (std::find(parentFolder->subFolders.begin(),
 					parentFolder->subFolders.end(),
-					folderMap[folderName]) == std::end(parentFolder->subFolders))
+					folderMap[folderPath]) == std::end(parentFolder->subFolders))
 				{
-					parentFolder->subFolders.push_back(folderMap[folderName]);
+					parentFolder->subFolders.push_back(folderMap[folderPath]);
 				}
 			}
 
@@ -817,7 +899,7 @@ void EditorHUD::BuildFileTree()
 				break;
 			}
 
-			parentFolder = folderMap[folderName];
+			parentFolder = folderMap[folderPath];
 			currentPath = currentPath.substr(folderName.size() + 1);
 		}
 	}
@@ -842,18 +924,18 @@ void EditorHUD::DrawDetailsWindow()
 
 	switch (selectedObjectType_)
 	{
-	case DetailObjectType::None:
+	case Editor_ObjectType::None:
 		break;
-	case DetailObjectType::Object:
+	case Editor_ObjectType::Object:
 		DrawDetailsWindow_Object();
 		break;
-	case DetailObjectType::DirectionalLight:
+	case Editor_ObjectType::DirectionalLight:
 		DrawDetailsWindow_DirectionalLight();
 		break;
-	case DetailObjectType::PointLight:
+	case Editor_ObjectType::PointLight:
 		DrawDetailsWindow_PointLight();
 		break;
-	case DetailObjectType::SpotLight:
+	case Editor_ObjectType::SpotLight:
 		DrawDetailsWindow_SpotLight();
 		break;
 	default:
@@ -893,17 +975,17 @@ void EditorHUD::DrawDetailsWindow_Object()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputText("##Position", selectedObjectWorldPosition);
+	DrawInputFloat("##Position", selectedObjectWorldPosition);
 	selectedObject->SetWorldPosition(selectedObjectWorldPosition);
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
-	DrawInputText("##Rotation", selectedObjectWorldRotationEulerDegrees);
+	DrawInputFloat("##Rotation", selectedObjectWorldRotationEulerDegrees);
 	selectedObject->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
-	DrawInputText("##Scaling", selectedObjectWorldScaling);
+	DrawInputFloat("##Scaling", selectedObjectWorldScaling);
 	selectedObject->SetWorldScaling(selectedObjectWorldScaling);
 
 	ImGui::Separator();
@@ -913,7 +995,7 @@ void EditorHUD::DrawDetailsWindow_Object()
 		float rigidBodyMass = rigidBody->GetMass();
 		ImGui::Text("Mass: ");
 		ImGui::SameLine();
-		DrawInputText("##Mass", rigidBodyMass);
+		DrawInputFloat("##Mass", rigidBodyMass);
 		rigidBody->SetMass(rigidBodyMass);
 	}
 	ImGui::Separator();
@@ -953,7 +1035,14 @@ void EditorHUD::DrawGameOptionsBar()
 void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
 {
 	static const char* objectBaseComponents[]{ "", "StaticMeshComponent" };
-	static const char* physicsObjectComponents[]{ "", "StaticMeshComponent", "BoxCollisionComponent", "CapsuleCollisionComponent", "SphereCollisionComponent" };
+	static const char* physicsObjectComponents[]{
+		"",
+		"StaticMeshComponent",
+		"BoxCollisionComponent",
+		"CapsuleCollisionComponent",
+		"SphereCollisionComponent",
+		"MovingTriangleMeshCollisionComponent",
+		"NonMovingTriangleMeshCollisionComponent" };
 
 	PhysicsObject* physicsObject = dynamic_cast<PhysicsObject*>(object);
 
@@ -973,6 +1062,7 @@ void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
 			{
 				physicsObjectReflections[selectedComponentString](physicsObject);
 			}
+			selectedItem = 0;
 		}
 	}
 	else
@@ -1056,17 +1146,17 @@ void EditorHUD::DrawDetailsWindow_Component(Component* component)
 
 	ImGui::Text("RelativePosition: ");
 	ImGui::SameLine();
-	DrawInputText(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
+	DrawInputFloat(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
 	component->SetRelativePosition(componentRelativePosition);
 
 	ImGui::Text("RelativeRotation: ");
 	ImGui::SameLine();
-	DrawInputText(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
+	DrawInputFloat(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
 	component->SetRelativeRotation(Quaternion::FromEulerDegrees(componentRelativeRotationEulerDegrees));
 
 	ImGui::Text("RelativeScaling: ");
 	ImGui::SameLine();
-	DrawInputText(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
+	DrawInputFloat(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
 
 	if (staticMeshComponent)
@@ -1120,22 +1210,22 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputText("##Position", lightPosition);
+	DrawInputFloat("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
-	DrawInputText("##Direction", lightDirection);
+	DrawInputFloat("##Direction", lightDirection);
 	light->SetDirection(lightDirection);
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
-	DrawInputText("##Intensity", lightIntensity);
+	DrawInputFloat("##Intensity", lightIntensity);
 	light->SetIntensity(lightIntensity);
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	DrawInputText("##Color", lightColor);
+	DrawInputFloat("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Cast shadow: ");
@@ -1145,7 +1235,7 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
-	DrawInputText("##Shadow Intensity", lightShadowIntensity);
+	DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
 
 	ImGui::PopItemWidth();
@@ -1166,22 +1256,22 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputText("##Position", lightPosition);
+	DrawInputFloat("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
-	DrawInputText("##Intensity", lightIntensity);
+	DrawInputFloat("##Intensity", lightIntensity);
 	light->SetIntensity(lightIntensity);
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	DrawInputText("##Color", lightColor);
+	DrawInputFloat("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Radius: ");
 	ImGui::SameLine();
-	DrawInputText("##Radius", lightRadius);
+	DrawInputFloat("##Radius", lightRadius);
 	light->SetRadius(lightRadius);
 
 	ImGui::Text("Cast shadow: ");
@@ -1191,7 +1281,7 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
-	DrawInputText("##Shadow Intensity", lightShadowIntensity);
+	DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
 
 	ImGui::PopItemWidth();
@@ -1214,32 +1304,32 @@ void EditorHUD::DrawDetailsWindow_SpotLight()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputText("##Position", lightPosition);
+	DrawInputFloat("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
-	DrawInputText("##Direction", lightDirection);
+	DrawInputFloat("##Direction", lightDirection);
 	light->SetDirection(lightDirection);
 
 	ImGui::Text("FalloffAngle: ");
 	ImGui::SameLine();
-	DrawInputText("##FalloffAngle", lightFalloffAngle);
+	DrawInputFloat("##FalloffAngle", lightFalloffAngle);
 	light->SetFalloffAngle(lightFalloffAngle);
 
 	ImGui::Text("CoverageAngle: ");
 	ImGui::SameLine();
-	DrawInputText("##CoverageAngle", lightCoverageAngle);
+	DrawInputFloat("##CoverageAngle", lightCoverageAngle);
 	light->SetCoverageAngle(lightCoverageAngle);
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
-	DrawInputText("##Intensity", lightIntensity);
+	DrawInputFloat("##Intensity", lightIntensity);
 	light->SetIntensity(lightIntensity);
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	DrawInputText("##Color", lightColor);
+	DrawInputFloat("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Cast shadow: ");
@@ -1249,7 +1339,7 @@ void EditorHUD::DrawDetailsWindow_SpotLight()
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
-	DrawInputText("##Shadow Intensity", lightShadowIntensity);
+	DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
 
 	ImGui::PopItemWidth();
@@ -1262,24 +1352,20 @@ void EditorHUD::DrawInputText(const std::string& name, std::string& value)
 	value = std::string(valueChar);
 }
 
-void EditorHUD::DrawInputText(const std::string& name, float& value)
+void EditorHUD::DrawInputFloat(const std::string& name, float& value)
 {
-	char valueChar[64];
-	sprintf(valueChar, "%.4f", value);
-	ImGui::InputText((name + "X").c_str(), valueChar, 64);
-	float newValue = (float)atof(valueChar);
+	float newValue = value;
+	ImGui::InputFloat((name).c_str(), &newValue);
 	if (SMALLER_EPSILON < GoknarMath::Abs(value - newValue))
 	{
 		value = newValue;
 	}
 }
 
-void EditorHUD::DrawInputText(const std::string& name, Vector3& vector)
+void EditorHUD::DrawInputFloat(const std::string& name, Vector3& vector)
 {
-	char valueCharX[64];
-	sprintf(valueCharX, "%.4f", vector.x);
-	ImGui::InputText((name + "X").c_str(), valueCharX, 64);
-	float newValueX = (float)atof(valueCharX);
+	float newValueX = vector.x;
+	ImGui::InputFloat((name + "X").c_str(), &newValueX);
 	if (SMALLER_EPSILON < GoknarMath::Abs(vector.x - newValueX))
 	{
 		vector.x = newValueX;
@@ -1287,10 +1373,8 @@ void EditorHUD::DrawInputText(const std::string& name, Vector3& vector)
 
 	ImGui::SameLine();
 
-	char valueCharY[64];
-	sprintf(valueCharY, "%.4f", vector.y);
-	ImGui::InputText((name + "Y").c_str(), valueCharY, 64);
-	float newValueY = (float)atof(valueCharY);
+	float newValueY = vector.y;
+	ImGui::InputFloat((name + "Y").c_str(), &newValueY);
 	if (SMALLER_EPSILON < GoknarMath::Abs(vector.y - newValueY))
 	{
 		vector.y = newValueY;
@@ -1298,22 +1382,18 @@ void EditorHUD::DrawInputText(const std::string& name, Vector3& vector)
 
 	ImGui::SameLine();
 
-	char valueCharZ[64];
-	sprintf(valueCharZ, "%.4f", vector.z);
-	ImGui::InputText((name + "Z").c_str(), valueCharZ, 64);
-	float newValueZ = (float)atof(valueCharZ);
+	float newValueZ = vector.z;
+	ImGui::InputFloat((name + "Z").c_str(), &newValueZ);
 	if (SMALLER_EPSILON < GoknarMath::Abs(vector.z - newValueZ))
 	{
 		vector.z = newValueZ;
 	}
 }
 
-void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
+void EditorHUD::DrawInputFloat(const  std::string& name, Quaternion& quaternion)
 {
-	char valueX[64];
-	sprintf(valueX, "%.4f", quaternion.x);
-	ImGui::InputText((name + "X").c_str(), valueX, 64);
-	float newQuaternionX = (float)atof(valueX);
+	float newQuaternionX = quaternion.x;
+	ImGui::InputFloat((name + "X").c_str(), &newQuaternionX);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.x - newQuaternionX))
 	{
 		quaternion.x = newQuaternionX;
@@ -1321,10 +1401,8 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 
 	ImGui::SameLine();
 
-	char valueCharY[64];
-	sprintf(valueCharY, "%.4f", quaternion.y);
-	ImGui::InputText((name + "Y").c_str(), valueCharY, 64);
-	float newQuaternionY = (float)atof(valueCharY);
+	float newQuaternionY = quaternion.y;
+	ImGui::InputFloat((name + "Y").c_str(), &newQuaternionY);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.y - newQuaternionY))
 	{
 		quaternion.y = newQuaternionY;
@@ -1332,10 +1410,8 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 
 	ImGui::SameLine();
 
-	char valueCharZ[64];
-	sprintf(valueCharZ, "%.4f", quaternion.z);
-	ImGui::InputText((name + "Z").c_str(), valueCharZ, 64);
-	float newQuaternionZ = (float)atof(valueCharZ);
+	float newQuaternionZ = quaternion.z;
+	ImGui::InputFloat((name + "Z").c_str(), &newQuaternionZ);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.z - newQuaternionZ))
 	{
 		quaternion.z = newQuaternionZ;
@@ -1343,10 +1419,8 @@ void EditorHUD::DrawInputText(const  std::string& name, Quaternion& quaternion)
 
 	ImGui::SameLine();
 
-	char valueW[64];
-	sprintf(valueW, "%.4f", quaternion.w);
-	ImGui::InputText((name + "W").c_str(), valueW, 64);
-	float newQuaternionW = (float)atof(valueW);
+	float newQuaternionW = quaternion.w;
+	ImGui::InputFloat((name + "W").c_str(), &newQuaternionW, 64);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.w - newQuaternionW))
 	{
 		quaternion.w = newQuaternionW;
@@ -1360,7 +1434,7 @@ void EditorHUD::DrawCheckbox(const std::string& name, bool& value)
 
 bool EditorHUD::DrawAssetSelector(std::string& selectedAssetPath)
 {
-	ImVec2 assetPickerWindowSize(400.f, 400.f);
+	ImVec2 assetPickerWindowSize(600.f, 600.f);
 	ImGui::SetNextWindowPos(ImVec2((windowSize_.x - assetPickerWindowSize.x) * 0.5f, (windowSize_.y - assetPickerWindowSize.y) * 0.5f));
 	ImGui::SetNextWindowSize(assetPickerWindowSize);
 	BeginWindow("Asset Selector", ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize);
@@ -1390,10 +1464,11 @@ void EditorHUD::BeginWindow(const std::string& name, ImGuiWindowFlags flags)
 	ImGui::Begin(name.c_str(), &windowOpenMap_[name], flags);
 }
 
-void EditorHUD::BeginTransparentWindow(const std::string& name)
+void EditorHUD::BeginTransparentWindow(const std::string& name, ImGuiWindowFlags additionalFlags)
 {
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoBackground;
 	windowFlags |= ImGuiWindowFlags_NoTitleBar;
+	windowFlags |= additionalFlags;
 
 	BeginWindow(name, windowFlags);
 }
@@ -1451,4 +1526,53 @@ void EditorHUD::OpenSaveSceneDialog()
 
 		windowOpenMap_[saveSceneDialogWindowName_] = false;
 	}
+}
+
+DirectionalLight* EditorHUD::CreateDirectionalLight()
+{
+	DirectionalLight* newDirectionalLight = new DirectionalLight();
+	selectedObjectType_ = Editor_ObjectType::DirectionalLight;
+	selectedObject_ = newDirectionalLight;
+
+	return newDirectionalLight;
+}
+
+PointLight* EditorHUD::CreatePointLight()
+{
+	PointLight* newPointLight = new PointLight();
+	selectedObjectType_ = Editor_ObjectType::PointLight;
+	selectedObject_ = newPointLight;
+	return newPointLight;
+}
+
+SpotLight* EditorHUD::CreateSpotLight()
+{
+	SpotLight* newSpotLight = new SpotLight();
+	selectedObjectType_ = Editor_ObjectType::SpotLight;
+	selectedObject_ = newSpotLight;
+	return newSpotLight;
+}
+
+ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
+{
+	ObjectBase* newObjectBase = DynamicObjectFactory::GetInstance()->Create(typeName);
+
+	if (!newObjectBase)
+	{
+		return nullptr;
+	}
+
+	newObjectBase->SetName(typeName);
+	selectedObjectType_ = Editor_ObjectType::Object;
+	selectedObject_ = newObjectBase;
+
+	return newObjectBase;
+}
+
+void EditorHUD::DrawObjectNameToCreateWindow()
+{
+	ImGui::SetNextWindowPos(ImGui::GetCursorPos());
+	BeginTransparentWindow("ObjectToCreateNameWindow", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+	ImGui::Text(objectToCreateName_.c_str());
+	EndWindow();
 }

@@ -2,6 +2,8 @@
 
 #include "Game.h"
 
+#include <chrono>
+
 #include <Goknar.h>
 
 #include "Goknar/Scene.h"

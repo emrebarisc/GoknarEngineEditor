@@ -10,11 +10,15 @@
 
 class ImGuiContext;
 
+class DirectionalLight;
+class PointLight;
+class SpotLight;
+
 class Image;
 class ObjectBase;
 class PhysicsObject;
 
-enum class DetailObjectType
+enum class Editor_ObjectType
 {
 	None = 0,
 	Object,
@@ -87,16 +91,16 @@ private:
 	void DrawDetailsWindow_SpotLight();
 
 	void DrawInputText(const std::string& name, std::string& value);
-	void DrawInputText(const std::string& name, float& value);
-	void DrawInputText(const std::string& name, Vector3& vector);
-	void DrawInputText(const std::string& name, Quaternion& quaternion);
+	void DrawInputFloat(const std::string& name, float& value);
+	void DrawInputFloat(const std::string& name, Vector3& vector);
+	void DrawInputFloat(const std::string& name, Quaternion& quaternion);
 
 	void DrawCheckbox(const std::string& name, bool& value);
 
 	bool DrawAssetSelector(std::string& selectedPath);
 
 	void BeginWindow(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
-	void BeginTransparentWindow(const std::string& name);
+	void BeginTransparentWindow(const std::string& name, ImGuiWindowFlags additionalFlags = ImGuiWindowFlags_None);
 	void EndWindow();
 
 	bool BeginDialogWindow_OneTextBoxOneButton(
@@ -106,6 +110,15 @@ private:
 
 	void FocusToPosition(const Vector3& position);
 	void OpenSaveSceneDialog();
+
+	DirectionalLight* CreateDirectionalLight();
+	PointLight* CreatePointLight();
+	SpotLight* CreateSpotLight();
+	ObjectBase* CreateObject(const std::string& typeName);
+
+	void OnPlaceObject();
+	Vector3 RaycastWorld();
+	void DrawObjectNameToCreateWindow();
 
 	Delegate<void(int, int, int, int)> onKeyboardEventDelegate_;
 	Delegate<void(double, double)> onCursorMoveDelegate_;
@@ -129,8 +142,11 @@ private:
 	Image* uiImage_;
 	ImGuiContext* imguiContext_;
 
-	DetailObjectType selectedObjectType_{ DetailObjectType::None };
+	Editor_ObjectType selectedObjectType_{ Editor_ObjectType::None };
 	void* selectedObject_{ nullptr };
+
+	Editor_ObjectType objectToCreateType_{ Editor_ObjectType::None };
+	std::string objectToCreateName_{};
 
 	std::string sceneSavePath_{};
 	std::string saveSceneDialogWindowName_{ "Save Scene" };
