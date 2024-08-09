@@ -20,13 +20,24 @@
 
 #include "Physics/RigidBody.h"
 
-#include <chrono>
+#include "Objects/Environment/EnvironmentStones.h"
 
 Game::Game() : Application()
 {
 	DynamicObjectFactory* dynamicObjectFactory = DynamicObjectFactory::GetInstance();
 	dynamicObjectFactory->RegisterClass("ObjectBase", []() -> ObjectBase* { return new ObjectBase(); });
-	dynamicObjectFactory->RegisterClass("RigidBody", []() -> RigidBody* { return new RigidBody(); });
+	dynamicObjectFactory->RegisterClass("RigidBody", []() -> RigidBody* { return new RigidBody(); }); 
+	dynamicObjectFactory->RegisterClass("Stone_01", []() -> EnvironmentStone* { return new EnvironmentStone_01(); });
+	dynamicObjectFactory->RegisterClass("Stone_02", []() -> EnvironmentStone* { return new EnvironmentStone_02(); });
+	dynamicObjectFactory->RegisterClass("Stone_03", []() -> EnvironmentStone* { return new EnvironmentStone_03(); });
+	dynamicObjectFactory->RegisterClass("Stone_04", []() -> EnvironmentStone* { return new EnvironmentStone_04(); });
+	dynamicObjectFactory->RegisterClass("LargeStone_01", []() -> EnvironmentStone* { return new EnvironmentLStone_01(); });
+	dynamicObjectFactory->RegisterClass("LargeStone_02", []() -> EnvironmentStone* { return new EnvironmentLStone_02(); });
+	dynamicObjectFactory->RegisterClass("LargeStone_03", []() -> EnvironmentStone* { return new EnvironmentLStone_03(); });
+	dynamicObjectFactory->RegisterClass("LargeStone_04", []() -> EnvironmentStone* { return new EnvironmentLStone_04(); });
+	dynamicObjectFactory->RegisterClass("LargeStone_05", []() -> EnvironmentStone* { return new EnvironmentLStone_05(); });
+	dynamicObjectFactory->RegisterClass("LargeStone_06", []() -> EnvironmentStone* { return new EnvironmentLStone_06(); });
+
 
 	engine->SetApplication(this);
 

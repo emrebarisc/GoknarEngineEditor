@@ -3,132 +3,121 @@
         <DirectionalLight>
             <Direction>0.577350 0.577350 -0.577350</Direction>
             <Color>1.000000 0.990000 0.830000</Color>
-            <Intensity>0.5</Intensity>
+            <Intensity>1.0</Intensity>
             <IsCastingShadow>1</IsCastingShadow>
             <ShadowIntensity>0.5</ShadowIntensity>
             <ShadowMapResolution>4096 4096</ShadowMapResolution>
         </DirectionalLight>
-        <PointLight>
-            <Position>18.000000 4.750000 3.000000</Position>
-            <Color>0.760500 0.097600 0.016000</Color>
-            <Intensity>10</Intensity>
-            <Radius>25</Radius>
-            <IsCastingShadow>1</IsCastingShadow>
-            <ShadowIntensity>0</ShadowIntensity>
-            <ShadowMapResolution>2048 2048</ShadowMapResolution>
-        </PointLight>
-        <PointLight>
-            <Position>24.750000 -2.500000 3.000000</Position>
-            <Color>0.760500 0.097600 0.016000</Color>
-            <Intensity>10</Intensity>
-            <Radius>25</Radius>
-            <IsCastingShadow>1</IsCastingShadow>
-            <ShadowIntensity>0</ShadowIntensity>
-            <ShadowMapResolution>2048 2048</ShadowMapResolution>
-        </PointLight>
     </Lights>
+    <Meshes>
+        <StaticMesh>
+            <Name>Tree_01</Name>
+            <Path>Meshes/Environment/Trees/SM_Tree_01.fbx</Path>
+        </StaticMesh>
 
-	<Meshes>
-		<StaticMesh>
-			<Name>BuildingWall</Name>
-			<Path>Meshes/SM_BuildingWall.fbx</Path>
-		</StaticMesh>
-		<StaticMesh>
-			<Name>FloorAndCeil</Name>
-			<Path>Meshes/SM_FloorAndCeil.fbx</Path>
-		</StaticMesh>
-	    <StaticMesh>
-	      <Name>Floor</Name>
-	      <Path>Meshes/SM_Floor.fbx</Path>
-	    </StaticMesh>
-	    <StaticMesh>
-	      <Name>Wall</Name>
-	      <Path>Meshes/SM_Wall.fbx</Path>
-	    </StaticMesh>
-	    <StaticMesh>
-	      <Name>Cube</Name>
-	      <Path>Meshes/SM_Cube.fbx</Path>
-	    </StaticMesh>
-	    <StaticMesh>
-	      <Name>CylinderWithAHole</Name>
-	      <Path>Meshes/SM_CylinderWithAHole.fbx</Path>
-	    </StaticMesh>
-	    <StaticMesh>
-	      <Name>Axis</Name>
-	      <Path>Meshes/Editor/SM_Axis.fbx</Path>
-	    </StaticMesh>
-	</Meshes>
+        <StaticMesh>
+            <Name>SM_Stone_01</Name>
+            <Path>Meshes/Environment/Stones/SM_Stone_01.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_Stone_01</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_Stone_01.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Stone_02</Name>
+            <Path>Meshes/Environment/Stones/SM_Stone_02.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_Stone_02</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_Stone_02.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Stone_03</Name>
+            <Path>Meshes/Environment/Stones/SM_Stone_03.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_Stone_03</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_Stone_03.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Stone_04</Name>
+            <Path>Meshes/Environment/Stones/SM_Stone_04.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_Stone_04</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_Stone_04.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_LStone_01</Name>
+            <Path>Meshes/Environment/Stones/SM_LStone_01.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_LStone_01</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_LStone_01.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_LStone_02</Name>
+            <Path>Meshes/Environment/Stones/SM_LStone_02.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_LStone_02</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_LStone_02.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_LStone_03</Name>
+            <Path>Meshes/Environment/Stones/SM_LStone_03.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_LStone_03</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_LStone_03.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_LStone_04</Name>
+            <Path>Meshes/Environment/Stones/SM_LStone_04.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_LStone_04</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_LStone_04.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_LStone_05</Name>
+            <Path>Meshes/Environment/Stones/SM_LStone_05.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_LStone_05</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_LStone_05.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_LStone_06</Name>
+            <Path>Meshes/Environment/Stones/SM_LStone_06.fbx</Path>
+        </StaticMesh>
+        <StaticMesh>
+            <Name>SM_Collision_LStone_06</Name>
+            <Path>Meshes/Environment/Stones/Collisions/SM_Collision_LStone_06.fbx</Path>
+        </StaticMesh>
+    </Meshes>
 
     <Objects>
-        <Object>
+        <RigidBody>
             <Name>Floor</Name>
             <WorldPosition>0.000000 0.000000 -0.050000</WorldPosition>
             <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
-            <WorldScaling>100.000000 100.000000 1.000000</WorldScaling>
+            <WorldScaling>100.000000 100.000000 0.100000</WorldScaling>
+            <Mass>0</Mass>
             <Components>
                 <StaticMeshComponent>
-                    <MeshPath>Meshes/SM_Floor.fbx</MeshPath>
+                    <MeshPath>Meshes/SM_UnitCube.fbx</MeshPath>
                     <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
                     <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
                     <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
                 </StaticMeshComponent>
-            </Components>
-        </Object>
-        <Object>
-            <Name>Wall</Name>
-            <WorldPosition>20.000000 5.000000 0.000000</WorldPosition>
-            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
-            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
-            <Components>
-                <StaticMeshComponent>
-                    <MeshPath>Meshes/SM_Wall.fbx</MeshPath>
+                <BoxCollisionComponent>
+                    <HalfSize>0.500000 0.500000 0.500000</HalfSize>
                     <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
                     <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
                     <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
-                </StaticMeshComponent>
+                </BoxCollisionComponent>
             </Components>
-        </Object>
-        <Object>
-            <Name>Wall</Name>
-            <WorldPosition>25.000000 0.000000 0.000000</WorldPosition>
-            <EulerWorldRotation>0.000000 0.000000 89.999992</EulerWorldRotation>
-            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
-            <Components>
-                <StaticMeshComponent>
-                    <MeshPath>Meshes/SM_Wall.fbx</MeshPath>
-                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
-                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
-                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
-                </StaticMeshComponent>
-            </Components>
-        </Object>
-        <Object>
-            <Name>Cylinder</Name>
-            <WorldPosition>20.000000 0.000000 5.000000</WorldPosition>
-            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
-            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
-            <Components>
-                <StaticMeshComponent>
-                    <MeshPath>Meshes/SM_CylinderWithAHole.fbx</MeshPath>
-                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
-                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
-                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
-                </StaticMeshComponent>
-            </Components>
-        </Object>
-        <Object>
-            <Name>Cube</Name>
-            <WorldPosition>20.000000 0.000000 1.000000</WorldPosition>
-            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
-            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
-            <Components>
-                <StaticMeshComponent>
-                    <MeshPath>Meshes/SM_Cube.fbx</MeshPath>
-                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
-                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
-                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
-                </StaticMeshComponent>
-            </Components>
-        </Object>
+        </RigidBody>
     </Objects>
 </Scene>
