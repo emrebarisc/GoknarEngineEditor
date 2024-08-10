@@ -6,6 +6,9 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
 
+#include "Goknar/Physics/PhysicsWorld.h"
+#include "Goknar/Physics/PhysicsDebugger.h"
+
 EnvironmentStone::EnvironmentStone()
 {
 	collisionComponent_ = AddSubComponent<MovingTriangleMeshCollisionComponent>();
@@ -13,6 +16,11 @@ EnvironmentStone::EnvironmentStone()
 
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 	staticMeshComponent_->SetParent(collisionComponent_);
+}
+
+void EnvironmentStone::BeginGame()
+{
+	RigidBody::BeginGame();
 }
 
 EnvironmentStone_01::EnvironmentStone_01() : EnvironmentStone()

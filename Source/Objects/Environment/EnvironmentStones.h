@@ -16,6 +16,8 @@ protected:
 	StaticMeshComponent* staticMeshComponent_;
 	MovingTriangleMeshCollisionComponent* collisionComponent_;
 
+	void BeginGame() override;
+
 private:
 };
 

@@ -97,6 +97,16 @@ EditorHUD::EditorHUD() : HUD()
 		{
 			AddCollisionComponent<SphereCollisionComponent>(physicsObject);
 		};
+	physicsObjectReflections["MovingTriangleMeshCollisionComponent"] = 
+		[](PhysicsObject* physicsObject)
+		{
+			AddCollisionComponent<MovingTriangleMeshCollisionComponent>(physicsObject);
+		};
+	physicsObjectReflections["NonMovingTriangleMeshCollisionComponent"] =
+		[](PhysicsObject* physicsObject)
+		{
+			AddCollisionComponent<NonMovingTriangleMeshCollisionComponent>(physicsObject);
+		};
 
 	windowOpenMap_[gameOptionsWindowName_] = true;
 	windowOpenMap_[sceneWindowName_] = true;
@@ -120,7 +130,6 @@ EditorHUD::~EditorHUD()
 	inputManager->RemoveCharDelegate(onCharPressedDelegate_);
 
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 
 	ImGui_DestroyFontsTexture();
 	ImGui_DestroyDeviceObjects();
@@ -387,11 +396,6 @@ void EditorHUD::UpdateHUD()
 
 	ImGui::Render();
 	ImGui_RenderDrawData(ImGui::GetDrawData());
-
-	if (drawCollisionWorld_)
-	{
-		engine->GetPhysicsWorld()->GetBulletPhysicsWorld()->debugDrawWorld();
-	}
 }
 
 void EditorHUD::DrawEditorHUD()
@@ -491,6 +495,25 @@ void EditorHUD::DrawEditorHUD()
 			if (ImGui::MenuItem("Draw Collision Components"))
 			{
 				drawCollisionWorld_ = !drawCollisionWorld_;
+				if (drawCollisionWorld_)
+				{
+					const auto& objects = engine->GetObjectsOfType<RigidBody>();
+					for (RigidBody* rigidBody : objects)
+					{
+						BoxCollisionComponent* boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(rigidBody->GetCollisionComponent());
+						if (boxCollisionComponent)
+						{
+							DebugDrawer::DrawCollisionComponent(boxCollisionComponent, Colorf::Red, 0.25f);
+
+							//btBoxShape* boxShape = static_cast<btBoxShape*>(boxCollisionComponent->GetBulletCollisionShape());
+
+							//btVector3 min;
+							//btVector3 max;
+							//boxShape->getAabb(rigidBody->GetBulletRigidBody()->getWorldTransform(), min, max);
+							//engine->GetPhysicsWorld()->GetPhysicsDebugger()->drawBox(min, max, { 1.f, 0.f, 0.f });
+						}
+					}
+				}
 			}
 
 			ImGui::EndMenu();
@@ -683,25 +706,59 @@ void EditorHUD::DrawSceneObjects()
 
 		for (ObjectBase* object : registeredObjects)
 		{
-			if (object->GetName().find("__Editor__") != std::string::npos)
+			if (object->GetParent() != nullptr)
 			{
 				continue;
 			}
 
-			if (ImGui::Selectable(object->GetName().c_str(), selectedObject_ == object, ImGuiSelectableFlags_AllowDoubleClick))
-			{
-				selectedObject_ = object;
-				selectedObjectType_ = Editor_ObjectType::Object;
-
-				if (ImGui::IsMouseDoubleClicked(ImGuiButtonFlags_MouseButtonLeft))
-				{
-					FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
-					freeCameraObject->SetWorldPosition(object->GetWorldPosition() - 20.f * freeCameraObject->GetForwardVector());
-				}
-			}
+			DrawSceneObject(object);
 		}
 
 		ImGui::TreePop();
+	}
+}
+
+void EditorHUD::DrawSceneObject(ObjectBase* object)
+{
+	if (object->GetName().find("__Editor__") != std::string::npos)
+	{
+		return;
+	}
+
+	if (ImGui::Selectable(object->GetName().c_str(), selectedObject_ == object, ImGuiSelectableFlags_AllowDoubleClick))
+	{
+		selectedObject_ = object;
+		selectedObjectType_ = Editor_ObjectType::Object;
+
+		if (ImGui::IsMouseDoubleClicked(ImGuiButtonFlags_MouseButtonLeft))
+		{
+			FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
+			freeCameraObject->SetWorldPosition(object->GetWorldPosition() - 20.f * freeCameraObject->GetForwardVector());
+		}
+	}
+
+	const std::vector<ObjectBase*>& children = object->GetChildren();
+	int childrenCount = children.size();
+	
+	for (int childIndex = 0; childIndex < childrenCount; ++childIndex)
+	{
+		ObjectBase* child = children[childIndex];
+		const std::vector<ObjectBase*>& childrenOfChild = child->GetChildren();
+		int childrenOfChildCount = childrenOfChild.size();
+
+		if (0 == childrenOfChildCount)
+		{
+			DrawSceneObject(child);
+		}
+		else
+		{
+			if (ImGui::TreeNode(child->GetName().c_str()))
+			{
+				DrawSceneObject(child);
+
+				ImGui::TreePop();
+			}
+		}
 	}
 }
 
@@ -1492,7 +1549,7 @@ bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowT
 	ImGui::SameLine();
 
 	char* input = const_cast<char*>(currentValue.c_str());
-	ImGui::InputText((std::string("##") + windowTitle + "_TextBox").c_str(), input, 64);
+	ImGui::InputText((std::string("##") + windowTitle + "_TextBox").c_str(), input, 1024);
 
 	std::string inputString = input;
 	bool buttonClicked = ImGui::Button(buttonText.c_str());

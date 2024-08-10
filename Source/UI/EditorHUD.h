@@ -75,6 +75,7 @@ private:
 	void DrawSceneWindow();
 	void DrawSceneLights();
 	void DrawSceneObjects();
+	void DrawSceneObject(ObjectBase* object);
 
 	void DrawObjectsWindow();
 	void BuildFileTree();
