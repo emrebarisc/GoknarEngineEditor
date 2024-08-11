@@ -18,6 +18,13 @@ class Image;
 class ObjectBase;
 class PhysicsObject;
 
+class StaticMeshComponent;
+class BoxCollisionComponent;
+class SphereCollisionComponent;
+class CapsuleCollisionComponent;
+class MovingTriangleMeshCollisionComponent;
+class NonMovingTriangleMeshCollisionComponent;
+
 enum class Editor_ObjectType
 {
 	None = 0,
@@ -66,6 +73,7 @@ private:
 
 	void OnDeleteInputPressed();
 	void OnFocusInputPressed();
+	void OnCancelInputPressed();
 
 	void DrawEditorHUD();
 
@@ -87,6 +95,12 @@ private:
 	void DrawDetailsWindow_Object();
 	void DrawDetailsWindow_AddComponentOptions(ObjectBase* object);
 	void DrawDetailsWindow_Component(Component* component);
+	void DrawDetailsWindow_StaticMeshComponent(StaticMeshComponent* component);
+	void DrawDetailsWindow_BoxCollisionComponent(BoxCollisionComponent* boxCollisionComponent);
+	void DrawDetailsWindow_SphereCollisionComponent(SphereCollisionComponent* sphereCollisionComponent);
+	void DrawDetailsWindow_CapsuleCollisionComponent(CapsuleCollisionComponent* capsuleCollisionComponent);
+	void DrawDetailsWindow_MovingTriangleMeshCollisionComponent(MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent);
+	void DrawDetailsWindow_NonMovingTriangleMeshCollisionComponent(NonMovingTriangleMeshCollisionComponent* nonMovingTriangleMeshCollisionComponent);
 	void DrawDetailsWindow_DirectionalLight();
 	void DrawDetailsWindow_PointLight();
 	void DrawDetailsWindow_SpotLight();
@@ -132,6 +146,7 @@ private:
 
 	Delegate<void()> onDeleteInputPressedDelegate_;
 	Delegate<void()> onFocusInputPressedDelegate_;
+	Delegate<void()> onCancelInputPressedDelegate_;
 
 	Vector2i windowSize_;
 

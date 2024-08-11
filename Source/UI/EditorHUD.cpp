@@ -76,6 +76,7 @@ EditorHUD::EditorHUD() : HUD()
 	onWindowSizeChangedDelegate_ = Delegate<void(int, int)>::create<EditorHUD, &EditorHUD::OnWindowSizeChanged>(this);
 	onDeleteInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnDeleteInputPressed>(this);
 	onFocusInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
+	onCancelInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnCancelInputPressed>(this);
 
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
 
@@ -130,6 +131,8 @@ EditorHUD::~EditorHUD()
 	inputManager->RemoveCharDelegate(onCharPressedDelegate_);
 
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
 
 	ImGui_DestroyFontsTexture();
 	ImGui_DestroyDeviceObjects();
@@ -162,6 +165,7 @@ void EditorHUD::PreInit()
 
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
+	inputManager->AddKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
 }
 
 void EditorHUD::Init()
@@ -376,6 +380,15 @@ void EditorHUD::OnFocusInputPressed()
 	FocusToPosition(position);
 }
 
+void EditorHUD::OnCancelInputPressed()
+{
+	if (objectToCreateType_ != Editor_ObjectType::None)
+	{
+		objectToCreateType_ = Editor_ObjectType::None;
+		objectToCreateName_ = "";
+	}
+}
+
 void EditorHUD::UpdateHUD()
 {
 	HUD::UpdateHUD();
@@ -503,14 +516,15 @@ void EditorHUD::DrawEditorHUD()
 						BoxCollisionComponent* boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(rigidBody->GetCollisionComponent());
 						if (boxCollisionComponent)
 						{
-							DebugDrawer::DrawCollisionComponent(boxCollisionComponent, Colorf::Red, 0.25f);
-
-							//btBoxShape* boxShape = static_cast<btBoxShape*>(boxCollisionComponent->GetBulletCollisionShape());
-
-							//btVector3 min;
-							//btVector3 max;
-							//boxShape->getAabb(rigidBody->GetBulletRigidBody()->getWorldTransform(), min, max);
-							//engine->GetPhysicsWorld()->GetPhysicsDebugger()->drawBox(min, max, { 1.f, 0.f, 0.f });
+							DebugDrawer::DrawCollisionComponent(boxCollisionComponent, Colorf::Blue, 1.f);
+						}
+						else if (SphereCollisionComponent* sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(rigidBody->GetCollisionComponent()))
+						{
+							DebugDrawer::DrawCollisionComponent(sphereCollisionComponent, Colorf::Blue, 1.f);
+						}
+						else if (CapsuleCollisionComponent* capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(rigidBody->GetCollisionComponent()))
+						{
+							DebugDrawer::DrawCollisionComponent(capsuleCollisionComponent, Colorf::Blue, 1.f);
 						}
 					}
 				}
@@ -616,6 +630,8 @@ void EditorHUD::DrawCameraInfo()
 	ImGui::Text((std::string("Position: ") + freeCameraObject->GetWorldPosition().ToString()).c_str());
 	ImGui::Text((std::string("Rotation: ") + freeCameraObject->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
 	ImGui::Text((std::string("Forward Vector: ") + freeCameraObject->GetForwardVector().ToString()).c_str());
+	ImGui::Text((std::string("Left Vector: ") + freeCameraObject->GetLeftVector().ToString()).c_str());
+	ImGui::Text((std::string("Up Vector: ") + freeCameraObject->GetUpVector().ToString()).c_str());
 
 	EndWindow();
 }
@@ -772,6 +788,7 @@ void EditorHUD::DrawFileTree(Folder* folder)
 			ImGui::TreePop();
 		}
 	}
+
 	for (auto fileName : folder->fileNames)
 	{
 		ImGui::Text(fileName.c_str());
@@ -1144,42 +1161,38 @@ void EditorHUD::DrawDetailsWindow_Component(Component* component)
 		return;
 	}
 
-	StaticMeshComponent* staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	StaticMeshComponent* staticMeshComponent{ nullptr };
 	BoxCollisionComponent* boxCollisionComponent{ nullptr };
 	SphereCollisionComponent* sphereCollisionComponent{ nullptr };
 	CapsuleCollisionComponent* capsuleCollisionComponent{ nullptr };
-
-	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
-	if (!staticMeshComponent)
-	{
-		boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
-	}
-	if (!boxCollisionComponent)
-	{
-		sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
-	}
-	if (!sphereCollisionComponent)
-	{
-		capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
-	}
+	MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent{ nullptr };
+	NonMovingTriangleMeshCollisionComponent* nonMvingTriangleMeshCollisionComponent{ nullptr };
 
 	std::string componentTypeString;
 
-	if (staticMeshComponent)
+	if (staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component))
 	{
 		componentTypeString = "StaticMeshComponent";
 	}
-	else if (boxCollisionComponent)
+	else if (boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component))
 	{
 		componentTypeString = "BoxCollisionComponent";
 	}
-	else if (sphereCollisionComponent)
+	else if (sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component))
 	{
 		componentTypeString = "SphereCollisionComponent";
 	}
-	else if (capsuleCollisionComponent)
+	else if (capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component))
 	{
 		componentTypeString = "CapsuleCollisionComponent";
+	}
+	else if (movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component))
+	{
+		componentTypeString = "MovingTriangleMeshCollisionComponent";
+	}
+	else if (nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component))
+	{
+		componentTypeString = "NonMovingTriangleMeshCollisionComponent";
 	}
 	else
 	{
@@ -1216,40 +1229,125 @@ void EditorHUD::DrawDetailsWindow_Component(Component* component)
 	DrawInputFloat(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
 
-	if (staticMeshComponent)
+	if (staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component))
 	{
-		std::string meshPath;
-		ImGui::Text("Mesh: ");
+		DrawDetailsWindow_StaticMeshComponent(staticMeshComponent);
+	}
+	else if (boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component))
+	{
+		DrawDetailsWindow_BoxCollisionComponent(boxCollisionComponent);
+	}
+	else if (sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component))
+	{
+		DrawDetailsWindow_SphereCollisionComponent(sphereCollisionComponent);
+	}
+	else if (capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component))
+	{
+		DrawDetailsWindow_CapsuleCollisionComponent(capsuleCollisionComponent);
+	}
+	else if (movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component))
+	{
+		DrawDetailsWindow_MovingTriangleMeshCollisionComponent(movingTriangleMeshCollisionComponent);
+	}
+	else if (nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component))
+	{
+		DrawDetailsWindow_NonMovingTriangleMeshCollisionComponent(nonMvingTriangleMeshCollisionComponent);
+	}
+}
 
-		ImGui::SameLine();
-		StaticMesh* staticMesh = staticMeshComponent->GetMeshInstance()->GetMesh();
-		ImGui::Text(staticMesh ? staticMesh->GetPath().substr(ContentDir.size()).c_str() : "");
+void EditorHUD::DrawDetailsWindow_StaticMeshComponent(StaticMeshComponent* staticMeshComponent)
+{
+	std::string specialPostfix = "##" + std::to_string(staticMeshComponent->GetGUID());
 
-		std::string specialName = std::string("Select asset") + specialPostfix;
+	std::string meshPath;
+	ImGui::Text("Mesh: ");
 
-		ImGui::SameLine();
-		if (ImGui::Button(specialName.c_str()))
+	ImGui::SameLine();
+	StaticMesh* staticMesh = staticMeshComponent->GetMeshInstance()->GetMesh();
+	ImGui::Text(staticMesh ? staticMesh->GetPath().substr(ContentDir.size()).c_str() : "");
+
+	std::string specialName = std::string("Select asset") + specialPostfix;
+
+	ImGui::SameLine();
+	if (ImGui::Button(specialName.c_str()))
+	{
+		windowOpenMap_[specialName.c_str()] = true;
+	}
+
+	if (windowOpenMap_[specialName.c_str()])
+	{
+		std::string selectedAssetPath;
+		if (DrawAssetSelector(selectedAssetPath))
 		{
-			windowOpenMap_[specialName.c_str()] = true;
-		}
-
-		if (windowOpenMap_[specialName.c_str()])
-		{
-			std::string selectedAssetPath;
-			if (DrawAssetSelector(selectedAssetPath))
+			StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(selectedAssetPath);
+			if (newStaticMesh)
 			{
-				StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(selectedAssetPath);
-				if (newStaticMesh)
-				{
-					staticMeshComponent->SetMesh(newStaticMesh);
-					windowOpenMap_[specialName.c_str()] = false;
-				}
+				staticMeshComponent->SetMesh(newStaticMesh);
+				windowOpenMap_[specialName.c_str()] = false;
 			}
 		}
 	}
-	else if (boxCollisionComponent)
+}
+
+void EditorHUD::DrawDetailsWindow_BoxCollisionComponent(BoxCollisionComponent* boxCollisionComponent)
+{
+}
+
+void EditorHUD::DrawDetailsWindow_SphereCollisionComponent(SphereCollisionComponent* sphereCollisionComponent)
+{
+	ImGui::Text("Radius: ");
+	ImGui::SameLine();
+	float sphereCollisionComponentRadius = sphereCollisionComponent->GetRadius();
+	DrawInputFloat((std::string("##SphereCollisionComponentRadius_") + std::to_string(sphereCollisionComponent->GetRadius())).c_str(), sphereCollisionComponentRadius);
+
+	if (sphereCollisionComponentRadius != sphereCollisionComponent->GetRadius())
 	{
+		sphereCollisionComponent->SetRadius(sphereCollisionComponentRadius);
 	}
+}
+
+void EditorHUD::DrawDetailsWindow_CapsuleCollisionComponent(CapsuleCollisionComponent* capsuleCollisionComponent)
+{
+	ImGui::Text("Radius: ");
+	ImGui::SameLine();
+	float capsuleCollisionComponentRadius = capsuleCollisionComponent->GetRadius();
+	DrawInputFloat((std::string("##SphereCollisionComponentRadius_") + std::to_string(capsuleCollisionComponent->GetRadius())).c_str(), capsuleCollisionComponentRadius);
+
+	if (capsuleCollisionComponentRadius != capsuleCollisionComponent->GetRadius())
+	{
+		capsuleCollisionComponent->SetRadius(capsuleCollisionComponentRadius);
+	}
+
+	ImGui::Text("Height: ");
+	ImGui::SameLine();
+	float capsuleCollisionComponentHeight = capsuleCollisionComponent->GetHeight();
+	DrawInputFloat((std::string("##SphereCollisionComponentHeight_") + std::to_string(capsuleCollisionComponent->GetHeight())).c_str(), capsuleCollisionComponentHeight);
+
+	if (capsuleCollisionComponentHeight != capsuleCollisionComponent->GetHeight())
+	{
+		capsuleCollisionComponent->SetHeight(capsuleCollisionComponentHeight);
+	}
+}
+
+void EditorHUD::DrawDetailsWindow_MovingTriangleMeshCollisionComponent(MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent)
+{
+	std::string meshPath;
+	ImGui::Text("Mesh: ");
+
+	ImGui::SameLine();
+	const MeshUnit* mesh = movingTriangleMeshCollisionComponent->GetMesh();
+	ImGui::Text(mesh ? mesh->GetPath().substr(ContentDir.size()).c_str() : "");
+}
+
+void EditorHUD::DrawDetailsWindow_NonMovingTriangleMeshCollisionComponent(NonMovingTriangleMeshCollisionComponent* nonMovingTriangleMeshCollisionComponent)
+{
+	std::string meshPath;
+	ImGui::Text("Mesh: ");
+
+	ImGui::SameLine();
+	const MeshUnit* mesh = nonMovingTriangleMeshCollisionComponent->GetMesh();
+	ImGui::Text(mesh ? mesh->GetPath().substr(ContentDir.size()).c_str() : "");
+
 }
 
 void EditorHUD::DrawDetailsWindow_DirectionalLight()
@@ -1628,7 +1726,9 @@ ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
 
 void EditorHUD::DrawObjectNameToCreateWindow()
 {
-	ImGui::SetNextWindowPos(ImGui::GetCursorPos());
+	double x, y;
+	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetWindow(), x, y);
+	ImGui::SetNextWindowPos({(float)x, (float)y});
 	BeginTransparentWindow("ObjectToCreateNameWindow", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 	ImGui::Text(objectToCreateName_.c_str());
 	EndWindow();
