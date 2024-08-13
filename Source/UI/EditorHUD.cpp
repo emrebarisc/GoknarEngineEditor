@@ -319,7 +319,7 @@ void EditorHUD::OnPlaceObject()
 Vector3 EditorHUD::RaycastWorld()
 {
 	double x, y;
-	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetWindow(), x, y);
+	engine->GetInputManager()->GetCursorPosition(x, y);
 	Vector2i screenCoordinate = Vector2i{ (int)x, (int)y };
 
 	RaycastData raycastData;
