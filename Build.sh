@@ -1,4 +1,4 @@
-isDebugBuild=false
+isDebugBuild=true
 cleanBuild=false
 runAfterBuild=false
 directoryName=""
