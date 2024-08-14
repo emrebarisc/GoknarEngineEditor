@@ -1354,9 +1354,9 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 {
 	DirectionalLight* light = static_cast<DirectionalLight*>(selectedObject_);
 
-	Vector3 lightPosition = light->GetPosition();
-	Vector3 lightDirection = light->GetDirection();
-	Vector3 lightColor = light->GetColor();
+	static Vector3 lightPosition = light->GetPosition();
+	static Vector3 lightDirection = light->GetDirection();
+	static Vector3 lightColor = light->GetColor();
 	float lightIntensity = light->GetIntensity();
 	float lightShadowIntensity = light->GetShadowIntensity();
 	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
