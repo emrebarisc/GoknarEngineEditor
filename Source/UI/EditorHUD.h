@@ -94,7 +94,7 @@ private:
 	void DrawDetailsWindow();
 	void DrawDetailsWindow_Object();
 	void DrawDetailsWindow_AddComponentOptions(ObjectBase* object);
-	void DrawDetailsWindow_Component(Component* component);
+	void DrawDetailsWindow_Component(ObjectBase* owner, Component* component);
 	void DrawDetailsWindow_StaticMeshComponent(StaticMeshComponent* component);
 	void DrawDetailsWindow_BoxCollisionComponent(BoxCollisionComponent* boxCollisionComponent);
 	void DrawDetailsWindow_SphereCollisionComponent(SphereCollisionComponent* sphereCollisionComponent);

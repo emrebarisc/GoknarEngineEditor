@@ -21,6 +21,7 @@
 #include "Physics/RigidBody.h"
 
 #include "Objects/Environment/EnvironmentStones.h"
+#include "Objects/Environment/EnvironmentTrees.h"
 
 Game::Game() : Application()
 {
@@ -37,7 +38,7 @@ Game::Game() : Application()
 	dynamicObjectFactory->RegisterClass("LargeStone_04", []() -> EnvironmentStone* { return new EnvironmentLStone_04(); });
 	dynamicObjectFactory->RegisterClass("LargeStone_05", []() -> EnvironmentStone* { return new EnvironmentLStone_05(); });
 	dynamicObjectFactory->RegisterClass("LargeStone_06", []() -> EnvironmentStone* { return new EnvironmentLStone_06(); });
-
+	dynamicObjectFactory->RegisterClass("Tree_01", []() -> EnvironmentTree* { return new EnvironmentTree_01(); });
 
 	engine->SetApplication(this);
 

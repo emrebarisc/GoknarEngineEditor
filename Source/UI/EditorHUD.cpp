@@ -13,6 +13,7 @@
 #include "Goknar/Contents/Audio.h"
 #include "Goknar/Contents/Image.h"
 
+#include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 
 #include "Goknar/Debug/DebugDrawer.h"
@@ -318,20 +319,26 @@ void EditorHUD::OnPlaceObject()
 
 Vector3 EditorHUD::RaycastWorld()
 {
+	Camera* activeCamera = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject()->GetCameraComponent()->GetCamera();
+
+	InputManager* inputManager = engine->GetInputManager();
+
 	double x, y;
-	engine->GetInputManager()->GetCursorPosition(x, y);
-	Vector2i screenCoordinate = Vector2i{ (int)x, (int)y };
+	inputManager->GetCursorPosition(x, y);
+
+	Vector3 cameraWorldPosition = activeCamera->GetPosition();
+	Vector3 cameraForwardVector = activeCamera->GetWorldDirectionAtPixel(Vector2i{ (int)x, (int)y });
 
 	RaycastData raycastData;
-	RaycastSingleResult raycastSingleResult;
+	raycastData.from = cameraWorldPosition;
+	raycastData.to = cameraWorldPosition + cameraForwardVector * 1000.f;
+	raycastData.collisionMask = CollisionMask::BlockWorldStatic;
 
-	Camera* activeCamera = engine->GetCameraManager()->GetActiveCamera();
+	RaycastSingleResult raycastResult;
 
-	Vector3 cameraPosition = activeCamera->GetPosition();
-	raycastData.from = cameraPosition;
-	raycastData.to = cameraPosition + 1000.f * activeCamera->GetWorldDirectionAtPixel(screenCoordinate);
-	engine->GetPhysicsWorld()->RaycastClosest(raycastData, raycastSingleResult);
-	return raycastSingleResult.hitPosition;
+	engine->GetPhysicsWorld()->RaycastClosest(raycastData, raycastResult);
+
+	return raycastResult.hitPosition;
 }
 
 void EditorHUD::OnDeleteInputPressed()
@@ -1077,7 +1084,7 @@ void EditorHUD::DrawDetailsWindow_Object()
 	const std::vector<Component*>& components = selectedObject->GetComponents();
 	for (Component* component : components)
 	{
-		DrawDetailsWindow_Component(component);
+		DrawDetailsWindow_Component(selectedObject, component);
 		ImGui::Separator();
 	}
 
@@ -1154,7 +1161,7 @@ void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
 	}
 }
 
-void EditorHUD::DrawDetailsWindow_Component(Component* component)
+void EditorHUD::DrawDetailsWindow_Component(ObjectBase* owner, Component* component)
 {
 	if (!component)
 	{
