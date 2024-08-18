@@ -1115,9 +1115,33 @@ void EditorHUD::DrawDetailsWindow_Object()
 			"Custom9"
 		};
 
+		int selectedCollisionGroup = 1;
+		CollisionGroup collisionGroup = rigidBody->GetCollisionGroup();
+		if (collisionGroup == CollisionGroup::Default) selectedCollisionGroup = 1;
+		else if (collisionGroup == CollisionGroup::WorldStaticBlock) selectedCollisionGroup = 2;
+		else if (collisionGroup == CollisionGroup::WorldDynamicBlock) selectedCollisionGroup = 3;
+		else if (collisionGroup == CollisionGroup::AllBlock) selectedCollisionGroup = 4;
+		else if (collisionGroup == CollisionGroup::WorldDynamicOverlap) selectedCollisionGroup = 5;
+		else if (collisionGroup == CollisionGroup::WorldStaticOverlap) selectedCollisionGroup = 6;
+		else if (collisionGroup == CollisionGroup::AllOverlap) selectedCollisionGroup = 7;
+		else if (collisionGroup == CollisionGroup::Character) selectedCollisionGroup = 8;
+		else if (collisionGroup == CollisionGroup::All) selectedCollisionGroup = 9;
+		else if (collisionGroup == CollisionGroup::Custom0) selectedCollisionGroup = 10;
+		else if (collisionGroup == CollisionGroup::Custom1) selectedCollisionGroup = 11;
+		else if (collisionGroup == CollisionGroup::Custom2) selectedCollisionGroup = 12;
+		else if (collisionGroup == CollisionGroup::Custom3) selectedCollisionGroup = 13;
+		else if (collisionGroup == CollisionGroup::Custom4) selectedCollisionGroup = 14;
+		else if (collisionGroup == CollisionGroup::Custom5) selectedCollisionGroup = 15;
+		else if (collisionGroup == CollisionGroup::Custom6) selectedCollisionGroup = 16;
+		else if (collisionGroup == CollisionGroup::Custom7) selectedCollisionGroup = 17;
+		else if (collisionGroup == CollisionGroup::Custom8) selectedCollisionGroup = 18;
+		else if (collisionGroup == CollisionGroup::Custom9) selectedCollisionGroup = 19;
+
+		ImGui::Columns(2, nullptr, false);
+		ImGui::SetColumnWidth(0, 125);
 		ImGui::Text("CollisionGroup: ");
-		ImGui::SameLine();
-		static int selectedCollisionGroup = 1;
+		ImGui::NextColumn();
+		ImGui::SetColumnWidth(1, 800);
 		bool collisionGroupCheck = ImGui::Combo("##CollisionGroup", &selectedCollisionGroup, collisionGroupNames, IM_ARRAYSIZE(collisionGroupNames));
 		if (collisionGroupCheck)
 		{
@@ -1196,6 +1220,7 @@ void EditorHUD::DrawDetailsWindow_Object()
 			}
 			rigidBody->SetCollisionGroup(collisionGroup);
 		}
+		ImGui::Columns(1, nullptr, false);
 
 		static const char* collisionMaskNames[]{
 			"",
@@ -1222,10 +1247,37 @@ void EditorHUD::DrawDetailsWindow_Object()
 			"Custom8",
 			"Custom9"
 		};
+		int selectedCollisionMask = 1;
 
+		CollisionMask collisionMask = rigidBody->GetCollisionMask();
+		if (collisionMask == CollisionMask::Default) selectedCollisionMask = 1;
+		else if (collisionMask == CollisionMask::BlockWorldDynamic) selectedCollisionMask = 2;
+		else if (collisionMask == CollisionMask::BlockWorldStatic) selectedCollisionMask = 3;
+		else if (collisionMask == CollisionMask::BlockCharacter) selectedCollisionMask = 4;
+		else if (collisionMask == CollisionMask::BlockAll) selectedCollisionMask = 5;
+		else if (collisionMask == CollisionMask::BlockAllExceptCharacter) selectedCollisionMask = 6;
+		else if (collisionMask == CollisionMask::OverlapWorldDynamic) selectedCollisionMask = 7;
+		else if (collisionMask == CollisionMask::OverlapWorldStatic) selectedCollisionMask = 8;
+		else if (collisionMask == CollisionMask::OverlapCharacter) selectedCollisionMask = 9;
+		else if (collisionMask == CollisionMask::OverlapAll) selectedCollisionMask = 10;
+		else if (collisionMask == CollisionMask::OverlapAllExceptCharacter) selectedCollisionMask = 11;
+		else if (collisionMask == CollisionMask::BlockAndOverlapAll) selectedCollisionMask = 12;
+		else if (collisionMask == CollisionMask::Custom0) selectedCollisionMask = 13;
+		else if (collisionMask == CollisionMask::Custom1) selectedCollisionMask = 14;
+		else if (collisionMask == CollisionMask::Custom2) selectedCollisionMask = 15;
+		else if (collisionMask == CollisionMask::Custom3) selectedCollisionMask = 16;
+		else if (collisionMask == CollisionMask::Custom4) selectedCollisionMask = 17;
+		else if (collisionMask == CollisionMask::Custom5) selectedCollisionMask = 18;
+		else if (collisionMask == CollisionMask::Custom6) selectedCollisionMask = 19;
+		else if (collisionMask == CollisionMask::Custom7) selectedCollisionMask = 20;
+		else if (collisionMask == CollisionMask::Custom8) selectedCollisionMask = 21;
+		else if (collisionMask == CollisionMask::Custom9) selectedCollisionMask = 22;
+
+		ImGui::Columns(2, nullptr, false);
+		ImGui::SetColumnWidth(0, 125);
 		ImGui::Text("CollisionMask: ");
-		ImGui::SameLine();
-		static int selectedCollisionMask = 1;
+		ImGui::NextColumn();
+		ImGui::SetColumnWidth(1, 800);
 		bool collisionMaskCheck = ImGui::Combo("##CollisionMask", &selectedCollisionMask, collisionMaskNames, IM_ARRAYSIZE(collisionMaskNames));
 		if (collisionMaskCheck)
 		{
@@ -1316,6 +1368,7 @@ void EditorHUD::DrawDetailsWindow_Object()
 			}
 			rigidBody->SetCollisionMask(collisionMask);
 		}
+		ImGui::Columns(1, nullptr, false);
 	}
 	ImGui::Separator();
 
