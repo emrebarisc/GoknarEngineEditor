@@ -83,7 +83,12 @@ EditorHUD::EditorHUD() : HUD()
 
 	BuildFileTree();
 
-	objectBaseReflections["StaticMeshComponent"] = [](ObjectBase* objectBase) { objectBase->AddSubComponent<StaticMeshComponent>(); };
+	objectBaseReflections["StaticMeshComponent"] = 
+		[](ObjectBase* objectBase) 
+		{
+			objectBase->AddSubComponent<StaticMeshComponent>();
+		};
+
 	physicsObjectReflections["BoxCollisionComponent"] = 
 		[this](PhysicsObject* physicsObject)
 		{ 
@@ -533,6 +538,14 @@ void EditorHUD::DrawEditorHUD()
 						{
 							DebugDrawer::DrawCollisionComponent(capsuleCollisionComponent, Colorf::Blue, 1.f);
 						}
+					}
+				}
+				else
+				{
+					const auto& objects = engine->GetObjectsOfType<DebugObject>();
+					for (DebugObject* debugObject : objects)
+					{
+						debugObject->Destroy();
 					}
 				}
 			}
@@ -1078,6 +1091,231 @@ void EditorHUD::DrawDetailsWindow_Object()
 		ImGui::SameLine();
 		DrawInputFloat("##Mass", rigidBodyMass);
 		rigidBody->SetMass(rigidBodyMass);
+
+		static const char* collisionGroupNames[]{
+			"",
+			"Default",
+			"WorldStaticBlock",
+			"WorldDynamicBlock",
+			"AllBlock",
+			"WorldDynamicOverlap",
+			"WorldStaticOverlap",
+			"AllOverlap",
+			"Character",
+			"All",
+			"Custom0",
+			"Custom1",
+			"Custom2",
+			"Custom3",
+			"Custom4",
+			"Custom5",
+			"Custom6",
+			"Custom7",
+			"Custom8",
+			"Custom9"
+		};
+
+		ImGui::Text("CollisionGroup: ");
+		ImGui::SameLine();
+		static int selectedCollisionGroup = 1;
+		bool collisionGroupCheck = ImGui::Combo("##CollisionGroup", &selectedCollisionGroup, collisionGroupNames, IM_ARRAYSIZE(collisionGroupNames));
+		if (collisionGroupCheck)
+		{
+			CollisionGroup collisionGroup = CollisionGroup::Default;
+			if (selectedCollisionGroup == 2)
+			{
+				collisionGroup = CollisionGroup::WorldStaticBlock;
+			}
+			else if (selectedCollisionGroup == 3)
+			{
+				collisionGroup = CollisionGroup::WorldDynamicBlock;
+			}
+			else if (selectedCollisionGroup == 4)
+			{
+				collisionGroup = CollisionGroup::AllBlock;
+			}
+			else if (selectedCollisionGroup == 5)
+			{
+				collisionGroup = CollisionGroup::WorldDynamicOverlap;
+			}
+			else if (selectedCollisionGroup == 6)
+			{
+				collisionGroup = CollisionGroup::WorldStaticOverlap;
+			}
+			else if (selectedCollisionGroup == 7)
+			{
+				collisionGroup = CollisionGroup::AllOverlap;
+			}
+			else if (selectedCollisionGroup == 8)
+			{
+				collisionGroup = CollisionGroup::Character;
+			}
+			else if (selectedCollisionGroup == 9)
+			{
+				collisionGroup = CollisionGroup::All;
+			}
+			else if (selectedCollisionGroup == 10)
+			{
+				collisionGroup = CollisionGroup::Custom0;
+			}
+			else if (selectedCollisionGroup == 11)
+			{
+				collisionGroup = CollisionGroup::Custom1;
+			}
+			else if (selectedCollisionGroup == 12)
+			{
+				collisionGroup = CollisionGroup::Custom2;
+			}
+			else if (selectedCollisionGroup == 13)
+			{
+				collisionGroup = CollisionGroup::Custom3;
+			}
+			else if (selectedCollisionGroup == 14)
+			{
+				collisionGroup = CollisionGroup::Custom4;
+			}
+			else if (selectedCollisionGroup == 15)
+			{
+				collisionGroup = CollisionGroup::Custom5;
+			}
+			else if (selectedCollisionGroup == 16)
+			{
+				collisionGroup = CollisionGroup::Custom6;
+			}
+			else if (selectedCollisionGroup == 17)
+			{
+				collisionGroup = CollisionGroup::Custom7;
+			}
+			else if (selectedCollisionGroup == 18)
+			{
+				collisionGroup = CollisionGroup::Custom8;
+			}
+			else if (selectedCollisionGroup == 19)
+			{
+				collisionGroup = CollisionGroup::Custom9;
+			}
+			rigidBody->SetCollisionGroup(collisionGroup);
+		}
+
+		static const char* collisionMaskNames[]{
+			"",
+			"Default",
+			"BlockWorldDynamic",
+			"BlockWorldStatic",
+			"BlockCharacter",
+			"BlockAll",
+			"BlockAllExceptCharacter",
+			"OverlapWorldDynamic",
+			"OverlapWorldStatic",
+			"OverlapCharacter",
+			"OverlapAll",
+			"OverlapAllExceptCharacter",
+			"BlockAndOverlapAll",
+			"Custom0",
+			"Custom1",
+			"Custom2",
+			"Custom3",
+			"Custom4",
+			"Custom5",
+			"Custom6",
+			"Custom7",
+			"Custom8",
+			"Custom9"
+		};
+
+		ImGui::Text("CollisionMask: ");
+		ImGui::SameLine();
+		static int selectedCollisionMask = 1;
+		bool collisionMaskCheck = ImGui::Combo("##CollisionMask", &selectedCollisionMask, collisionMaskNames, IM_ARRAYSIZE(collisionMaskNames));
+		if (collisionMaskCheck)
+		{
+			CollisionMask collisionMask = CollisionMask::Default;
+			if (selectedCollisionMask == 2)
+			{
+				collisionMask = CollisionMask::BlockWorldDynamic;
+			}
+			else if (selectedCollisionMask == 3)
+			{
+				collisionMask = CollisionMask::BlockWorldStatic;
+			}
+			else if (selectedCollisionMask == 4)
+			{
+				collisionMask = CollisionMask::BlockCharacter;
+			}
+			else if (selectedCollisionMask == 5)
+			{
+				collisionMask = CollisionMask::BlockAll;
+			}
+			else if (selectedCollisionMask == 6)
+			{
+				collisionMask = CollisionMask::BlockAllExceptCharacter;
+			}
+			else if (selectedCollisionMask == 7)
+			{
+				collisionMask = CollisionMask::OverlapWorldDynamic;
+			}
+			else if (selectedCollisionMask == 8)
+			{
+				collisionMask = CollisionMask::OverlapWorldStatic;
+			}
+			else if (selectedCollisionMask == 9)
+			{
+				collisionMask = CollisionMask::OverlapCharacter;
+			}
+			else if (selectedCollisionMask == 10)
+			{
+				collisionMask = CollisionMask::OverlapAll;
+			}
+			else if (selectedCollisionMask == 11)
+			{
+				collisionMask = CollisionMask::OverlapAllExceptCharacter;
+			}
+			else if (selectedCollisionMask == 12)
+			{
+				collisionMask = CollisionMask::BlockAndOverlapAll;
+			}
+			else if (selectedCollisionMask == 13)
+			{
+				collisionMask = CollisionMask::Custom0;
+			}
+			else if (selectedCollisionMask == 14)
+			{
+				collisionMask = CollisionMask::Custom1;
+			}
+			else if (selectedCollisionMask == 15)
+			{
+				collisionMask = CollisionMask::Custom2;
+			}
+			else if (selectedCollisionMask == 16)
+			{
+				collisionMask = CollisionMask::Custom3;
+			}
+			else if (selectedCollisionMask == 17)
+			{
+				collisionMask = CollisionMask::Custom4;
+			}
+			else if (selectedCollisionMask == 18)
+			{
+				collisionMask = CollisionMask::Custom5;
+			}
+			else if (selectedCollisionMask == 19)
+			{
+				collisionMask = CollisionMask::Custom6;
+			}
+			else if (selectedCollisionMask == 20)
+			{
+				collisionMask = CollisionMask::Custom7;
+			}
+			else if (selectedCollisionMask == 21)
+			{
+				collisionMask = CollisionMask::Custom8;
+			}
+			else if (selectedCollisionMask == 22)
+			{
+				collisionMask = CollisionMask::Custom9;
+			}
+			rigidBody->SetCollisionMask(collisionMask);
+		}
 	}
 	ImGui::Separator();
 
@@ -1115,7 +1353,11 @@ void EditorHUD::DrawGameOptionsBar()
 
 void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
 {
-	static const char* objectBaseComponents[]{ "", "StaticMeshComponent" };
+	static const char* objectBaseComponents[]{
+		"",
+		"StaticMeshComponent"
+	};
+
 	static const char* physicsObjectComponents[]{
 		"",
 		"StaticMeshComponent",
@@ -1123,7 +1365,8 @@ void EditorHUD::DrawDetailsWindow_AddComponentOptions(ObjectBase* object)
 		"CapsuleCollisionComponent",
 		"SphereCollisionComponent",
 		"MovingTriangleMeshCollisionComponent",
-		"NonMovingTriangleMeshCollisionComponent" };
+		"NonMovingTriangleMeshCollisionComponent"
+	};
 
 	PhysicsObject* physicsObject = dynamic_cast<PhysicsObject*>(object);
 
