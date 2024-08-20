@@ -538,6 +538,33 @@ void EditorHUD::DrawEditorHUD()
 						{
 							DebugDrawer::DrawCollisionComponent(capsuleCollisionComponent, Colorf::Blue, 1.f);
 						}
+						else if (MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(rigidBody->GetCollisionComponent()))
+						{
+							DebugDrawer::DrawCollisionComponent(movingTriangleMeshCollisionComponent, Colorf::Blue, 1.f);
+						}
+						else if (MultipleCollisionComponent* movingTriangleMeshCollisionComponent = dynamic_cast<MultipleCollisionComponent*>(rigidBody->GetCollisionComponent()))
+						{
+							for (const Component* component : movingTriangleMeshCollisionComponent->GetOwner()->GetComponents())
+							{
+								const BoxCollisionComponent* boxCollisionComponent = dynamic_cast<const BoxCollisionComponent*>(component);
+								if (boxCollisionComponent)
+								{
+									DebugDrawer::DrawCollisionComponent(boxCollisionComponent, Colorf::Blue, 1.f);
+								}
+								else if (const SphereCollisionComponent* sphereCollisionComponent = dynamic_cast<const SphereCollisionComponent*>(component))
+								{
+									DebugDrawer::DrawCollisionComponent(sphereCollisionComponent, Colorf::Blue, 1.f);
+								}
+								else if (const CapsuleCollisionComponent* capsuleCollisionComponent = dynamic_cast<const CapsuleCollisionComponent*>(component))
+								{
+									DebugDrawer::DrawCollisionComponent(capsuleCollisionComponent, Colorf::Blue, 1.f);
+								}
+								else if (const MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent = dynamic_cast<const MovingTriangleMeshCollisionComponent*>(component))
+								{
+									DebugDrawer::DrawCollisionComponent(movingTriangleMeshCollisionComponent, Colorf::Blue, 1.f);
+								}
+							}
+						}
 					}
 				}
 				else

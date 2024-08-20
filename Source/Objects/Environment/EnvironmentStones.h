@@ -2,19 +2,18 @@
 #define __ENVIRONMENTSTONES_H__
 
 #include "Goknar/Core.h"
-#include "Goknar/Physics/RigidBody.h"
+#include "Goknar/ObjectBase.h"
 
 class StaticMeshComponent;
 class MovingTriangleMeshCollisionComponent;
 
-class GOKNAR_API EnvironmentStone : public RigidBody
+class GOKNAR_API EnvironmentStone : public ObjectBase
 {
 public:
 	EnvironmentStone();
 
 protected:
 	StaticMeshComponent* staticMeshComponent_;
-	MovingTriangleMeshCollisionComponent* collisionComponent_;
 
 	void BeginGame() override;
 
