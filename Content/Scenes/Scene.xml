@@ -1,13 +1,25 @@
 <Scene>
     <Assets>
         <Mesh>
-            <Path>Meshes/Characters/AI/SkeletalMesh_RottenFlesh.fbx</Path>
-        </Mesh>
-        <Mesh>
             <Path>Meshes/SM_SkillTargetIndicator.fbx</Path>
         </Mesh>
         <Mesh>
             <Path>Meshes/Skills/SkillObjects/SM_FireBurstCastedSkillObject.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Skills/SkillObjects/SM_FireBurstCastedSkillFloorFlameObject.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Environment/Portals/SM_Portal.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Environment/Plants/SM_Grass.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Environment/Plants/SM_Mushrooms_01.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Characters/AI/SkeletalMesh_RottenFlesh.fbx</Path>
         </Mesh>
         <Mesh>
             <Path>Meshes/Skills/SkillObjects/SM_MeleeBasicSkillCastedSkillObject.fbx</Path>
@@ -102,15 +114,18 @@
         <Mesh>
             <Path>Meshes/Environment/Props/SM_Stairs_01.fbx</Path>
         </Mesh>
+        <Mesh>
+            <Path>Meshes/Environment/Portals/SM_Portal_Outer_01.fbx</Path>
+        </Mesh>
     </Assets>
     <Lights>
         <DirectionalLight>
-            <Direction>0.577233 -0.577233 -0.577584</Direction>
+            <Direction>0.577350 -0.577350 -0.577350</Direction>
             <Color>1.000000 1.000000 1.000000</Color>
-            <Intensity>1</Intensity>
+            <Intensity>2</Intensity>
             <IsCastingShadow>1</IsCastingShadow>
-            <ShadowIntensity>0.5</ShadowIntensity>
-            <ShadowMapResolution>4096 4096</ShadowMapResolution>
+            <ShadowIntensity>0.55000001</ShadowIntensity>
+            <ShadowMapResolution>9192 9192</ShadowMapResolution>
         </DirectionalLight>
     </Lights>
     <Objects>
@@ -187,7 +202,7 @@
         <ObjectBase>
             <Name>LStone_02</Name>
             <WorldPosition>-0.500000 -5.750000 -5.500000</WorldPosition>
-            <EulerWorldRotation>28.500044 -5.000224 -110.000000</EulerWorldRotation>
+            <EulerWorldRotation>30.999994 -5.000224 -110.000000</EulerWorldRotation>
             <WorldScaling>0.250000 0.750000 2.000000</WorldScaling>
             <Components>
                 <StaticMeshComponent>
@@ -198,14 +213,224 @@
                 </StaticMeshComponent>
             </Components>
         </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>2.800000 1.628875 0.000004</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 60.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>2.092000 2.567000 0.000003</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 -20.000000</EulerWorldRotation>
+            <WorldScaling>1.200000 1.200000 1.200000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>0.500000 3.250000 0.000005</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 160.000000</EulerWorldRotation>
+            <WorldScaling>1.500000 1.000000 1.500000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>-0.845736 2.769000 0.000006</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 20.000000</EulerWorldRotation>
+            <WorldScaling>1.250000 1.250000 1.250000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>-2.200000 2.300000 0.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 140.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.250000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>2.450000 0.250000 0.000004</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 70.000015</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 0.750000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>2.086000 -2.000000 0.000001</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 -140.000000</EulerWorldRotation>
+            <WorldScaling>1.200000 1.200000 1.200000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>2.039062 -0.696836 0.000006</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
+            <WorldScaling>0.750000 0.750000 1.250000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentGrass_01</Name>
+            <WorldPosition>1.000000 -3.101000 0.000349</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 30.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Grass.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentMushrooms_01</Name>
+            <WorldPosition>0.639494 2.250000 0.000001</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Mushrooms_01.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentMushrooms_01</Name>
+            <WorldPosition>1.250000 1.750000 0.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 120.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Plants/SM_Mushrooms_01.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentLStone_02</Name>
+            <WorldPosition>-18.625000 -10.991000 -0.500000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 120.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Stones/SM_LStone_02.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentLStone_03</Name>
+            <WorldPosition>-20.750000 -2.000000 -0.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 20.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Stones/SM_LStone_03.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentStone_03</Name>
+            <WorldPosition>-6.500000 -6.500000 -3.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 20.000002 -45.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Stones/SM_Stone_03.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>EnvironmentStone_04</Name>
+            <WorldPosition>-7.000000 9.000000 -3.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 50.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Stones/SM_Stone_04.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
         <RigidBody>
             <Name>Floor0RigidBody</Name>
-            <WorldPosition>0.000000 0.000000 -5.000000</WorldPosition>
+            <WorldPosition>0.000000 0.000000 -0.500000</WorldPosition>
             <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
-            <WorldScaling>8.000000 8.000000 10.000000</WorldScaling>
+            <WorldScaling>8.000000 8.000000 1.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>64</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>64</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -222,13 +447,13 @@
             </Components>
         </RigidBody>
         <RigidBody>
-            <Name>Floor1Collider</Name>
-            <WorldPosition>-8.250000 0.000000 -4.500000</WorldPosition>
+            <Name>Floor1RigidBody</Name>
+            <WorldPosition>-12.400000 0.000000 0.000000</WorldPosition>
             <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
-            <WorldScaling>8.000000 8.000000 10.250000</WorldScaling>
+            <WorldScaling>16.000000 16.000000 1.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>64</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>64</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -250,8 +475,8 @@
             <EulerWorldRotation>0.000000 12.000000 0.000000</EulerWorldRotation>
             <WorldScaling>3.000000 3.000000 1.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>64</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>64</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -267,8 +492,8 @@
             <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
             <WorldScaling>2.250000 0.250000 2.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>64</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -284,8 +509,8 @@
             <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
             <WorldScaling>2.250000 0.250000 2.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>64</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -301,8 +526,8 @@
             <EulerWorldRotation>0.000000 0.000000 20.000010</EulerWorldRotation>
             <WorldScaling>6.000000 1.000000 10.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>65</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -318,8 +543,8 @@
             <EulerWorldRotation>0.000000 0.000000 -30.000004</EulerWorldRotation>
             <WorldScaling>5.000000 1.000000 10.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>65</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -335,8 +560,8 @@
             <EulerWorldRotation>0.000000 0.000000 -5.000004</EulerWorldRotation>
             <WorldScaling>1.000000 6.000000 10.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>65</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -352,8 +577,8 @@
             <EulerWorldRotation>0.000000 0.000000 30.000004</EulerWorldRotation>
             <WorldScaling>5.000000 1.000000 10.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>65</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
@@ -369,8 +594,124 @@
             <EulerWorldRotation>0.000000 0.000000 -20.000010</EulerWorldRotation>
             <WorldScaling>6.000000 1.000000 10.000000</WorldScaling>
             <Mass>0</Mass>
-            <CollisionGroup>65</CollisionGroup>
-            <CollisionMask>38</CollisionMask>
+            <CollisionGroup>6</CollisionGroup>
+            <CollisionMask>128</CollisionMask>
+            <Components>
+                <BoxCollisionComponent>
+                    <HalfSize>0.500000 0.500000 0.500000</HalfSize>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </BoxCollisionComponent>
+            </Components>
+        </RigidBody>
+        <RigidBody>
+            <Name>EnvironmentTree_01</Name>
+            <WorldPosition>1.000000 -2.000000 1.750000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 45.000004</EulerWorldRotation>
+            <WorldScaling>2.000000 2.000000 2.000000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
+            <Components>
+                <CapsuleCollisionComponent>
+                    <Radius>0.2</Radius>
+                    <Height>2</Height>
+                    <RelativePosition>0.000000 0.000000 -1.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </CapsuleCollisionComponent>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Trees/SM_Tree_01.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </RigidBody>
+        <RigidBody>
+            <Name>EnvironmentTree_01</Name>
+            <WorldPosition>-2.000000 -2.250000 1.250000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 -30.000004</EulerWorldRotation>
+            <WorldScaling>1.500000 1.500000 1.500000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
+            <Components>
+                <CapsuleCollisionComponent>
+                    <Radius>0.2</Radius>
+                    <Height>2</Height>
+                    <RelativePosition>0.000000 0.000000 -1.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </CapsuleCollisionComponent>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Trees/SM_Tree_01.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </RigidBody>
+        <RigidBody>
+            <Name>RigidBody</Name>
+            <WorldPosition>-7.500000 -5.500000 0.500000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 40.000000</EulerWorldRotation>
+            <WorldScaling>8.000000 1.000000 10.000000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
+            <Components>
+                <BoxCollisionComponent>
+                    <HalfSize>0.500000 0.500000 0.500000</HalfSize>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </BoxCollisionComponent>
+            </Components>
+        </RigidBody>
+        <RigidBody>
+            <Name>RigidBody</Name>
+            <WorldPosition>-14.000000 -7.500000 0.500000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 -10.000000</EulerWorldRotation>
+            <WorldScaling>7.000000 1.000000 10.000000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
+            <Components>
+                <BoxCollisionComponent>
+                    <HalfSize>0.500000 0.500000 0.500000</HalfSize>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </BoxCollisionComponent>
+            </Components>
+        </RigidBody>
+        <RigidBody>
+            <Name>RigidBody</Name>
+            <WorldPosition>-19.000000 -3.000000 0.500004</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 112.000000</EulerWorldRotation>
+            <WorldScaling>10.000000 1.000000 10.000000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
+            <Components>
+                <BoxCollisionComponent>
+                    <HalfSize>0.500000 0.500000 0.500000</HalfSize>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </BoxCollisionComponent>
+            </Components>
+        </RigidBody>
+        <RigidBody>
+            <Name>RigidBody</Name>
+            <WorldPosition>-8.250000 6.250000 0.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 -36.499996</EulerWorldRotation>
+            <WorldScaling>9.000000 1.000000 10.000000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
             <Components>
                 <BoxCollisionComponent>
                     <HalfSize>0.500000 0.500000 0.500000</HalfSize>
