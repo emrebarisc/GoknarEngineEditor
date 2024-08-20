@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include <Goknar.h>
+#include <Core.h>
 
 #include "Goknar/Scene.h"
 #include "Goknar/Model/StaticMesh.h"
@@ -13,6 +14,7 @@
 #include "Goknar/Camera.h"
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/WindowManager.h"
+#include "Data/MaterialInitializer.h"
 
 #include "Factories/DynamicObjectFactory.h"
 #include "Objects/FreeCameraObject.h"
@@ -22,24 +24,28 @@
 
 #include "Objects/Environment/EnvironmentStones.h"
 #include "Objects/Environment/EnvironmentTrees.h"
+#include "Objects/Environment/EnvironmentPlants.h"
 
 Game::Game() : Application()
 {
-	DynamicObjectFactory* dynamicObjectFactory = DynamicObjectFactory::GetInstance();
-	dynamicObjectFactory->RegisterClass("ObjectBase", []() -> ObjectBase* { return new ObjectBase(); });
-	dynamicObjectFactory->RegisterClass("RigidBody", []() -> RigidBody* { return new RigidBody(); }); 
-	dynamicObjectFactory->RegisterClass("Stone_01", []() -> EnvironmentStone* { return new EnvironmentStone_01(); });
-	dynamicObjectFactory->RegisterClass("Stone_02", []() -> EnvironmentStone* { return new EnvironmentStone_02(); });
-	dynamicObjectFactory->RegisterClass("Stone_03", []() -> EnvironmentStone* { return new EnvironmentStone_03(); });
-	dynamicObjectFactory->RegisterClass("Stone_04", []() -> EnvironmentStone* { return new EnvironmentStone_04(); });
-	dynamicObjectFactory->RegisterClass("LargeStone_01", []() -> EnvironmentStone* { return new EnvironmentLStone_01(); });
-	dynamicObjectFactory->RegisterClass("LargeStone_02", []() -> EnvironmentStone* { return new EnvironmentLStone_02(); });
-	dynamicObjectFactory->RegisterClass("LargeStone_03", []() -> EnvironmentStone* { return new EnvironmentLStone_03(); });
-	dynamicObjectFactory->RegisterClass("LargeStone_04", []() -> EnvironmentStone* { return new EnvironmentLStone_04(); });
-	dynamicObjectFactory->RegisterClass("LargeStone_05", []() -> EnvironmentStone* { return new EnvironmentLStone_05(); });
-	dynamicObjectFactory->RegisterClass("LargeStone_06", []() -> EnvironmentStone* { return new EnvironmentLStone_06(); });
-	dynamicObjectFactory->RegisterClass("Tree_01", []() -> EnvironmentTree* { return new EnvironmentTree_01(); });
+	REGISTER_CLASS(ObjectBase);
+	REGISTER_CLASS(RigidBody);
+	REGISTER_CLASS(EnvironmentStone_01);
+	REGISTER_CLASS(EnvironmentStone_02);
+	REGISTER_CLASS(EnvironmentStone_03);
+	REGISTER_CLASS(EnvironmentStone_04);
+	REGISTER_CLASS(EnvironmentLStone_01);
+	REGISTER_CLASS(EnvironmentLStone_02);
+	REGISTER_CLASS(EnvironmentLStone_03);
+	REGISTER_CLASS(EnvironmentLStone_04);
+	REGISTER_CLASS(EnvironmentLStone_05);
+	REGISTER_CLASS(EnvironmentLStone_06);
+	REGISTER_CLASS(EnvironmentTree_01);
+	REGISTER_CLASS(EnvironmentGrass_01);
+	REGISTER_CLASS(EnvironmentMushrooms_01);
 
+	materialInitializer_ = new MaterialInitializer();
+	
 	engine->SetApplication(this);
 
 	engine->GetRenderer()->SetMainRenderType(RenderPassType::Deferred);
@@ -62,6 +68,7 @@ Game::Game() : Application()
 
 Game::~Game()
 {
+	delete materialInitializer_;
 }
 
 void Game::Run()
