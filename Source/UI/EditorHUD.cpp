@@ -35,6 +35,7 @@
 #include "Goknar/Physics/Components/SphereCollisionComponent.h"
 #include "Goknar/Physics/Components/NonMovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
+#include "Goknar/Physics/Components/MultipleCollisionComponent.h"
 #include "Goknar/Physics/Components/PhysicsMovementComponent.h"
 
 #include "Goknar/Renderer/Texture.h"
@@ -337,7 +338,8 @@ Vector3 EditorHUD::RaycastWorld()
 	RaycastData raycastData;
 	raycastData.from = cameraWorldPosition;
 	raycastData.to = cameraWorldPosition + cameraForwardVector * 1000.f;
-	raycastData.collisionMask = CollisionMask::BlockWorldStatic;
+	raycastData.collisionGroup = CollisionGroup::All;
+	raycastData.collisionMask = CollisionMask(0xFFFFFF);
 
 	RaycastSingleResult raycastResult;
 

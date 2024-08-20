@@ -20,8 +20,9 @@ FreeCameraObject::FreeCameraObject() : ObjectBase()
 void FreeCameraObject::BeginGame()
 {
 	WindowManager* windowManager = engine->GetWindowManager();
-	cameraComponent_->GetCamera()->SetImageWidth(windowManager->GetWindowSize().x);
-	cameraComponent_->GetCamera()->SetImageHeight(windowManager->GetWindowSize().y);
+	Camera* camera = cameraComponent_->GetCamera();
+	camera->SetImageWidth(windowManager->GetWindowSize().x);
+	camera->SetImageHeight(windowManager->GetWindowSize().y);
 
 	SetWorldPosition(Vector3{ -15.f, -16.f, 12.5f });
 	SetWorldRotation(Quaternion::FromEulerDegrees({ 5.f, 20.f, 25.f }));
