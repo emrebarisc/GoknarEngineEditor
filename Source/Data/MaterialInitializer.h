@@ -18,4 +18,5 @@ private:
 	void Environment_InitializePortalMaterials();
 	void Environment_InitializeGrassMaterials();
 	void Environment_InitializeMushroomMaterials();
+	void Environment_InitializePondMaterials();
 };

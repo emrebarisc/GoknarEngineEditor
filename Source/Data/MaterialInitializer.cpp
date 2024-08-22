@@ -13,6 +13,7 @@ MaterialInitializer::MaterialInitializer()
 	Environment_InitializePortalMaterials();
 	Environment_InitializeGrassMaterials();
 	Environment_InitializeMushroomMaterials();
+	Environment_InitializePondMaterials();
 }
 
 void MaterialInitializer::Skills_InitializeTargetObjectMaterials()
@@ -274,4 +275,77 @@ void MaterialInitializer::Environment_InitializeMushroomMaterials()
 
 	MaterialInitializationData* materialInitializationData = mushroomMaterial->GetInitializationData();
 	materialInitializationData->emmisiveColor.result = std::string("texture(" + emmisiveTextureName + ", " + SHADER_VARIABLE_NAMES::TEXTURE::UV + ").xyz * ") + SHADER_VARIABLE_NAMES::MATERIAL::EMMISIVE_COLOR + "; ";
+}
+
+void MaterialInitializer::Environment_InitializePondMaterials()
+{
+	ResourceManager* resourceManager = engine->GetResourceManager();
+	
+	{
+		StaticMesh* pondStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Environment/Waterfall/SM_Pond.fbx");
+
+		Material* pondMaterial = pondStaticMesh->GetMaterial();
+		pondMaterial->SetEmmisiveColor(Vector3{ 0.25f });
+
+		std::string flowTextureName = "flowTexture";
+		Image* flowImage = resourceManager->GetContent<Image>("Textures/Noises/T_Noise_02.png");
+		flowImage->SetTextureUsage(TextureUsage::Diffuse);
+		flowImage->SetName(flowTextureName);
+
+		pondMaterial->AddTextureImage(flowImage);
+
+		MaterialInitializationData* materialInitializationData = pondMaterial->GetInitializationData();
+		materialInitializationData->baseColor.calculation = R"(
+	vec2 modifiedUV1 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV1 *= vec2(0.125f, 0.125f);
+	modifiedUV1 += vec2(1.f, -0.5f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+	
+	vec2 modifiedUV2 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV2 *= vec2(0.25f, 0.25f);
+	modifiedUV2 += vec2(1.f, -0.625f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+
+	vec4 totalFlowValue = texture()" + flowTextureName + R"(, modifiedUV1) * texture()" + flowTextureName + R"(, modifiedUV2);
+	float totalFlowValueFloat = smoothstep(0.75f, 0.25f, pow(totalFlowValue.r, 0.2f));
+
+	vec3 backgroundColor = vec3(0.294, 0.42, 0.353);//vec3(0.702, 0.722, 0.698);
+	vec3 foregroundColor = vec3(0.471, 0.722, 0.584);//vec3(0.467, 0.573, 0.588);
+
+	vec3 finalColor = backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+)";
+		materialInitializationData->baseColor.result = "vec4(finalColor, 1.f); ";
+	}
+
+	{
+		StaticMesh* pondSpiralStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Environment/Waterfall/SM_SpiralFlow.fbx");
+
+		Material* pondSpiralMaterial = pondSpiralStaticMesh->GetMaterial();
+		pondSpiralMaterial->SetEmmisiveColor(Vector3{ 0.f });
+		pondSpiralMaterial->SetBlendModel(MaterialBlendModel::Transparent);
+
+		std::string spiralFlowTextureName = "spiralFlowTexture";
+		Image* spiralFlowImage = resourceManager->GetContent<Image>("Textures/Noises/T_Trail_01.png");
+		spiralFlowImage->SetTextureUsage(TextureUsage::Diffuse);
+		spiralFlowImage->SetName(spiralFlowTextureName);
+		spiralFlowImage->SetTextureWrappingR(TextureWrapping::CLAMP_TO_BORDER);
+		spiralFlowImage->SetTextureWrappingT(TextureWrapping::CLAMP_TO_BORDER);
+		spiralFlowImage->SetTextureWrappingS(TextureWrapping::REPEAT);
+
+		pondSpiralMaterial->AddTextureImage(spiralFlowImage);
+
+		MaterialInitializationData* materialInitializationData = pondSpiralMaterial->GetInitializationData();
+		materialInitializationData->baseColor.calculation = R"(
+	vec2 modifiedUV1 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV1 *= vec2(1.f, 1.f);
+	modifiedUV1 -= vec2(1.f, 0.f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+
+	vec4 totalFlowValue = texture()" + spiralFlowTextureName + R"(, modifiedUV1);
+	float totalFlowValueFloat = totalFlowValue.r;
+
+	vec3 backgroundColor = vec3(0.702, 0.722, 0.698);
+	vec3 foregroundColor = vec3(0.467, 0.573, 0.588);
+
+	vec3 finalColor = vec3(totalFlowValueFloat);//backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+)";
+		materialInitializationData->baseColor.result = "vec4(finalColor, totalFlowValueFloat.r); ";
+	}
 }
