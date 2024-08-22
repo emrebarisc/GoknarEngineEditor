@@ -19,6 +19,12 @@
             <Path>Meshes/Environment/Plants/SM_Mushrooms_01.fbx</Path>
         </Mesh>
         <Mesh>
+            <Path>Meshes/Environment/Waterfall/SM_Pond.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Environment/Waterfall/SM_SpiralFlow.fbx</Path>
+        </Mesh>
+        <Mesh>
             <Path>Meshes/Characters/AI/SkeletalMesh_RottenFlesh.fbx</Path>
         </Mesh>
         <Mesh>
@@ -417,6 +423,26 @@
             <Components>
                 <StaticMeshComponent>
                     <MeshPath>Meshes/Environment/Stones/SM_Stone_04.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </ObjectBase>
+        <ObjectBase>
+            <Name>Pool</Name>
+            <WorldPosition>-11.000000 -14.000000 11.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
+            <WorldScaling>1.000000 1.000000 1.000000</WorldScaling>
+            <Components>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Waterfall/SM_Pond.fbx</MeshPath>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/Environment/Waterfall/SM_SpiralFlow.fbx</MeshPath>
                     <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
                     <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
                     <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
