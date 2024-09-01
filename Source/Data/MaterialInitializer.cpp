@@ -168,6 +168,50 @@ void MaterialInitializer::Skills_InitializeFireBurstCastedObjectMaterials()
 	}
 }
 
+void MaterialInitializer::Skills_InitializeSlashMaterials()
+{
+	ResourceManager* resourceManager = engine->GetResourceManager();
+
+	StaticMesh* slashStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Skills/SkillObjects/SM_BasicSkill.fbx");
+
+	Material* slashMaterial = slashStaticMesh->GetMaterial();
+	slashMaterial->SetEmmisiveColor(Vector3{ 5.f });
+	slashMaterial->SetShadingModel(MaterialShadingModel::TwoSided);
+	slashMaterial->SetBlendModel(MaterialBlendModel::Transparent);
+
+	std::string diffuseTextureName = "diffuseTexture";
+	Image* diffuseImage = resourceManager->GetContent<Image>("Textures/Skills/Slash/T_SlashDissolve.png");
+	diffuseImage->SetTextureUsage(TextureUsage::Diffuse);
+	diffuseImage->SetName(diffuseTextureName);
+
+	slashMaterial->AddTextureImage(diffuseImage);
+
+	MaterialInitializationData* materialInitializationData = slashMaterial->GetInitializationData();
+
+	materialInitializationData->AddFragmentShaderUniform("uniform float startTime");
+	materialInitializationData->AddFragmentShaderUniform("uniform float swingSpeed");
+	materialInitializationData->AddFragmentShaderUniform("uniform vec3 slashColor = vec3(1.f)");
+
+	materialInitializationData->baseColor.calculation =
+		R"(
+	float t = )" + std::string(SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME) + R"( - startTime;
+
+	vec2 modifiedUV1 = )" + SHADER_VARIABLE_NAMES::TEXTURE::UV + R"(;
+	modifiedUV1 *= vec2(1.f, 1.f);
+	//modifiedUV1 -= vec2(0.5f, 0.f) * t;
+
+	vec4 textureValue = texture()" + diffuseTextureName + R"(, modifiedUV1);
+
+	float timeWithSwingSpeed = t * swingSpeed;
+
+	float opacity = textureValue.r * max(timeWithSwingSpeed - textureValue.r, 0.f);
+	opacity *= textureUV.x;
+
+	textureValue.xyz *= slashColor; 
+)";
+	materialInitializationData->baseColor.result = "vec4(textureValue.xyz, opacity);";
+}
+
 void MaterialInitializer::Environment_InitializePortalMaterials()
 {
 	ResourceManager* resourceManager = engine->GetResourceManager();
@@ -223,7 +267,7 @@ void MaterialInitializer::Environment_InitializeGrassMaterials()
 	StaticMesh* grassStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Environment/Plants/SM_Grass.fbx");
 
 	Material* grassMaterial = grassStaticMesh->GetMaterial();
-	grassMaterial->SetBaseColor(Vector3{ 0.25f, 0.275f, 0.25f });
+	grassMaterial->SetBaseColor(Vector3{ 0.1, 0.115, 0.1 });
 	grassMaterial->SetEmmisiveColor(Vector3{ 0.f });
 	grassMaterial->SetTranslucency(1.f);
 	grassMaterial->SetShadingModel(MaterialShadingModel::TwoSided);
@@ -255,6 +299,13 @@ void MaterialInitializer::Environment_InitializeGrassMaterials()
 	wave *= 0.01f;
 )";
 	materialInitializationData->vertexPositionOffset.result = std::string("vec3(wave * ") + SHADER_VARIABLE_NAMES::VERTEX::COLOR + ")";
+
+	materialInitializationData->baseColor.calculation = R"(
+	vec4 modifiedVertexColor = )" + std::string(SHADER_VARIABLE_NAMES::VERTEX_SHADER_OUTS::VERTEX_COLOR) + R"(;
+	modifiedVertexColor = min(modifiedVertexColor + 0.25f, 1.f);
+	vec4 colorResult = modifiedVertexColor * )" + std::string(SHADER_VARIABLE_NAMES::MATERIAL::BASE_COLOR) + R"( + (1.f - modifiedVertexColor) * vec4(0.125f);
+)";
+	materialInitializationData->baseColor.result = "colorResult;";
 }
 
 void MaterialInitializer::Environment_InitializeMushroomMaterials()
@@ -267,7 +318,7 @@ void MaterialInitializer::Environment_InitializeMushroomMaterials()
 	mushroomMaterial->SetTranslucency(0.f);
 
 	std::string emmisiveTextureName = "emmisiveTexture";
-	Image* emmisiveImage = resourceManager->GetContent<Image>("Textures/Environment/T_MushroomEmmisive.png");
+	Image* emmisiveImage = resourceManager->GetContent<Image>("Textures/Environment/Mushroom/T_MushroomEmmisive.png");
 	emmisiveImage->SetTextureUsage(TextureUsage::Emmisive);
 	emmisiveImage->SetName(emmisiveTextureName);
 
@@ -280,7 +331,7 @@ void MaterialInitializer::Environment_InitializeMushroomMaterials()
 void MaterialInitializer::Environment_InitializePondMaterials()
 {
 	ResourceManager* resourceManager = engine->GetResourceManager();
-	
+
 	{
 		StaticMesh* pondStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Environment/Waterfall/SM_Pond.fbx");
 
@@ -307,10 +358,13 @@ void MaterialInitializer::Environment_InitializePondMaterials()
 	vec4 totalFlowValue = texture()" + flowTextureName + R"(, modifiedUV1) * texture()" + flowTextureName + R"(, modifiedUV2);
 	float totalFlowValueFloat = smoothstep(0.75f, 0.25f, pow(totalFlowValue.r, 0.2f));
 
-	vec3 backgroundColor = vec3(0.294, 0.42, 0.353);//vec3(0.702, 0.722, 0.698);
-	vec3 foregroundColor = vec3(0.471, 0.722, 0.584);//vec3(0.467, 0.573, 0.588);
+	vec3 backgroundColor = vec3(0.294, 0.42, 0.353);
+	vec3 foregroundColor = vec3(0.471, 0.722, 0.584);
+
+	float dotValue = min(1.f, pow(clamp((6.f - textureUV.y) / 5.f, 0.f, 1.f), 1.f));
 
 	vec3 finalColor = backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+	finalColor *= dotValue;
 )";
 		materialInitializationData->baseColor.result = "vec4(finalColor, 1.f); ";
 	}
@@ -336,16 +390,119 @@ void MaterialInitializer::Environment_InitializePondMaterials()
 		materialInitializationData->baseColor.calculation = R"(
 	vec2 modifiedUV1 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
 	modifiedUV1 *= vec2(1.f, 1.f);
-	modifiedUV1 -= vec2(1.f, 0.f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+	modifiedUV1 -= vec2(1.0f, 0.f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
 
 	vec4 totalFlowValue = texture()" + spiralFlowTextureName + R"(, modifiedUV1);
-	float totalFlowValueFloat = totalFlowValue.r;
+	float totalFlowValueFloat = totalFlowValue.r * 4.f;
 
-	vec3 backgroundColor = vec3(0.702, 0.722, 0.698);
-	vec3 foregroundColor = vec3(0.467, 0.573, 0.588);
+	vec3 backgroundColor = vec3(0.294, 0.42, 0.353);//vec3(0.702, 0.722, 0.698);
+	vec3 foregroundColor = vec3(0.471, 0.722, 0.584);//vec3(0.467, 0.573, 0.588);
 
-	vec3 finalColor = vec3(totalFlowValueFloat);//backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+	vec3 finalColor = backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+	float opacity = totalFlowValueFloat.r;
+
+	float uvMultiplier = 1.f;
+	if(textureUV.x <= 1.f)
+	{
+		uvMultiplier = textureUV.x;
+	}
+	else if(3.f <= textureUV.x)
+	{
+		uvMultiplier = 4.f - textureUV.x;
+	}
+
+	opacity *= min(uvMultiplier, 1.f);
 )";
-		materialInitializationData->baseColor.result = "vec4(finalColor, totalFlowValueFloat.r); ";
+		materialInitializationData->baseColor.result = "vec4(finalColor, opacity); ";
+	}
+
+	{
+		StaticMesh* waterfallInnerStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Environment/Waterfall/SM_WaterfallInner.fbx");
+		Material* waterfallInnerMaterial = waterfallInnerStaticMesh->GetMaterial();
+		waterfallInnerMaterial->SetEmmisiveColor(Vector3{ 0.25f });
+
+		std::string flowTextureName = "flowTexture";
+		Image* flowImage = resourceManager->GetContent<Image>("Textures/Noises/T_Noise_02.png");
+		flowImage->SetTextureUsage(TextureUsage::Diffuse);
+		flowImage->SetName(flowTextureName);
+
+		waterfallInnerMaterial->AddTextureImage(flowImage);
+
+		MaterialInitializationData* materialInitializationData = waterfallInnerMaterial->GetInitializationData();
+		materialInitializationData->baseColor.calculation = R"(
+	vec2 modifiedUV1 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV1 *= vec2(1.f, 1.f);
+	modifiedUV1 -= vec2(1.f, -0.5f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+	
+	vec2 modifiedUV2 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV2 *= vec2(2.f, 2.f);
+	modifiedUV2 -= vec2(1.f, 0.625f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+
+	vec4 totalFlowValue = texture()" + flowTextureName + R"(, modifiedUV1) * texture()" + flowTextureName + R"(, modifiedUV2);
+	float totalFlowValueFloat = totalFlowValue.r * 4.f;
+
+	vec3 backgroundColor = vec3(0.294, 0.42, 0.353);//vec3(0.702, 0.722, 0.698);
+	vec3 foregroundColor = vec3(0.471, 0.722, 0.584);//vec3(0.467, 0.573, 0.588);
+
+	vec3 finalColor = backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+)";
+		materialInitializationData->baseColor.result = "vec4(finalColor, 1.f); ";
+	}
+
+	{
+		StaticMesh* waterfallOuterStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/Environment/Waterfall/SM_WaterfallOuter.fbx");
+		Material* waterfallOuterMaterial = waterfallOuterStaticMesh->GetMaterial();
+
+		waterfallOuterMaterial->SetEmmisiveColor(Vector3{ 0.f });
+		waterfallOuterMaterial->SetBlendModel(MaterialBlendModel::Transparent);
+
+		std::string spiralFlowTextureName = "spiralFlowTexture";
+		Image* spiralFlowImage = resourceManager->GetContent<Image>("Textures/Noises/T_Trail_01.png");
+		spiralFlowImage->SetTextureUsage(TextureUsage::Diffuse);
+		spiralFlowImage->SetName(spiralFlowTextureName);
+		waterfallOuterMaterial->AddTextureImage(spiralFlowImage);
+
+		Image* noiseImage = resourceManager->GetContent<Image>("Textures/Noises/T_Noise_02.png");
+		std::string noiseTextureName = noiseImage->GetName();
+		noiseImage->SetName(noiseTextureName);
+		waterfallOuterMaterial->AddTextureImage(noiseImage);
+
+		MaterialInitializationData* materialInitializationData = waterfallOuterMaterial->GetInitializationData();
+		materialInitializationData->baseColor.calculation = R"(
+	vec2 modifiedUV1 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV1 *= vec2(0.25f, 1.f);
+	modifiedUV1 -= vec2(2.0f, 0.f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+
+	vec2 modifiedUV2 = )" + std::string(SHADER_VARIABLE_NAMES::TEXTURE::UV) + R"(;
+	modifiedUV2 *= vec2(0.06125f, 0.06125f);
+	modifiedUV2 -= vec2(0.5f, 0.25f) * )" + SHADER_VARIABLE_NAMES::TIMING::ELAPSED_TIME + R"(;
+
+	vec4 flowValue = texture()" + spiralFlowTextureName + R"(, modifiedUV1);
+	vec4 noiseValue = texture()" + noiseTextureName + R"(, modifiedUV2);
+	noiseValue *= 2.f;
+
+	vec4 totalFlowValue = flowValue * noiseValue;
+
+	float totalFlowValueFloat = totalFlowValue.r * 8.f;
+
+	vec3 backgroundColor = vec3(0.294, 0.42, 0.353);//vec3(0.702, 0.722, 0.698);
+	vec3 foregroundColor = vec3(0.471, 0.722, 0.584);//vec3(0.467, 0.573, 0.588);
+
+	vec3 finalColor = backgroundColor * (1.f - totalFlowValueFloat) + foregroundColor * totalFlowValueFloat;
+	float opacity = totalFlowValueFloat.r;
+
+	float uvMultiplier = 1.f;
+	if(textureUV.x <= 1.f)
+	{
+		uvMultiplier = textureUV.x;
+	}
+	else if(11.f <= textureUV.x)
+	{
+		uvMultiplier = (13.5f - textureUV.x) * 0.5f;
+	}
+
+	opacity *= min(uvMultiplier, 1.f);
+)";
+		materialInitializationData->baseColor.result = "vec4(finalColor, opacity); ";
 	}
 }

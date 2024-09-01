@@ -11,10 +11,11 @@ public:
 	MaterialInitializer();
 
 protected:
-    
+
 private:
 	void Skills_InitializeTargetObjectMaterials();
 	void Skills_InitializeFireBurstCastedObjectMaterials();
+	void Skills_InitializeSlashMaterials();
 	void Environment_InitializePortalMaterials();
 	void Environment_InitializeGrassMaterials();
 	void Environment_InitializeMushroomMaterials();

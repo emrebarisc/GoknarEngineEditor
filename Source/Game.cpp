@@ -22,6 +22,7 @@
 
 #include "Physics/RigidBody.h"
 
+#include "Lighting/Sun.h"
 #include "Objects/Environment/EnvironmentStones.h"
 #include "Objects/Environment/EnvironmentTrees.h"
 #include "Objects/Environment/EnvironmentPlants.h"
@@ -64,6 +65,10 @@ Game::Game() : Application()
 
 	freeCameraObject_ = new FreeCameraObject();
 	freeCameraObject_->SetName("__Editor__Camera");
+
+	engine->GetWindowManager()->SetWindowSize(1900, 1000);
+
+	new Sun();
 }
 
 Game::~Game()

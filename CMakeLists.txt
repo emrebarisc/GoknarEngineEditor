@@ -18,6 +18,7 @@ set(SUBDIRS
     ${SOURCE_DIR_NAME}/Components
     ${SOURCE_DIR_NAME}/Controllers
     ${SOURCE_DIR_NAME}/Data
+    ${SOURCE_DIR_NAME}/Lighting
     ${SOURCE_DIR_NAME}/Objects
     ${SOURCE_DIR_NAME}/Objects/Environment
     ${SOURCE_DIR_NAME}/Objects/Portals
