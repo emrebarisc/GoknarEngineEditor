@@ -2059,7 +2059,7 @@ ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
 void EditorHUD::DrawObjectNameToCreateWindow()
 {
 	double x, y;
-	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetWindow(), x, y);
+	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetMainWindow(), x, y);
 	ImGui::SetNextWindowPos({(float)x, (float)y});
 	BeginTransparentWindow("ObjectToCreateNameWindow", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 	ImGui::Text(objectToCreateName_.c_str());

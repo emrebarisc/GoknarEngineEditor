@@ -122,7 +122,7 @@ void FreeCameraController::Pitch(float value)
 void FreeCameraController::OnMouseRightClickPressed()
 {
 	double x, y;
-	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetWindow(), x, y);
+	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetMainWindow(), x, y);
 	previousCursorPositionForRotating_ = Vector2(x, y);
 	isRotatingTheCamera_ = true;
 }
@@ -130,7 +130,7 @@ void FreeCameraController::OnMouseRightClickPressed()
 void FreeCameraController::OnMouseMiddleClickPressed()
 {
 	double x, y;
-	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetWindow(), x, y);
+	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetMainWindow(), x, y);
 	previousCursorPositionFor2DMovement_ = Vector2(x, y);
 	isMovingCameraIn2D_ = true;
 }
