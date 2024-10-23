@@ -69,16 +69,16 @@ EditorHUD::EditorHUD() : HUD()
 
 	engine->SetHUD(this);
 
-	onKeyboardEventDelegate_ = Delegate<void(int, int, int, int)>::create<EditorHUD, &EditorHUD::OnKeyboardEvent>(this);
-	onCursorMoveDelegate_ = Delegate<void(double, double)>::create<EditorHUD, &EditorHUD::OnCursorMove>(this);
-	onScrollDelegate_ = Delegate<void(double, double)>::create<EditorHUD, &EditorHUD::OnScroll>(this);
-	onLeftClickPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnLeftClickPressed>(this);
-	onLeftClickReleasedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnLeftClickReleased>(this);
-	onCharPressedDelegate_ = Delegate<void(unsigned int)>::create<EditorHUD, &EditorHUD::OnCharPressed>(this);
-	onWindowSizeChangedDelegate_ = Delegate<void(int, int)>::create<EditorHUD, &EditorHUD::OnWindowSizeChanged>(this);
-	onDeleteInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnDeleteInputPressed>(this);
-	onFocusInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
-	onCancelInputPressedDelegate_ = Delegate<void()>::create<EditorHUD, &EditorHUD::OnCancelInputPressed>(this);
+	onKeyboardEventDelegate_ = Delegate<void(int, int, int, int)>::Create<EditorHUD, &EditorHUD::OnKeyboardEvent>(this);
+	onCursorMoveDelegate_ = Delegate<void(double, double)>::Create<EditorHUD, &EditorHUD::OnCursorMove>(this);
+	onScrollDelegate_ = Delegate<void(double, double)>::Create<EditorHUD, &EditorHUD::OnScroll>(this);
+	onLeftClickPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnLeftClickPressed>(this);
+	onLeftClickReleasedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnLeftClickReleased>(this);
+	onCharPressedDelegate_ = Delegate<void(unsigned int)>::Create<EditorHUD, &EditorHUD::OnCharPressed>(this);
+	onWindowSizeChangedDelegate_ = Delegate<void(int, int)>::Create<EditorHUD, &EditorHUD::OnWindowSizeChanged>(this);
+	onDeleteInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnDeleteInputPressed>(this);
+	onFocusInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
+	onCancelInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnCancelInputPressed>(this);
 
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
 
