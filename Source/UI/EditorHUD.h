@@ -18,12 +18,16 @@ class Image;
 class ObjectBase;
 class PhysicsObject;
 
-class StaticMeshComponent;
 class BoxCollisionComponent;
-class SphereCollisionComponent;
+class Camera;
 class CapsuleCollisionComponent;
+class FrameBuffer;
+class StaticMeshComponent;
+class SphereCollisionComponent;
 class MovingTriangleMeshCollisionComponent;
 class NonMovingTriangleMeshCollisionComponent;
+class RenderTarget;
+class Texture;
 
 enum class Editor_ObjectType
 {
@@ -86,9 +90,12 @@ private:
 	void DrawSceneObject(ObjectBase* object);
 
 	void DrawObjectsWindow();
+	void DrawObjectInspector();
 	void BuildFileTree();
 	void DrawFileTree(Folder* folder);
 	void DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
+
+	void DrawViewport();
 
 	void DrawFileBrowserWindow();
 	void DrawDetailsWindow();
@@ -152,6 +159,9 @@ private:
 
 	ImVec2 buttonSize_{ 100.f, 40.f };
 
+	ImVec2 viewportSize_{ 0.f, 0.f };
+	ImVec2 viewportPosition_{ 0.f, 0.f };
+
 	std::unordered_map<std::string, std::function<void(ObjectBase*)>> objectBaseReflections;
 	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsObjectReflections;
 
@@ -171,10 +181,14 @@ private:
 	std::string fileBrowserWindowName_{ "FileBrowser" };
 	std::string detailsWindowName_{ "Details" };
 	std::string gameOptionsWindowName_{ "GameOptions" };
+	std::string objectInspectorWindowName_{ "Object Inspector" };
+	std::string viewportWindowName_{ "Viewport" };
 
 	std::unordered_map<std::string, bool> windowOpenMap_;
 
 	ImGuiWindowFlags dockableWindowFlags_{ ImGuiWindowFlags_None };
+
+	RenderTarget* renderTarget_{ nullptr };
 
 	bool drawCollisionWorld_{ false };
 };

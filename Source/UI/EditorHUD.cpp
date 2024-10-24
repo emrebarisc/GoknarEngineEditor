@@ -27,6 +27,8 @@
 
 #include "Goknar/Model/MeshUnit.h"
 
+#include "Goknar/Renderer/Framebuffer.h"
+
 #include "Goknar/Physics/PhysicsDebugger.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/RigidBody.h"
@@ -39,6 +41,7 @@
 #include "Goknar/Physics/Components/PhysicsMovementComponent.h"
 
 #include "Goknar/Renderer/Texture.h"
+#include "Goknar/Renderer/RenderTarget.h"
 
 #include "Goknar/Lights/DirectionalLight.h"
 #include "Goknar/Lights/PointLight.h"
@@ -63,8 +66,6 @@ void AddCollisionComponent(PhysicsObject* physicsObject)
 
 EditorHUD::EditorHUD() : HUD()
 {
-    SetIsTickable(true);
-	
 	imguiContext_ = ImGui::CreateContext();
 
 	engine->SetHUD(this);
@@ -121,6 +122,7 @@ EditorHUD::EditorHUD() : HUD()
 	windowOpenMap_[objectsWindowName_] = true;
 	windowOpenMap_[fileBrowserWindowName_] = true;
 	windowOpenMap_[detailsWindowName_] = true;
+	windowOpenMap_[viewportWindowName_] = true;
 }
 
 EditorHUD::~EditorHUD()
@@ -152,6 +154,8 @@ EditorHUD::~EditorHUD()
 	}
 
 	delete rootFolder;
+
+	delete renderTarget_;
 }
 
 void EditorHUD::PreInit()
@@ -209,6 +213,11 @@ void EditorHUD::BeginGame()
 	ImVec4* colors = style->Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.f);
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
+
+	renderTarget_ = new RenderTarget();
+	renderTarget_->Init();
+	renderTarget_->GetCamera()->SetPosition(Vector3{ 0.f, 0.f, 10.f });
+	renderTarget_->GetCamera()->SetVectors(Vector3{ 0.f, 0.f, -1.f }, Vector3{ 1.f, 0.f, 0.f });
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
@@ -325,7 +334,7 @@ void EditorHUD::OnPlaceObject()
 
 Vector3 EditorHUD::RaycastWorld()
 {
-	Camera* activeCamera = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject()->GetCameraComponent()->GetCamera();
+	Camera* activeCamera = renderTarget_->GetCamera();
 
 	InputManager* inputManager = engine->GetInputManager();
 
@@ -333,7 +342,7 @@ Vector3 EditorHUD::RaycastWorld()
 	inputManager->GetCursorPosition(x, y);
 
 	Vector3 cameraWorldPosition = activeCamera->GetPosition();
-	Vector3 cameraForwardVector = activeCamera->GetWorldDirectionAtPixel(Vector2i{ (int)x, (int)y });
+	Vector3 cameraForwardVector = activeCamera->GetWorldDirectionAtPixel(Vector2i{ (int)(x - viewportPosition_.x), (int)(y - viewportPosition_.y) });
 
 	RaycastData raycastData;
 	raycastData.from = cameraWorldPosition;
@@ -604,6 +613,10 @@ void EditorHUD::DrawEditorHUD()
 			{
 				windowOpenMap_[detailsWindowName_] = !windowOpenMap_[detailsWindowName_];
 			}
+			if (ImGui::MenuItem((std::string(windowOpenMap_[viewportWindowName_] ? "+ " : "- ") + "Viewport").c_str()))
+			{
+				windowOpenMap_[viewportWindowName_] = !windowOpenMap_[viewportWindowName_];
+			}
 
 			ImGui::EndMenu();
 		}
@@ -659,6 +672,11 @@ void EditorHUD::DrawEditorHUD()
 	{
 		DrawDetailsWindow();
 	}
+
+	if (windowOpenMap_[viewportWindowName_])
+	{
+		DrawViewport();
+	}
 	
 	if (windowOpenMap_[gameOptionsWindowName_])
 	{
@@ -668,6 +686,11 @@ void EditorHUD::DrawEditorHUD()
 	if (windowOpenMap_[saveSceneDialogWindowName_])
 	{
 		OpenSaveSceneDialog();
+	}
+
+	if (windowOpenMap_[objectInspectorWindowName_])
+	{
+		DrawObjectInspector();
 	}
 }
 
@@ -804,7 +827,7 @@ void EditorHUD::DrawSceneObject(ObjectBase* object)
 
 	const std::vector<ObjectBase*>& children = object->GetChildren();
 	int childrenCount = children.size();
-	
+
 	for (int childIndex = 0; childIndex < childrenCount; ++childIndex)
 	{
 		ObjectBase* child = children[childIndex];
@@ -872,6 +895,32 @@ void EditorHUD::DrawFileGrid(Folder* folder, std::string& selectedFileName, bool
 	ImGui::Columns(1, nullptr, false);
 }
 
+void EditorHUD::DrawViewport()
+{
+	BeginWindow(viewportWindowName_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+	ImVec2 newViewportSize = ImGui::GetWindowSize();
+	if (viewportSize_.x != newViewportSize.x || viewportSize_.y != newViewportSize.y)
+	{
+		viewportSize_ = newViewportSize;
+
+		renderTarget_->SetFrameSize({ viewportSize_.x, viewportSize_.y });
+	}
+
+	viewportPosition_ = ImGui::GetWindowPos();
+
+	Texture* renderTargetTexture = renderTarget_->GetTexture();
+
+	ImGui::Image(
+		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
+		ImVec2{ (float)viewportSize_.x, (float)viewportSize_.y },
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	EndWindow();
+}
+
 void EditorHUD::DrawObjectsWindow()
 {
 	BeginWindow(objectsWindowName_, dockableWindowFlags_);
@@ -907,12 +956,39 @@ void EditorHUD::DrawObjectsWindow()
 			{
 				objectToCreateType_ = Editor_ObjectType::Object;
 				objectToCreateName_ = name;
+
+				windowOpenMap_[objectInspectorWindowName_] = true;
 			}
 		}
 		
 		ImGui::TreePop();
 	}
 	ImGui::Separator();
+	EndWindow();
+}
+
+void EditorHUD::DrawObjectInspector()
+{
+	BeginWindow(objectInspectorWindowName_);
+
+	//CameraManager* cameraManager = engine->GetCameraManager();
+
+	//Camera* activeCamera = cameraManager->GetActiveCamera();
+	//cameraManager->SetActiveCamera(objectCamera);
+	//Renderer* renderer = engine->GetRenderer();
+	//renderer->Render(RenderPassType::GeometryBuffer);
+
+	//viewportFramebuffer_->Bind();
+	//renderer->Render(RenderPassType::Deferred);
+
+	//ImGui::Image(
+	//	(void*)(intptr_t)viewportFrameTexture_->GetRendererTextureId(),
+	//	ImVec2{ (float)objectCamera->GetImageWidth(), (float)objectCamera->GetImageHeight() }
+	//);
+
+	//cameraManager->SetActiveCamera(activeCamera);
+	//viewportFramebuffer_->Unbind();
+
 	EndWindow();
 }
 
