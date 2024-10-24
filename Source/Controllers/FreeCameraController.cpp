@@ -32,11 +32,7 @@ FreeCameraController::FreeCameraController(FreeCameraObject* freeCameraObject) :
 	previousCursorPositionFor2DMovement_ = Vector2(0.f, 0.f);
 
 	onMouseRightClickPressedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseRightClickPressed>(this);
-<<<<<<< HEAD
-	onMouseRightClickReleasedDelegate_ = KeyboardDelegate::Create < FreeCameraController, &FreeCameraController::OnMouseRightClickReleased > (this);
-=======
 	onMouseRightClickReleasedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseRightClickReleased >(this);
->>>>>>> 4518afbd62a1600f20f29aeddc0f434e66554840
 	onMouseMiddleClickPressedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseMiddleClickPressed>(this);
 	onMouseMiddleClickReleasedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseMiddleClickReleased>(this);
 
