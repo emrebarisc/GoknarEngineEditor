@@ -25,7 +25,7 @@ protected:
 	virtual void BeginGame() override;
 	virtual void Tick(float deltaTime) override;
 
-	FreeCameraController* freeCameraController_;
-	CameraComponent* cameraComponent_;
+	FreeCameraController* freeCameraController_{ nullptr };
+	CameraComponent* cameraComponent_{ nullptr };
 private:
 };

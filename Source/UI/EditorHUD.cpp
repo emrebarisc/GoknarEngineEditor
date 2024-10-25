@@ -215,9 +215,13 @@ void EditorHUD::BeginGame()
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
 
 	renderTarget_ = new RenderTarget();
+	renderTarget_->SetCamera(dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject()->GetCameraComponent()->GetCamera());
 	renderTarget_->Init();
-	renderTarget_->GetCamera()->SetPosition(Vector3{ 0.f, 0.f, 10.f });
-	renderTarget_->GetCamera()->SetVectors(Vector3{ 0.f, 0.f, -1.f }, Vector3{ 1.f, 0.f, 0.f });
+	//renderTarget_->SetRenderShadows(false);
+	//renderTarget_->GetCamera()->SetPosition(Vector3{ 0.f, 0.f, 10.f });
+	//renderTarget_->GetCamera()->SetVectors(Vector3{ 0.f, 0.f, -1.f }, Vector3{ 1.f, 0.f, 0.f });
+
+	engine->GetRenderer()->SetDrawOnWindow(false);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
@@ -692,6 +696,8 @@ void EditorHUD::DrawEditorHUD()
 	{
 		DrawObjectInspector();
 	}
+
+	renderTarget_->SetIsActive(windowOpenMap_[viewportWindowName_]);
 }
 
 void EditorHUD::DrawCameraInfo()
@@ -910,7 +916,6 @@ void EditorHUD::DrawViewport()
 	viewportPosition_ = ImGui::GetWindowPos();
 
 	Texture* renderTargetTexture = renderTarget_->GetTexture();
-
 	ImGui::Image(
 		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
 		ImVec2{ (float)viewportSize_.x, (float)viewportSize_.y },
