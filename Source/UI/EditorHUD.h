@@ -96,6 +96,7 @@ private:
 	void DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
 
 	void DrawViewport();
+	void DrawGeometryBuffersWindow();
 
 	void DrawFileBrowserWindow();
 	void DrawDetailsWindow();
@@ -183,6 +184,7 @@ private:
 	std::string gameOptionsWindowName_{ "GameOptions" };
 	std::string objectInspectorWindowName_{ "Object Inspector" };
 	std::string viewportWindowName_{ "Viewport" };
+	std::string geometryBuffersWindowName_{ "Geometry Buffers" };
 
 	std::unordered_map<std::string, bool> windowOpenMap_;
 

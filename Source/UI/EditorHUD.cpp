@@ -123,6 +123,7 @@ EditorHUD::EditorHUD() : HUD()
 	windowOpenMap_[fileBrowserWindowName_] = true;
 	windowOpenMap_[detailsWindowName_] = true;
 	windowOpenMap_[viewportWindowName_] = true;
+	windowOpenMap_[geometryBuffersWindowName_] = true;
 }
 
 EditorHUD::~EditorHUD()
@@ -621,6 +622,10 @@ void EditorHUD::DrawEditorHUD()
 			{
 				windowOpenMap_[viewportWindowName_] = !windowOpenMap_[viewportWindowName_];
 			}
+			if (ImGui::MenuItem((std::string(windowOpenMap_[geometryBuffersWindowName_] ? "+ " : "- ") + "Geometry Buffers").c_str()))
+			{
+				windowOpenMap_[geometryBuffersWindowName_] = !windowOpenMap_[geometryBuffersWindowName_];
+			}
 
 			ImGui::EndMenu();
 		}
@@ -680,6 +685,11 @@ void EditorHUD::DrawEditorHUD()
 	if (windowOpenMap_[viewportWindowName_])
 	{
 		DrawViewport();
+	}
+	
+	if (windowOpenMap_[geometryBuffersWindowName_])
+	{
+		DrawGeometryBuffersWindow();
 	}
 	
 	if (windowOpenMap_[gameOptionsWindowName_])
@@ -918,7 +928,79 @@ void EditorHUD::DrawViewport()
 	Texture* renderTargetTexture = renderTarget_->GetTexture();
 	ImGui::Image(
 		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
-		ImVec2{ (float)viewportSize_.x, (float)viewportSize_.y },
+		ImVec2{ (float)engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->bufferWidth, (float)engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->bufferHeight },
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	EndWindow();
+}
+
+void EditorHUD::DrawGeometryBuffersWindow()
+{
+	BeginWindow(geometryBuffersWindowName_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+	ImVec2 newViewportSize = ImGui::GetWindowSize();
+	if (viewportSize_.x != newViewportSize.x || viewportSize_.y != newViewportSize.y)
+	{
+		viewportSize_ = newViewportSize;
+
+		renderTarget_->SetFrameSize({ viewportSize_.x, viewportSize_.y });
+	}
+
+	viewportPosition_ = ImGui::GetWindowPos();
+
+	ImVec2 windowSize = ImGui::GetWindowSize();
+	ImVec2 imageSize = { (float)windowSize.x * 0.3334f, (float)windowSize.y * 0.5f };
+
+	ImVec2 imagePosition = {0.f, 0.f};
+
+	ImGui::SetCursorPos(imagePosition);
+	Texture* diffuseTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
+	Texture* emmisiveColorTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->emmisiveColorTexture;
+	Texture* specularTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->specularTexture;
+	Texture* worldPositionTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
+	Texture* worldNormalTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->worldNormalTexture;
+
+	ImGui::Image(
+		(ImTextureID)(intptr_t)diffuseTexture->GetRendererTextureId(),
+		imageSize,
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	imagePosition = { imageSize.x, 0.f};
+	ImGui::SetCursorPos(imagePosition);
+	ImGui::Image(
+		(ImTextureID)(intptr_t)emmisiveColorTexture->GetRendererTextureId(),
+		imageSize,
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	imagePosition = { 2.f * imageSize.x, 0.f};
+	ImGui::SetCursorPos(imagePosition);
+	ImGui::Image(
+		(ImTextureID)(intptr_t)specularTexture->GetRendererTextureId(),
+		imageSize,
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	imagePosition = { 0.f, imageSize.y };
+	ImGui::SetCursorPos(imagePosition);
+	ImGui::Image(
+		(ImTextureID)(intptr_t)worldPositionTexture->GetRendererTextureId(),
+		imageSize,
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	imagePosition = { imageSize.x, imageSize.y };
+	ImGui::SetCursorPos(imagePosition);
+	ImGui::Image(
+		(ImTextureID)(intptr_t)worldNormalTexture->GetRendererTextureId(),
+		imageSize,
 		ImVec2{ 0.f, 1.f },
 		ImVec2{ 1.f, 0.f }
 	);
