@@ -124,6 +124,9 @@ EditorHUD::EditorHUD() : HUD()
 	windowOpenMap_[detailsWindowName_] = true;
 	windowOpenMap_[viewportWindowName_] = true;
 	windowOpenMap_[geometryBuffersWindowName_] = true;
+
+	renderTarget_ = new RenderTarget();
+	engine->GetRenderer()->SetDrawOnWindow(false);
 }
 
 EditorHUD::~EditorHUD()
@@ -178,6 +181,8 @@ void EditorHUD::PreInit()
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
+
+	renderTarget_->Init();
 }
 
 void EditorHUD::Init()
@@ -215,14 +220,10 @@ void EditorHUD::BeginGame()
 	colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.f);
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
 
-	renderTarget_ = new RenderTarget();
-	renderTarget_->SetCamera(dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject()->GetCameraComponent()->GetCamera());
-	renderTarget_->Init();
-	//renderTarget_->SetRenderShadows(false);
-	//renderTarget_->GetCamera()->SetPosition(Vector3{ 0.f, 0.f, 10.f });
-	//renderTarget_->GetCamera()->SetVectors(Vector3{ 0.f, 0.f, -1.f }, Vector3{ 1.f, 0.f, 0.f });
-
-	engine->GetRenderer()->SetDrawOnWindow(false);
+	FreeCameraObject* renderTargetFreeCameraObject = new FreeCameraObject();
+	Camera* renderTargetCamera = renderTargetFreeCameraObject->GetCameraComponent()->GetCamera();
+	renderTargetCamera->SetCameraType(CameraType::RenderTarget);
+	renderTarget_->SetCamera(renderTargetCamera);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
@@ -441,6 +442,12 @@ void EditorHUD::UpdateHUD()
 
 void EditorHUD::DrawEditorHUD()
 {
+	if(!engine->GetRenderer()->GetDrawOnWindow())
+	{
+		glClearColor(0.f, 0.f, 0.f, 1.f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
 	static bool p_open = true;
 	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
@@ -916,10 +923,10 @@ void EditorHUD::DrawViewport()
 	BeginWindow(viewportWindowName_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 	ImVec2 newViewportSize = ImGui::GetWindowSize();
+
 	if (viewportSize_.x != newViewportSize.x || viewportSize_.y != newViewportSize.y)
 	{
 		viewportSize_ = newViewportSize;
-
 		renderTarget_->SetFrameSize({ viewportSize_.x, viewportSize_.y });
 	}
 
@@ -928,7 +935,7 @@ void EditorHUD::DrawViewport()
 	Texture* renderTargetTexture = renderTarget_->GetTexture();
 	ImGui::Image(
 		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
-		ImVec2{ (float)engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->bufferWidth, (float)engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->bufferHeight },
+		ImVec2{ viewportSize_.x, viewportSize_.y },
 		ImVec2{ 0.f, 1.f },
 		ImVec2{ 1.f, 0.f }
 	);
@@ -940,14 +947,6 @@ void EditorHUD::DrawGeometryBuffersWindow()
 {
 	BeginWindow(geometryBuffersWindowName_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	ImVec2 newViewportSize = ImGui::GetWindowSize();
-	if (viewportSize_.x != newViewportSize.x || viewportSize_.y != newViewportSize.y)
-	{
-		viewportSize_ = newViewportSize;
-
-		renderTarget_->SetFrameSize({ viewportSize_.x, viewportSize_.y });
-	}
-
 	viewportPosition_ = ImGui::GetWindowPos();
 
 	ImVec2 windowSize = ImGui::GetWindowSize();
@@ -956,11 +955,11 @@ void EditorHUD::DrawGeometryBuffersWindow()
 	ImVec2 imagePosition = {0.f, 0.f};
 
 	ImGui::SetCursorPos(imagePosition);
-	Texture* diffuseTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
-	Texture* emmisiveColorTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->emmisiveColorTexture;
-	Texture* specularTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->specularTexture;
-	Texture* worldPositionTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
-	Texture* worldNormalTexture = engine->GetRenderer()->GetDeferredRenderingData()->geometryBufferData->worldNormalTexture;
+	Texture* diffuseTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
+	Texture* emmisiveColorTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->emmisiveColorTexture;
+	Texture* specularTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->specularTexture;
+	Texture* worldPositionTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
+	Texture* worldNormalTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->worldNormalTexture;
 
 	ImGui::Image(
 		(ImTextureID)(intptr_t)diffuseTexture->GetRendererTextureId(),
