@@ -222,6 +222,10 @@ void EditorHUD::BeginGame()
 
 	FreeCameraObject* renderTargetFreeCameraObject = new FreeCameraObject();
 	Camera* renderTargetCamera = renderTargetFreeCameraObject->GetCameraComponent()->GetCamera();
+
+	//Camera* renderTargetCamera = new Camera();
+	//renderTargetCamera->SetPosition({-10.f, -10.f, 10.f});
+	//renderTargetCamera->SetVectors(Vector3{ 1.f, 1.f, -1.f }.GetNormalized(), Vector3{ 0.f, 0.f, 1.f }.GetNormalized());
 	renderTargetCamera->SetCameraType(CameraType::RenderTarget);
 	renderTarget_->SetCamera(renderTargetCamera);
 }
@@ -694,7 +698,7 @@ void EditorHUD::DrawEditorHUD()
 		DrawViewport();
 	}
 	
-	if (windowOpenMap_[geometryBuffersWindowName_])
+	if (engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred &&  windowOpenMap_[geometryBuffersWindowName_])
 	{
 		DrawGeometryBuffersWindow();
 	}
