@@ -136,6 +136,8 @@ private:
 	void FocusToPosition(const Vector3& position);
 	void OpenSaveSceneDialog();
 
+	bool IsCursorInCurrentWindow();
+
 	DirectionalLight* CreateDirectionalLight();
 	PointLight* CreatePointLight();
 	SpotLight* CreateSpotLight();
@@ -196,5 +198,6 @@ private:
 
 	RenderTarget* renderTarget_{ nullptr };
 
-	bool drawCollisionWorld_{ false };
+	bool drawCollisionWorld_{ false }; 
+	bool shouldFreeCameraControllerBeEnabled_{ true };
 };

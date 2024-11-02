@@ -690,17 +690,20 @@ void EditorHUD::DrawEditorHUD()
 		DrawDetailsWindow();
 	}
 
+	shouldFreeCameraControllerBeEnabled_ = true;
+
 	if (windowOpenMap_[viewportWindowName_])
 	{
-		viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(true);
 		DrawViewport();
 	}
 	else
 	{
-		viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(false);
+		shouldFreeCameraControllerBeEnabled_ = false;
 	}
 	
-	if (engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred && windowOpenMap_[geometryBuffersWindowName_])
+	bool shouldDrawGeometryBuffersWindow = engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred && windowOpenMap_[geometryBuffersWindowName_];
+
+	if (shouldDrawGeometryBuffersWindow)
 	{
 		DrawGeometryBuffersWindow();
 	}
@@ -720,7 +723,9 @@ void EditorHUD::DrawEditorHUD()
 		DrawObjectInspector();
 	}
 
-	renderTarget_->SetIsActive(windowOpenMap_[viewportWindowName_]);
+	renderTarget_->SetIsActive(windowOpenMap_[viewportWindowName_] || shouldDrawGeometryBuffersWindow);
+
+	viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(shouldFreeCameraControllerBeEnabled_);
 }
 
 void EditorHUD::DrawCameraInfo()
@@ -946,18 +951,7 @@ void EditorHUD::DrawViewport()
 		ImVec2{ 1.f, 0.f }
 	);
 
-	ImVec2 windowPos = ImGui::GetWindowPos();
-	ImVec2 windowSize = ImGui::GetWindowSize();
-
-	ImVec2 mousePos = ImGui::GetMousePos();
-
-	bool isMouseInside = mousePos.x >= windowPos.x && mousePos.x <= windowPos.x + windowSize.x &&
-		mousePos.y >= windowPos.y && mousePos.y <= windowPos.y + windowSize.y;
-
-	if (!isMouseInside)
-	{
-		viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(false);
-	}
+	shouldFreeCameraControllerBeEnabled_ = IsCursorInCurrentWindow();
 
 	EndWindow();
 }
@@ -1022,6 +1016,8 @@ void EditorHUD::DrawGeometryBuffersWindow()
 		ImVec2{ 0.f, 1.f },
 		ImVec2{ 1.f, 0.f }
 	);
+
+	shouldFreeCameraControllerBeEnabled_ |= IsCursorInCurrentWindow();
 
 	EndWindow();
 }
@@ -2194,6 +2190,19 @@ void EditorHUD::OpenSaveSceneDialog()
 
 		windowOpenMap_[saveSceneDialogWindowName_] = false;
 	}
+}
+
+bool EditorHUD::IsCursorInCurrentWindow()
+{
+	ImVec2 windowPos = ImGui::GetWindowPos();
+	ImVec2 windowSize = ImGui::GetWindowSize();
+
+	ImVec2 mousePos = ImGui::GetMousePos();
+
+	bool isMouseInside = mousePos.x >= windowPos.x && mousePos.x <= windowPos.x + windowSize.x &&
+		mousePos.y >= windowPos.y && mousePos.y <= windowPos.y + windowSize.y;
+
+	return isMouseInside;
 }
 
 DirectionalLight* EditorHUD::CreateDirectionalLight()
