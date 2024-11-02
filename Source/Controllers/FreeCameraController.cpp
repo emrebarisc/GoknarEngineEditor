@@ -66,6 +66,11 @@ void FreeCameraController::SetupInputs()
 
 void FreeCameraController::SetIsActive(bool isActive)
 {
+	if (GetIsActive() == isActive)
+	{
+		return;
+	}
+
 	Controller::SetIsActive(isActive);
 
 	if (isActive)
@@ -172,8 +177,8 @@ void FreeCameraController::BindInputDelegates()
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::SPACE, INPUT_ACTION::G_REPEAT, moveUpDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::LEFT_CONTROL, INPUT_ACTION::G_REPEAT, moveDownDelegate_);
 
-	inputManager->AddCursorDelegate(onCursorMoveDelegate_);
 	inputManager->AddScrollDelegate(onScrollMoveDelegate_);
+	inputManager->AddCursorDelegate(onCursorMoveDelegate_);
 
 }
 
@@ -186,13 +191,13 @@ void FreeCameraController::UnbindInputDelegates()
 	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_MIDDLE, INPUT_ACTION::G_PRESS, onMouseMiddleClickPressedDelegate_);
 	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_MIDDLE, INPUT_ACTION::G_RELEASE, onMouseMiddleClickReleasedDelegate_);
 
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::LEFT, INPUT_ACTION::G_REPEAT, moveLeftDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::RIGHT, INPUT_ACTION::G_REPEAT, moveRightDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::UP, INPUT_ACTION::G_REPEAT, moveForwardDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::DOWN, INPUT_ACTION::G_REPEAT, moveBackwardDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::A, INPUT_ACTION::G_REPEAT, moveLeftDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::D, INPUT_ACTION::G_REPEAT, moveRightDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::W, INPUT_ACTION::G_REPEAT, moveForwardDelegate_);
+	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::S, INPUT_ACTION::G_REPEAT, moveBackwardDelegate_);
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::SPACE, INPUT_ACTION::G_REPEAT, moveUpDelegate_);
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::LEFT_CONTROL, INPUT_ACTION::G_REPEAT, moveDownDelegate_);
 
-	inputManager->RemoveCursorDelegate(onScrollMoveDelegate_);
-	inputManager->RemoveScrollDelegate(onCursorMoveDelegate_);
+	inputManager->RemoveScrollDelegate(onScrollMoveDelegate_);
+	inputManager->RemoveCursorDelegate(onCursorMoveDelegate_);
 }

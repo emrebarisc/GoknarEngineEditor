@@ -50,6 +50,7 @@
 #include "Goknar/Helpers/SceneParser.h"
 
 #include "Game.h"
+#include "Controllers/FreeCameraController.h"
 #include "Objects/FreeCameraObject.h"
 #include "Thirdparty/ImGuiOpenGL.h"
 
@@ -220,12 +221,8 @@ void EditorHUD::BeginGame()
 	colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.f);
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
 
-	FreeCameraObject* renderTargetFreeCameraObject = new FreeCameraObject();
-	Camera* renderTargetCamera = renderTargetFreeCameraObject->GetCameraComponent()->GetCamera();
-
-	//Camera* renderTargetCamera = new Camera();
-	//renderTargetCamera->SetPosition({-10.f, -10.f, 10.f});
-	//renderTargetCamera->SetVectors(Vector3{ 1.f, 1.f, -1.f }.GetNormalized(), Vector3{ 0.f, 0.f, 1.f }.GetNormalized());
+	viewportFreeCameraObject_ = new FreeCameraObject();
+	Camera* renderTargetCamera = viewportFreeCameraObject_->GetCameraComponent()->GetCamera();
 	renderTargetCamera->SetCameraType(CameraType::RenderTarget);
 	renderTarget_->SetCamera(renderTargetCamera);
 }
@@ -695,10 +692,15 @@ void EditorHUD::DrawEditorHUD()
 
 	if (windowOpenMap_[viewportWindowName_])
 	{
+		viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(true);
 		DrawViewport();
 	}
+	else
+	{
+		viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(false);
+	}
 	
-	if (engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred &&  windowOpenMap_[geometryBuffersWindowName_])
+	if (engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred && windowOpenMap_[geometryBuffersWindowName_])
 	{
 		DrawGeometryBuffersWindow();
 	}
@@ -943,6 +945,19 @@ void EditorHUD::DrawViewport()
 		ImVec2{ 0.f, 1.f },
 		ImVec2{ 1.f, 0.f }
 	);
+
+	ImVec2 windowPos = ImGui::GetWindowPos();
+	ImVec2 windowSize = ImGui::GetWindowSize();
+
+	ImVec2 mousePos = ImGui::GetMousePos();
+
+	bool isMouseInside = mousePos.x >= windowPos.x && mousePos.x <= windowPos.x + windowSize.x &&
+		mousePos.y >= windowPos.y && mousePos.y <= windowPos.y + windowSize.y;
+
+	if (!isMouseInside)
+	{
+		viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(false);
+	}
 
 	EndWindow();
 }

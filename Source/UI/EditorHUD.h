@@ -29,6 +29,8 @@ class NonMovingTriangleMeshCollisionComponent;
 class RenderTarget;
 class Texture;
 
+class FreeCameraObject;
+
 enum class Editor_ObjectType
 {
 	None = 0,
@@ -168,6 +170,8 @@ private:
 
 	Image* uiImage_;
 	ImGuiContext* imguiContext_;
+
+	FreeCameraObject* viewportFreeCameraObject_;
 
 	Editor_ObjectType selectedObjectType_{ Editor_ObjectType::None };
 	void* selectedObject_{ nullptr };
