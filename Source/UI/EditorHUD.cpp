@@ -1275,17 +1275,17 @@ void EditorHUD::DrawDetailsWindow_Object()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Position", selectedObjectWorldPosition);
+	DrawInputVector3("##Position", selectedObjectWorldPosition);
 	selectedObject->SetWorldPosition(selectedObjectWorldPosition);
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Rotation", selectedObjectWorldRotationEulerDegrees);
+	DrawInputVector3("##Rotation", selectedObjectWorldRotationEulerDegrees);
 	selectedObject->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Scaling", selectedObjectWorldScaling);
+	DrawInputVector3("##Scaling", selectedObjectWorldScaling);
 	selectedObject->SetWorldScaling(selectedObjectWorldScaling);
 
 	ImGui::Separator();
@@ -1725,17 +1725,17 @@ void EditorHUD::DrawDetailsWindow_Component(ObjectBase* owner, Component* compon
 
 	ImGui::Text("RelativePosition: ");
 	ImGui::SameLine();
-	DrawInputFloat(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
+	DrawInputVector3(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
 	component->SetRelativePosition(componentRelativePosition);
 
 	ImGui::Text("RelativeRotation: ");
 	ImGui::SameLine();
-	DrawInputFloat(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
+	DrawInputVector3(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
 	component->SetRelativeRotation(Quaternion::FromEulerDegrees(componentRelativeRotationEulerDegrees));
 
 	ImGui::Text("RelativeScaling: ");
 	ImGui::SameLine();
-	DrawInputFloat(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
+	DrawInputVector3(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
 
 	if (staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component))
@@ -1768,7 +1768,6 @@ void EditorHUD::DrawDetailsWindow_StaticMeshComponent(StaticMeshComponent* stati
 {
 	std::string specialPostfix = "##" + std::to_string(staticMeshComponent->GetGUID());
 
-	std::string meshPath;
 	ImGui::Text("Mesh: ");
 
 	ImGui::SameLine();
@@ -1796,6 +1795,22 @@ void EditorHUD::DrawDetailsWindow_StaticMeshComponent(StaticMeshComponent* stati
 			}
 		}
 	}
+
+	ImGui::Text("Render mask: ");
+
+	ImGui::SameLine();
+	StaticMeshInstance* staticMeshInstance = staticMeshComponent->GetMeshInstance();
+
+	ImGui::PushItemWidth(100.f);
+
+	int currentValue = staticMeshInstance->GetRenderMask();
+	DrawInputInt("##StaticMeshInstanceRenderMask", currentValue);
+	if (currentValue != staticMeshInstance->GetRenderMask())
+	{
+		staticMeshInstance->SetRenderMask(currentValue);
+	}
+
+	ImGui::PopItemWidth();
 }
 
 void EditorHUD::DrawDetailsWindow_BoxCollisionComponent(BoxCollisionComponent* boxCollisionComponent)
@@ -1874,12 +1889,12 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Position", lightPosition);
+	DrawInputVector3("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Direction", lightDirection);
+	DrawInputVector3("##Direction", lightDirection);
 	light->SetDirection(lightDirection);
 
 	ImGui::Text("Intensity: ");
@@ -1889,7 +1904,7 @@ void EditorHUD::DrawDetailsWindow_DirectionalLight()
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Color", lightColor);
+	DrawInputVector3("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Cast shadow: ");
@@ -1920,7 +1935,7 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Position", lightPosition);
+	DrawInputVector3("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Intensity: ");
@@ -1930,7 +1945,7 @@ void EditorHUD::DrawDetailsWindow_PointLight()
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Color", lightColor);
+	DrawInputVector3("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Radius: ");
@@ -1968,12 +1983,12 @@ void EditorHUD::DrawDetailsWindow_SpotLight()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Position", lightPosition);
+	DrawInputVector3("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Direction", lightDirection);
+	DrawInputVector3("##Direction", lightDirection);
 	light->SetDirection(lightDirection);
 
 	ImGui::Text("FalloffAngle: ");
@@ -1993,7 +2008,7 @@ void EditorHUD::DrawDetailsWindow_SpotLight()
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	DrawInputFloat("##Color", lightColor);
+	DrawInputVector3("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Cast shadow: ");
@@ -2016,6 +2031,13 @@ void EditorHUD::DrawInputText(const std::string& name, std::string& value)
 	value = std::string(valueChar);
 }
 
+void EditorHUD::DrawInputInt(const std::string& name, int& value)
+{
+	int newValue = value;
+	ImGui::InputInt((name).c_str(), &newValue);
+	value = newValue;
+}
+
 void EditorHUD::DrawInputFloat(const std::string& name, float& value)
 {
 	float newValue = value;
@@ -2026,7 +2048,7 @@ void EditorHUD::DrawInputFloat(const std::string& name, float& value)
 	}
 }
 
-void EditorHUD::DrawInputFloat(const std::string& name, Vector3& vector)
+void EditorHUD::DrawInputVector3(const std::string& name, Vector3& vector)
 {
 	float newValueX = vector.x;
 	ImGui::InputFloat((name + "X").c_str(), &newValueX);
@@ -2054,7 +2076,7 @@ void EditorHUD::DrawInputFloat(const std::string& name, Vector3& vector)
 	}
 }
 
-void EditorHUD::DrawInputFloat(const  std::string& name, Quaternion& quaternion)
+void EditorHUD::DrawInputQuaternion(const  std::string& name, Quaternion& quaternion)
 {
 	float newQuaternionX = quaternion.x;
 	ImGui::InputFloat((name + "X").c_str(), &newQuaternionX);

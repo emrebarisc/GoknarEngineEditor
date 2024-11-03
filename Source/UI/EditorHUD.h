@@ -116,9 +116,10 @@ private:
 	void DrawDetailsWindow_SpotLight();
 
 	void DrawInputText(const std::string& name, std::string& value);
+	void DrawInputInt(const std::string& name, int& value);
 	void DrawInputFloat(const std::string& name, float& value);
-	void DrawInputFloat(const std::string& name, Vector3& vector);
-	void DrawInputFloat(const std::string& name, Quaternion& quaternion);
+	void DrawInputVector3(const std::string& name, Vector3& vector);
+	void DrawInputQuaternion(const std::string& name, Quaternion& quaternion);
 
 	void DrawCheckbox(const std::string& name, bool& value);
 
