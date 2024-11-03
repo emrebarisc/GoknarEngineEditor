@@ -92,7 +92,6 @@ private:
 	void DrawSceneObject(ObjectBase* object);
 
 	void DrawObjectsWindow();
-	void DrawObjectInspector();
 	void BuildFileTree();
 	void DrawFileTree(Folder* folder);
 	void DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
@@ -189,7 +188,6 @@ private:
 	std::string fileBrowserWindowName_{ "FileBrowser" };
 	std::string detailsWindowName_{ "Details" };
 	std::string gameOptionsWindowName_{ "GameOptions" };
-	std::string objectInspectorWindowName_{ "Object Inspector" };
 	std::string viewportWindowName_{ "Viewport" };
 	std::string geometryBuffersWindowName_{ "Geometry Buffers" };
 
@@ -197,7 +195,7 @@ private:
 
 	ImGuiWindowFlags dockableWindowFlags_{ ImGuiWindowFlags_None };
 
-	RenderTarget* renderTarget_{ nullptr };
+	RenderTarget* viewportRenderTarget_{ nullptr };
 
 	bool drawCollisionWorld_{ false }; 
 	bool shouldFreeCameraControllerBeEnabled_{ true };

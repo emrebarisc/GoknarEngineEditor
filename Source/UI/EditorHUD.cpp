@@ -126,7 +126,8 @@ EditorHUD::EditorHUD() : HUD()
 	windowOpenMap_[viewportWindowName_] = true;
 	windowOpenMap_[geometryBuffersWindowName_] = true;
 
-	renderTarget_ = new RenderTarget();
+	viewportRenderTarget_ = new RenderTarget();
+
 	engine->GetRenderer()->SetDrawOnWindow(false);
 }
 
@@ -160,7 +161,7 @@ EditorHUD::~EditorHUD()
 
 	delete rootFolder;
 
-	delete renderTarget_;
+	delete viewportRenderTarget_;
 }
 
 void EditorHUD::PreInit()
@@ -183,7 +184,7 @@ void EditorHUD::PreInit()
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
 
-	renderTarget_->Init();
+	viewportRenderTarget_->Init();
 }
 
 void EditorHUD::Init()
@@ -224,7 +225,7 @@ void EditorHUD::BeginGame()
 	viewportFreeCameraObject_ = new FreeCameraObject();
 	Camera* renderTargetCamera = viewportFreeCameraObject_->GetCameraComponent()->GetCamera();
 	renderTargetCamera->SetCameraType(CameraType::RenderTarget);
-	renderTarget_->SetCamera(renderTargetCamera);
+	viewportRenderTarget_->SetCamera(renderTargetCamera);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
@@ -341,7 +342,7 @@ void EditorHUD::OnPlaceObject()
 
 Vector3 EditorHUD::RaycastWorld()
 {
-	Camera* activeCamera = renderTarget_->GetCamera();
+	Camera* activeCamera = viewportRenderTarget_->GetCamera();
 
 	InputManager* inputManager = engine->GetInputManager();
 
@@ -718,12 +719,7 @@ void EditorHUD::DrawEditorHUD()
 		OpenSaveSceneDialog();
 	}
 
-	if (windowOpenMap_[objectInspectorWindowName_])
-	{
-		DrawObjectInspector();
-	}
-
-	renderTarget_->SetIsActive(windowOpenMap_[viewportWindowName_] || shouldDrawGeometryBuffersWindow);
+	viewportRenderTarget_->SetIsActive(windowOpenMap_[viewportWindowName_] || shouldDrawGeometryBuffersWindow);
 
 	viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(shouldFreeCameraControllerBeEnabled_);
 }
@@ -936,12 +932,12 @@ void EditorHUD::DrawViewport()
 	if (viewportSize_.x != newViewportSize.x || viewportSize_.y != newViewportSize.y)
 	{
 		viewportSize_ = newViewportSize;
-		renderTarget_->SetFrameSize({ viewportSize_.x, viewportSize_.y });
+		viewportRenderTarget_->SetFrameSize({ newViewportSize.x, newViewportSize.y });
 	}
 
 	viewportPosition_ = ImGui::GetWindowPos();
 
-	Texture* renderTargetTexture = renderTarget_->GetTexture();
+	Texture* renderTargetTexture = viewportRenderTarget_->GetTexture();
 
 	ImGui::SetCursorPos(ImVec2{0.f, 0.f});
 	ImGui::Image(
@@ -968,11 +964,11 @@ void EditorHUD::DrawGeometryBuffersWindow()
 	ImVec2 imagePosition = {0.f, 0.f};
 
 	ImGui::SetCursorPos(imagePosition);
-	Texture* diffuseTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
-	Texture* emmisiveColorTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->emmisiveColorTexture;
-	Texture* specularTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->specularTexture;
-	Texture* worldPositionTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
-	Texture* worldNormalTexture = renderTarget_->GetDeferredRenderingData()->geometryBufferData->worldNormalTexture;
+	Texture* diffuseTexture = viewportRenderTarget_->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
+	Texture* emmisiveColorTexture = viewportRenderTarget_->GetDeferredRenderingData()->geometryBufferData->emmisiveColorTexture;
+	Texture* specularTexture = viewportRenderTarget_->GetDeferredRenderingData()->geometryBufferData->specularTexture;
+	Texture* worldPositionTexture = viewportRenderTarget_->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
+	Texture* worldNormalTexture = viewportRenderTarget_->GetDeferredRenderingData()->geometryBufferData->worldNormalTexture;
 
 	ImGui::Image(
 		(ImTextureID)(intptr_t)diffuseTexture->GetRendererTextureId(),
@@ -1057,39 +1053,12 @@ void EditorHUD::DrawObjectsWindow()
 			{
 				objectToCreateType_ = Editor_ObjectType::Object;
 				objectToCreateName_ = name;
-
-				windowOpenMap_[objectInspectorWindowName_] = true;
 			}
 		}
 		
 		ImGui::TreePop();
 	}
 	ImGui::Separator();
-	EndWindow();
-}
-
-void EditorHUD::DrawObjectInspector()
-{
-	BeginWindow(objectInspectorWindowName_);
-
-	//CameraManager* cameraManager = engine->GetCameraManager();
-
-	//Camera* activeCamera = cameraManager->GetActiveCamera();
-	//cameraManager->SetActiveCamera(objectCamera);
-	//Renderer* renderer = engine->GetRenderer();
-	//renderer->Render(RenderPassType::GeometryBuffer);
-
-	//viewportFramebuffer_->Bind();
-	//renderer->Render(RenderPassType::Deferred);
-
-	//ImGui::Image(
-	//	(void*)(intptr_t)viewportFrameTexture_->GetRendererTextureId(),
-	//	ImVec2{ (float)objectCamera->GetImageWidth(), (float)objectCamera->GetImageHeight() }
-	//);
-
-	//cameraManager->SetActiveCamera(activeCamera);
-	//viewportFramebuffer_->Unbind();
-
 	EndWindow();
 }
 
