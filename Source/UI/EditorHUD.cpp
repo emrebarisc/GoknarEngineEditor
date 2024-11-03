@@ -732,12 +732,11 @@ void EditorHUD::DrawCameraInfo()
 {
 	BeginTransparentWindow("CameraInfo");
 
-	FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
-	ImGui::Text((std::string("Position: ") + freeCameraObject->GetWorldPosition().ToString()).c_str());
-	ImGui::Text((std::string("Rotation: ") + freeCameraObject->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
-	ImGui::Text((std::string("Forward Vector: ") + freeCameraObject->GetForwardVector().ToString()).c_str());
-	ImGui::Text((std::string("Left Vector: ") + freeCameraObject->GetLeftVector().ToString()).c_str());
-	ImGui::Text((std::string("Up Vector: ") + freeCameraObject->GetUpVector().ToString()).c_str());
+	ImGui::Text((std::string("Position: ") + viewportFreeCameraObject_->GetWorldPosition().ToString()).c_str());
+	ImGui::Text((std::string("Rotation: ") + viewportFreeCameraObject_->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
+	ImGui::Text((std::string("Forward Vector: ") + viewportFreeCameraObject_->GetForwardVector().ToString()).c_str());
+	ImGui::Text((std::string("Left Vector: ") + viewportFreeCameraObject_->GetLeftVector().ToString()).c_str());
+	ImGui::Text((std::string("Up Vector: ") + viewportFreeCameraObject_->GetUpVector().ToString()).c_str());
 
 	EndWindow();
 }
@@ -854,8 +853,7 @@ void EditorHUD::DrawSceneObject(ObjectBase* object)
 
 		if (ImGui::IsMouseDoubleClicked(ImGuiButtonFlags_MouseButtonLeft))
 		{
-			FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
-			freeCameraObject->SetWorldPosition(object->GetWorldPosition() - 20.f * freeCameraObject->GetForwardVector());
+			viewportFreeCameraObject_->SetWorldPosition(object->GetWorldPosition() - 20.f * viewportFreeCameraObject_->GetForwardVector());
 		}
 	}
 
@@ -944,6 +942,8 @@ void EditorHUD::DrawViewport()
 	viewportPosition_ = ImGui::GetWindowPos();
 
 	Texture* renderTargetTexture = renderTarget_->GetTexture();
+
+	ImGui::SetCursorPos(ImVec2{0.f, 0.f});
 	ImGui::Image(
 		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
 		ImVec2{ viewportSize_.x, viewportSize_.y },
@@ -2174,8 +2174,7 @@ bool EditorHUD::BeginDialogWindow_OneTextBoxOneButton(const std::string& windowT
 
 void EditorHUD::FocusToPosition(const Vector3& position)
 {
-	FreeCameraObject* freeCameraObject = dynamic_cast<Game*>(engine->GetApplication())->GetFreeCameraObject();
-	freeCameraObject->SetWorldPosition(position - 20.f * freeCameraObject->GetForwardVector());
+	viewportFreeCameraObject_->SetWorldPosition(position - 20.f * viewportFreeCameraObject_->GetForwardVector());
 }
 
 void EditorHUD::OpenSaveSceneDialog()
