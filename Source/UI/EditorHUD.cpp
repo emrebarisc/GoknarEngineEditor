@@ -128,7 +128,7 @@ EditorHUD::EditorHUD() : HUD()
 
 	viewportRenderTarget_ = new RenderTarget();
 
-	engine->GetRenderer()->SetDrawOnWindow(false);
+	engine->GetRenderer()->SetDrawOnWindow(true);
 }
 
 EditorHUD::~EditorHUD()
@@ -664,7 +664,7 @@ void EditorHUD::DrawEditorHUD()
 
 	ImGui::End();
 
-	DrawCameraInfo();
+	DrawDrawInfo();
 
 	if (objectToCreateType_ != Editor_ObjectType::None)
 	{
@@ -724,9 +724,11 @@ void EditorHUD::DrawEditorHUD()
 	viewportFreeCameraObject_->GetFreeCameraController()->SetIsActive(shouldFreeCameraControllerBeEnabled_);
 }
 
-void EditorHUD::DrawCameraInfo()
+void EditorHUD::DrawDrawInfo()
 {
-	BeginTransparentWindow("CameraInfo");
+	BeginTransparentWindow("DrawInfo");
+
+	ImGui::Text((std::string("Draw call count: ") + std::to_string(engine->GetRenderer()->drawCallCount)).c_str());
 
 	ImGui::Text((std::string("Position: ") + viewportFreeCameraObject_->GetWorldPosition().ToString()).c_str());
 	ImGui::Text((std::string("Rotation: ") + viewportFreeCameraObject_->GetWorldRotation().ToEulerDegrees().ToString()).c_str());

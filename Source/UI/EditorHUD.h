@@ -83,7 +83,7 @@ private:
 
 	void DrawEditorHUD();
 
-	void DrawCameraInfo();
+	void DrawDrawInfo();
 	void DrawGameOptionsBar();
 
 	void DrawSceneWindow();
