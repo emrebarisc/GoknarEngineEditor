@@ -14,7 +14,6 @@ FreeCameraObject::FreeCameraObject() : ObjectBase()
 	SetRootComponent(cameraComponent_);
 
 	freeCameraController_ = new FreeCameraController(this);
-	freeCameraController_->SetName("__Editor__FreeCameraController");
 }
 
 void FreeCameraObject::BeginGame()

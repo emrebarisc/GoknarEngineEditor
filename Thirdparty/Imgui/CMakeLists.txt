@@ -4,9 +4,14 @@ project(IMGUI)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(LIBRARY_SOURCE)
-file(GLOB sourceFiles "Repo/*.c" "Repo/*.cpp" "Repo/*.cxx")
-list(APPEND LIBRARY_SOURCE ${sourceFiles})
-add_library(IMGUI ${LIBRARY_SOURCE})
+# 1. Collect Core ImGui source files (imgui.cpp, imgui_draw.cpp, etc.)
+file(GLOB IMGUI_CORE_SOURCE 
+    "Repo/*.cpp" 
+    "Repo/*.c"
+)
 
-target_include_directories(IMGUI PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Repo>/)
+add_library(IMGUI STATIC ${IMGUI_CORE_SOURCE})
+
+target_include_directories(IMGUI PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Repo>
+)

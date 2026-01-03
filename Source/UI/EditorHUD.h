@@ -1,10 +1,14 @@
 #pragma once
 
+#include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "Goknar/Core.h"
 #include "Goknar/Delegates/Delegate.h"
 #include "Goknar/UI/HUD.h"
+
+#include "Panels/EditorPanel.h"
 
 #include "imgui.h"
 
@@ -27,24 +31,17 @@ class SphereCollisionComponent;
 class MovingTriangleMeshCollisionComponent;
 class NonMovingTriangleMeshCollisionComponent;
 class RenderTarget;
-class Texture;
-
-class FreeCameraObject;
-
-enum class Editor_ObjectType
-{
-	None = 0,
-	Object,
-	DirectionalLight,
-	PointLight,
-	SpotLight
-};
 
 class GOKNAR_API EditorHUD : public HUD
 {
 public:
 	EditorHUD();
+	EditorHUD(const EditorHUD&) = delete;
+	EditorHUD(EditorHUD&&) = default;
 	virtual ~EditorHUD();
+
+	EditorHUD& operator=(const EditorHUD&) = delete;
+	EditorHUD& operator=(EditorHUD&&) = default;
 
     virtual void PreInit() override;
     virtual void Init() override;
@@ -52,22 +49,24 @@ public:
 
     virtual void BeginGame() override;
 
+	virtual void SetupDocking();
+
     virtual void UpdateHUD() override;
+
+	template<typename T>
+	void ShowPanel();
+
+	template<typename T>
+	void HidePanel();
+
+	const std::vector<std::unique_ptr<IEditorPanel>>& GetPanels() const
+	{
+		return panels_;
+	}
 
 protected:
 
 private:
-	struct Folder
-	{
-		std::string folderName;
-		std::string fullPath;
-		std::vector<Folder*> subFolders;
-		std::vector<std::string> fileNames;
-	};
-
-	Folder* rootFolder;
-	std::unordered_map<std::string, Folder*> folderMap;
-
 	void OnKeyboardEvent(int key, int scanCode, int action, int mod);
 
 	void OnCursorMove(double xPosition, double yPosition);
@@ -86,57 +85,19 @@ private:
 	void DrawDrawInfo();
 	void DrawGameOptionsBar();
 
-	void DrawSceneWindow();
-	void DrawSceneLights();
-	void DrawSceneObjects();
-	void DrawSceneObject(ObjectBase* object);
-
 	void DrawObjectsWindow();
-	void BuildFileTree();
-	void DrawFileTree(Folder* folder);
-	void DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
-
-	void DrawViewport();
-	void DrawGeometryBuffersWindow();
-
-	void DrawFileBrowserWindow();
-	void DrawDetailsWindow();
-	void DrawDetailsWindow_Object();
-	void DrawDetailsWindow_AddComponentOptions(ObjectBase* object);
-	void DrawDetailsWindow_Component(ObjectBase* owner, Component* component);
-	void DrawDetailsWindow_StaticMeshComponent(StaticMeshComponent* component);
-	void DrawDetailsWindow_BoxCollisionComponent(BoxCollisionComponent* boxCollisionComponent);
-	void DrawDetailsWindow_SphereCollisionComponent(SphereCollisionComponent* sphereCollisionComponent);
-	void DrawDetailsWindow_CapsuleCollisionComponent(CapsuleCollisionComponent* capsuleCollisionComponent);
-	void DrawDetailsWindow_MovingTriangleMeshCollisionComponent(MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent);
-	void DrawDetailsWindow_NonMovingTriangleMeshCollisionComponent(NonMovingTriangleMeshCollisionComponent* nonMovingTriangleMeshCollisionComponent);
-	void DrawDetailsWindow_DirectionalLight();
-	void DrawDetailsWindow_PointLight();
-	void DrawDetailsWindow_SpotLight();
-
-	void DrawInputText(const std::string& name, std::string& value);
-	void DrawInputInt(const std::string& name, int& value);
-	void DrawInputFloat(const std::string& name, float& value);
-	void DrawInputVector3(const std::string& name, Vector3& vector);
-	void DrawInputQuaternion(const std::string& name, Quaternion& quaternion);
 
 	void DrawCheckbox(const std::string& name, bool& value);
 
-	bool DrawAssetSelector(std::string& selectedPath);
+	//bool DrawAssetSelector(std::string& selectedPath);
 
 	void BeginWindow(const std::string& name, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
 	void BeginTransparentWindow(const std::string& name, ImGuiWindowFlags additionalFlags = ImGuiWindowFlags_None);
 	void EndWindow();
 
-	bool BeginDialogWindow_OneTextBoxOneButton(
-		const std::string& windowTitle, const std::string& text, 
-		const std::string& currentValue, const std::string& buttonText,
-		ImGuiWindowFlags flags);
+
 
 	void FocusToPosition(const Vector3& position);
-	void OpenSaveSceneDialog();
-
-	bool IsCursorInCurrentWindow();
 
 	DirectionalLight* CreateDirectionalLight();
 	PointLight* CreatePointLight();
@@ -146,6 +107,7 @@ private:
 	void OnPlaceObject();
 	Vector3 RaycastWorld();
 	void DrawObjectNameToCreateWindow();
+
 
 	Delegate<void(int, int, int, int)> onKeyboardEventDelegate_;
 	Delegate<void(double, double)> onCursorMoveDelegate_;
@@ -171,32 +133,37 @@ private:
 	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsObjectReflections;
 
 	Image* uiImage_;
-	ImGuiContext* imguiContext_;
-
-	FreeCameraObject* viewportFreeCameraObject_;
-
-	Editor_ObjectType selectedObjectType_{ Editor_ObjectType::None };
-	void* selectedObject_{ nullptr };
-
-	Editor_ObjectType objectToCreateType_{ Editor_ObjectType::None };
-	std::string objectToCreateName_{};
-
-	std::string sceneSavePath_{};
-	std::string saveSceneDialogWindowName_{ "Save Scene" };
-	std::string sceneWindowName_{ "Scene" };
-	std::string objectsWindowName_{ "Objects" };
-	std::string fileBrowserWindowName_{ "FileBrowser" };
-	std::string detailsWindowName_{ "Details" };
-	std::string gameOptionsWindowName_{ "GameOptions" };
-	std::string viewportWindowName_{ "Viewport" };
-	std::string geometryBuffersWindowName_{ "Geometry Buffers" };
 
 	std::unordered_map<std::string, bool> windowOpenMap_;
 
 	ImGuiWindowFlags dockableWindowFlags_{ ImGuiWindowFlags_None };
 
-	RenderTarget* viewportRenderTarget_{ nullptr };
-
 	bool drawCollisionWorld_{ false }; 
 	bool shouldFreeCameraControllerBeEnabled_{ true };
+
+
+	template<typename T>
+	void AddPanel();
+
+	std::vector<std::unique_ptr<IEditorPanel>> panels_;
+	std::unordered_map<std::string, int> panelIndexMap_;
 };
+
+template<typename T>
+inline void EditorHUD::AddPanel()
+{
+	panels_.emplace_back(std::make_unique<T>(this));
+	panelIndexMap_[typeid(T).name()] = panels_.size() - 1;
+}
+
+template<typename T>
+inline void EditorHUD::ShowPanel()
+{
+	panels_[panelIndexMap_[typeid(T).name()]]->SetIsOpen(true);
+}
+
+template<typename T>
+inline void EditorHUD::HidePanel()
+{
+	panels_[panelIndexMap_[typeid(T).name()]]->SetIsOpen(false);
+}

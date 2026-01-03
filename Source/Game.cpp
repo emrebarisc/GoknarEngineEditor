@@ -63,9 +63,6 @@ Game::Game() : Application()
 	editorHUD_ = new EditorHUD();
 	editorHUD_->SetName("__Editor__HUD");
 
-	freeCameraObject_ = new FreeCameraObject();
-	freeCameraObject_->SetName("__Editor__Camera");
-
 	engine->GetWindowManager()->SetWindowSize(1900, 1000);
 
 	new Sun();

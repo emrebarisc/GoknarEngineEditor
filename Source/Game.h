@@ -14,14 +14,7 @@ public:
 
 	void Run() override;
 
-	FreeCameraObject* GetFreeCameraObject()
-	{
-		return freeCameraObject_;
-	}
-
 private:
 	EditorHUD* editorHUD_{ nullptr };
-	FreeCameraObject* freeCameraObject_{ nullptr };
 	MaterialInitializer* materialInitializer_{ nullptr };
-
 };

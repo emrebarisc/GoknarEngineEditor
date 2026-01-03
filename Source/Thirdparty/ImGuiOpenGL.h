@@ -44,3 +44,5 @@ IMGUI_IMPL_API bool     ImGui_CreateFontsTexture();
 IMGUI_IMPL_API void     ImGui_DestroyFontsTexture();
 IMGUI_IMPL_API bool     ImGui_CreateDeviceObjects();
 IMGUI_IMPL_API void     ImGui_DestroyDeviceObjects();
+
+ImGuiKey ImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode);

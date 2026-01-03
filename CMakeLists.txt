@@ -23,6 +23,7 @@ set(SUBDIRS
     ${SOURCE_DIR_NAME}/Objects/Environment
     ${SOURCE_DIR_NAME}/Objects/Portals
     ${SOURCE_DIR_NAME}/UI
+    ${SOURCE_DIR_NAME}/UI/Panels
     ${SOURCE_DIR_NAME}/Thirdparty
 )
 set(GAME_SOURCE)
