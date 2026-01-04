@@ -7,7 +7,11 @@
 class ObjectCreationPanel : public IEditorPanel
 {
 public:
-    ObjectCreationPanel(EditorHUD* hud) : IEditorPanel("Create", hud) {}
+    ObjectCreationPanel(EditorHUD* hud) : 
+        IEditorPanel("Object Creation", hud)
+    {
+
+    }
     
     virtual void Draw() override;
 
