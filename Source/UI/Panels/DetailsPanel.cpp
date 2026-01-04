@@ -82,7 +82,7 @@ void DetailsPanel::Draw()
 	case EditorSelectionType::None:
 		break;
 	case EditorSelectionType::Object:
-		DrawObjectDetails(EditorContext::Get()->GetSelectionAs<ObjectBase>());
+		DrawObjectDetails();
 		break;
 	case EditorSelectionType::DirectionalLight:
 		DrawDirectionalLightDetails();
@@ -100,36 +100,38 @@ void DetailsPanel::Draw()
 	ImGui::End();
 }
 
-void DetailsPanel::DrawTransform(ObjectBase* obj)
+void DetailsPanel::DrawTransform()
 {
-	Vector3 position = obj->GetWorldPosition();
-	Vector3 rotation = obj->GetWorldRotation().ToEulerDegrees();
-	Vector3 scale = obj->GetWorldScaling();
+	ObjectBase* object = EditorContext::Get()->GetSelectionAs<ObjectBase>();
+
+	Vector3 position = object->GetWorldPosition();
+	Vector3 rotation = object->GetWorldRotation().ToEulerDegrees();
+	Vector3 scale = object->GetWorldScaling();
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Position", position);
-	obj->SetWorldPosition(position);
+	object->SetWorldPosition(position);
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Rotation", rotation);
-	obj->SetWorldRotation(Quaternion::FromEulerDegrees(rotation));
+	object->SetWorldRotation(Quaternion::FromEulerDegrees(rotation));
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Scaling", scale);
-	obj->SetWorldScaling(scale);
+	object->SetWorldScaling(scale);
 }
 
-void DetailsPanel::DrawObjectDetails(ObjectBase* obj)
+void DetailsPanel::DrawObjectDetails()
 {
-	ObjectBase* selectedObject = static_cast<ObjectBase*>(EditorContext::Get()->selectedObject);
+	ObjectBase* object = EditorContext::Get()->GetSelectionAs<ObjectBase>();
 
-	Vector3 selectedObjectWorldPosition = selectedObject->GetWorldPosition();
-	Vector3 selectedObjectWorldRotationEulerDegrees = selectedObject->GetWorldRotation().ToEulerDegrees();
-	Vector3 selectedObjectWorldScaling = selectedObject->GetWorldScaling();
-	std::string selectedObjectName = selectedObject->GetNameWithoutId();
+	Vector3 selectedObjectWorldPosition = object->GetWorldPosition();
+	Vector3 selectedObjectWorldRotationEulerDegrees = object->GetWorldRotation().ToEulerDegrees();
+	Vector3 selectedObjectWorldScaling = object->GetWorldScaling();
+	std::string selectedObjectName = object->GetNameWithoutId();
 
 	ImGui::Text(selectedObjectName.c_str());
 	ImGui::Separator();
@@ -137,7 +139,7 @@ void DetailsPanel::DrawObjectDetails(ObjectBase* obj)
 	ImGui::Text("Add Component: ");
 	ImGui::SameLine();
 
-	DrawAddComponentOptions(selectedObject);
+	DrawAddComponentOptions(object);
 
 	ImGui::PushItemWidth(50.f);
 
@@ -147,26 +149,26 @@ void DetailsPanel::DrawObjectDetails(ObjectBase* obj)
 	EditorWidgets::DrawInputText("##Name", newName);
 	if (newName != selectedObjectName)
 	{
-		selectedObject->SetName(newName);
+		object->SetName(newName);
 	}
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Position", selectedObjectWorldPosition);
-	selectedObject->SetWorldPosition(selectedObjectWorldPosition);
+	object->SetWorldPosition(selectedObjectWorldPosition);
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Rotation", selectedObjectWorldRotationEulerDegrees);
-	selectedObject->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
+	object->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Scaling", selectedObjectWorldScaling);
-	selectedObject->SetWorldScaling(selectedObjectWorldScaling);
+	object->SetWorldScaling(selectedObjectWorldScaling);
 
 	ImGui::Separator();
-	RigidBody* rigidBody = dynamic_cast<RigidBody*>(selectedObject);
+	RigidBody* rigidBody = dynamic_cast<RigidBody*>(object);
 	if (rigidBody)
 	{
 		float rigidBodyMass = rigidBody->GetMass();
@@ -455,10 +457,10 @@ void DetailsPanel::DrawObjectDetails(ObjectBase* obj)
 	}
 	ImGui::Separator();
 
-	const std::vector<Component*>& components = selectedObject->GetComponents();
+	const std::vector<Component*>& components = object->GetComponents();
 	for (Component* component : components)
 	{
-		DrawComponentDetails(selectedObject, component);
+		DrawComponentDetails(object, component);
 		ImGui::Separator();
 	}
 
@@ -676,16 +678,18 @@ void DetailsPanel::DrawNonMovingTriangleMeshCollisionComponentDetails(NonMovingT
 
 }
 
-void DetailsPanel::DrawPhysicsDetails(PhysicsObject* obj)
+void DetailsPanel::DrawPhysicsDetails()
 {
+	PhysicsObject* physicsObject = EditorContext::Get()->GetSelectionAs<PhysicsObject>();
+
 	char nameBuf[64];
-	strcpy_s(nameBuf, obj->GetName().c_str());
+	strcpy_s(nameBuf, physicsObject->GetName().c_str());
 	if (ImGui::InputText("Name", nameBuf, 64))
 	{
-		obj->SetName(nameBuf);
+		physicsObject->SetName(nameBuf);
 	}
 
-	DrawTransform(obj);
+	DrawTransform();
 
 	ImGui::Separator();
 	ImGui::Text("Add Component");
@@ -693,7 +697,7 @@ void DetailsPanel::DrawPhysicsDetails(PhysicsObject* obj)
 	{
 		if (ImGui::Button(pair.first.c_str()))
 		{
-			pair.second(obj);
+			pair.second(physicsObject);
 		}
 	}
 }
@@ -753,7 +757,7 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 
 void DetailsPanel::DrawDirectionalLightDetails()
 {
-	DirectionalLight* light = static_cast<DirectionalLight*>(EditorContext::Get()->selectedObject);
+	DirectionalLight* light = EditorContext::Get()->GetSelectionAs<DirectionalLight>();
 
 	static Vector3 lightPosition = light->GetPosition();
 	static Vector3 lightDirection = light->GetDirection();
@@ -799,7 +803,7 @@ void DetailsPanel::DrawDirectionalLightDetails()
 
 void DetailsPanel::DrawPointLightDetails()
 {
-	PointLight* light = static_cast<PointLight*>(EditorContext::Get()->selectedObject);
+	PointLight* light = EditorContext::Get()->GetSelectionAs<PointLight>();
 
 	Vector3 lightPosition = light->GetPosition();
 	Vector3 lightColor = light->GetColor();
@@ -845,7 +849,7 @@ void DetailsPanel::DrawPointLightDetails()
 
 void DetailsPanel::DrawSpotLightDetails()
 {
-	SpotLight* light = static_cast<SpotLight*>(EditorContext::Get()->selectedObject);
+	SpotLight* light = EditorContext::Get()->GetSelectionAs<SpotLight>();
 
 	Vector3 lightPosition = light->GetPosition();
 	Vector3 lightDirection = light->GetDirection();

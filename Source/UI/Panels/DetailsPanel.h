@@ -23,9 +23,9 @@ public:
 	virtual void Draw() override;
 
 private:
-	void DrawTransform(ObjectBase* obj);
-	void DrawObjectDetails(ObjectBase* obj);
-	void DrawPhysicsDetails(PhysicsObject* obj);
+	void DrawTransform();
+	void DrawObjectDetails();
+	void DrawPhysicsDetails();
 	void DrawDirectionalLightDetails();
 	void DrawPointLightDetails();
 	void DrawSpotLightDetails();
