@@ -12,12 +12,15 @@ EditorContext::EditorContext()
 {
 	imguiContext_ = ImGui::CreateContext();
 
-	viewportCamera = new FreeCameraObject();
-	viewportCamera->SetName("__Editor__ViewportCamera");
-	viewportCamera->GetFreeCameraController()->SetName("__Editor__FreeCameraController");
+	viewportCameraObject = new FreeCameraObject();
+	viewportCameraObject->SetName("__Editor__ViewportCamera");
+	viewportCameraObject->GetFreeCameraController()->SetName("__Editor__FreeCameraController");
+
+	Camera* viewportCamera = viewportCameraObject->GetCameraComponent()->GetCamera();
+	viewportCamera->SetCameraType(CameraType::RenderTarget);
 
 	viewportRenderTarget = new RenderTarget();
-	viewportRenderTarget->SetCamera(viewportCamera->GetCameraComponent()->GetCamera());
+	viewportRenderTarget->SetCamera(viewportCamera);
 	viewportRenderTarget->Init();
 }
 
@@ -25,12 +28,12 @@ EditorContext::~EditorContext()
 {
 	delete viewportRenderTarget;
 
-	viewportCamera->Destroy();
+	viewportCameraObject->Destroy();
 
 	ImGui::DestroyContext(imguiContext_);
 }
 
 void EditorContext::SetCameraMovement(bool value)
 {
-	viewportCamera->GetFreeCameraController()->SetIsActive(value);
+	viewportCameraObject->GetFreeCameraController()->SetIsActive(value);
 }

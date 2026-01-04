@@ -71,8 +71,7 @@ public:
 
 	void* selectedObject = nullptr;
 
-	FreeCameraObject* viewportCamera{ nullptr };
-
+	FreeCameraObject* viewportCameraObject{ nullptr };
 	RenderTarget* viewportRenderTarget{ nullptr };
 
 	ImGuiContext* imguiContext_{ nullptr };

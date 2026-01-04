@@ -24,12 +24,7 @@ ViewportPanel::~ViewportPanel()
 
 void ViewportPanel::Init()
 {
-	cameraObject_ = new FreeCameraObject();
-	cameraObject_->SetWorldPosition(Vector3(0.f, 0.f, 10.f));
-	EditorContext::Get()->viewportCamera = cameraObject_;
-
-	Camera* renderTargetCamera = EditorContext::Get()->viewportCamera->GetCameraComponent()->GetCamera();
-	renderTargetCamera->SetCameraType(CameraType::RenderTarget);
+	Camera* renderTargetCamera = EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera();
 	EditorContext::Get()->viewportRenderTarget->SetCamera(renderTargetCamera);
 }
 
