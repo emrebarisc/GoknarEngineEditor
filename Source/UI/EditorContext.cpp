@@ -5,6 +5,7 @@
 #include "Objects/FreeCameraObject.h"
 #include "Controllers/FreeCameraController.h"
 
+#include "Goknar/Camera.h"
 #include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Renderer/RenderTarget.h"
 
