@@ -7,15 +7,10 @@
 
 #include "Goknar/Camera.h"
 #include "Goknar/Engine.h"
-#include "Goknar/Scene.h"
 
-#include "Goknar/Contents/Audio.h"
 #include "Goknar/Contents/Image.h"
 
-#include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
-
-#include "Goknar/Debug/DebugDrawer.h"
 
 #include "Goknar/Factories/DynamicObjectFactory.h"
 
@@ -23,16 +18,9 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Managers/WindowManager.h"
 
-#include "Goknar/Model/MeshUnit.h"
-
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
-#include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
-#include "Goknar/Physics/Components/SphereCollisionComponent.h"
-#include "Goknar/Physics/Components/NonMovingTriangleMeshCollisionComponent.h"
-#include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
-#include "Goknar/Physics/Components/MultipleCollisionComponent.h"
 
 #include "Goknar/Renderer/Texture.h"
 #include "Goknar/Renderer/RenderTarget.h"
@@ -41,20 +29,19 @@
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
 
-#include "Goknar/Helpers/SceneParser.h"
-
-#include "Game.h"
 #include "Controllers/FreeCameraController.h"
 #include "Objects/FreeCameraObject.h"
 #include "Thirdparty/ImGuiOpenGL.h"
-#include "EditorWidgets.h"
 
 #include "EditorContext.h"
+#include "EditorUtils.h"
 #include "Panels/DebugPanel.h"
 #include "Panels/DetailsPanel.h"
 #include "Panels/FileBrowserPanel.h"
 #include "Panels/GeometryBuffersPanel.h"
 #include "Panels/MenuBar.h"
+#include "Panels/ObjectCreationPanel.h"
+#include "Panels/ObjectNameToCreatePanel.h"
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
 #include "Panels/ViewportPanel.h"
@@ -81,6 +68,8 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ScenePanel>();
 	AddPanel<ViewportPanel>();
 	AddPanel<DebugPanel>();
+	AddPanel<ObjectCreationPanel>();
+	AddPanel<ObjectNameToCreatePanel>();
 
 	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)
 	{
@@ -100,8 +89,7 @@ EditorHUD::EditorHUD() : HUD()
 
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
 
-
-	engine->GetRenderer()->SetDrawOnWindow(false);
+	engine->GetRenderer()->SetDrawOnWindow(true);
 }
 
 EditorHUD::~EditorHUD()
@@ -172,18 +160,14 @@ void EditorHUD::BeginGame()
 	HUD::BeginGame();
 
 	WindowManager* windowManager = engine->GetWindowManager();
-	windowSize_ = windowManager->GetWindowSize();
-
-	Vector2 buttonSizeVector = windowSize_ * 0.05f;
-	buttonSize_ = ImVec2(buttonSizeVector.x, buttonSizeVector.y);
-
 	windowManager->AddWindowSizeCallback(onWindowSizeChangedDelegate_);
 
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2((float)windowSize_.x, (float)windowSize_.y);
+	io.DisplaySize = EditorUtils::ToImVec2(windowManager->GetWindowSize());
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 	io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
-	io.KeyRepeatRate = 0.1f;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.KeyRepeatRate = 0.25f;
 
 	ImGui_Init("#version 410 core");
 
@@ -191,72 +175,83 @@ void EditorHUD::BeginGame()
 	ImVec4* colors = style->Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.f);
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
-
 }
 
-void EditorHUD::SetupDocking()
+void EditorHUD::UpdateHUD()
+{
+	HUD::UpdateHUD();
+
+	if (!engine->GetRenderer()->GetDrawOnWindow())
+	{
+		glClearColor(0.f, 0.f, 0.f, 1.f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	WindowManager* windowManager = engine->GetWindowManager();
+	EditorContext::Get()->windowSize = windowManager->GetWindowSize();
+
+	ImGui_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::StyleColorsDark();
+
+	DrawBackgroundWindow();
+	DrawEditorHUD();
+
+	ImGui::Render();
+	ImGui_RenderDrawData(ImGui::GetDrawData());
+}
+
+void EditorHUD::DrawBackgroundWindow()
 {
 	static bool p_open = true;
-	static bool opt_fullscreen = true;
 	static bool opt_padding = false;
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	if (opt_fullscreen)
-	{
-		const ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->WorkPos);
-		ImGui::SetNextWindowSize(viewport->WorkSize);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	}
-	else
-	{
-		dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-	}
-
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-	// and handle the pass-thru hole, so we ask Begin() to not render a background.
-	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-	if (!opt_padding)
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("Goknar Engine Editor", &p_open, window_flags);
-	if (!opt_padding)
-		ImGui::PopStyleVar();
-
-	if (opt_fullscreen)
-		ImGui::PopStyleVar(2);
-
-	// Submit the DockSpace
 	ImGuiIO& io = ImGui::GetIO();
 
-	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-	{
-		ImGuiID dockspace_id = ImGui::GetID("Editor");
-		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-	}
-	else
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::Text("ERROR: Docking is not enabled! See Demo > Configuration.");
-		ImGui::Text("Set io.ConfigFlags |= ImGuiConfigFlags_DockingEnable in your code, or ");
-		ImGui::SameLine(0.0f, 0.0f);
-		if (ImGui::SmallButton("click here"))
-			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	}
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Once);
+	ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar;
+	window_flags |= ImGuiWindowFlags_NoTitleBar;
+	window_flags |= ImGuiWindowFlags_NoCollapse;
+	window_flags |= ImGuiWindowFlags_NoMove;
+	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+	window_flags |= ImGuiWindowFlags_NoNavFocus;
+
+	ImGui::Begin("Goknar Engine Editor", &p_open, window_flags);
+
+
+	ImGuiID dockspace_id = ImGui::GetID("Editor");
+	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
 	ImGui::End();
+}
+
+void EditorHUD::DrawEditorHUD()
+{
+	std::vector<std::unique_ptr<IEditorPanel>>::const_iterator panelIterator = panels_.cbegin();
+	while (panelIterator != panels_.cend())
+	{
+		IEditorPanel* panel = panelIterator->get();
+
+		if (panel->GetIsOpen())
+		{
+			panel->Draw();
+		}
+
+		++panelIterator;
+	}
+
+	EditorContext::Get()->viewportRenderTarget->SetIsActive(true);
+
+	bool isViewportCameraMovable =
+		GetPanel<ViewportPanel>()->IsCursorOn() ||
+		(GetPanel<GeometryBuffersPanel>() && GetPanel<GeometryBuffersPanel>()->IsCursorOn());
+
+	EditorContext::Get()->viewportCameraObject->GetFreeCameraController()->SetIsActive(isViewportCameraMovable);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
@@ -309,6 +304,9 @@ void EditorHUD::OnWindowSizeChanged(int width, int height)
 	EditorContext::Get()->windowSize = Vector2i(width, height);
 	Vector2 buttonSizeVector = EditorContext::Get()->windowSize * 0.05f;
 	EditorContext::Get()->buttonSize = Vector2i(buttonSizeVector.x, buttonSizeVector.y);
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = EditorUtils::ToImVec2(EditorContext::Get()->windowSize);
 }
 
 void EditorHUD::OnPlaceObject()
@@ -349,8 +347,11 @@ void EditorHUD::OnPlaceObject()
 		break;
 	}
 
+	EditorContext::Get()->isPlacingObject = false;
 	EditorContext::Get()->objectToCreateType = EditorSelectionType::None;
 	EditorContext::Get()->objectToCreateName = "";
+
+	HidePanel<ObjectNameToCreatePanel>();
 }
 
 Vector3 EditorHUD::RaycastWorld()
@@ -362,8 +363,11 @@ Vector3 EditorHUD::RaycastWorld()
 	double x, y;
 	inputManager->GetCursorPosition(x, y);
 
+	const Vector2i& viewportPosition = GetPanel<ViewportPanel>()->GetPosition();
+
 	Vector3 cameraWorldPosition = activeCamera->GetPosition();
-	Vector3 cameraForwardVector = activeCamera->GetWorldDirectionAtPixel(Vector2i{ (int)(x - viewportPosition_.x), (int)(y - viewportPosition_.y) });
+	Vector3 cameraForwardVector = activeCamera->GetWorldDirectionAtPixel(
+		Vector2i{ (int)(x - viewportPosition.x), (int)(y - viewportPosition.y) });
 
 	RaycastData raycastData;
 	raycastData.from = cameraWorldPosition;
@@ -429,115 +433,6 @@ void EditorHUD::OnCancelInputPressed()
 	EditorContext::Get()->ClearCreateData();
 }
 
-void EditorHUD::UpdateHUD()
-{
-	HUD::UpdateHUD();
-
-	WindowManager* windowManager = engine->GetWindowManager();
-	EditorContext::Get()->windowSize = windowManager->GetWindowSize();
-
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	io.DisplaySize = ImVec2((float)windowSize_.x, (float)windowSize_.y);
-
-	ImGui_NewFrame();
-	ImGui::NewFrame();
-
-	ImGui::StyleColorsDark();
-
-	DrawEditorHUD();
-
-	ImGui::Render();
-	ImGui_RenderDrawData(ImGui::GetDrawData());
-}
-
-void EditorHUD::DrawEditorHUD()
-{
-	if (!engine->GetRenderer()->GetDrawOnWindow())
-	{
-		glClearColor(0.f, 0.f, 0.f, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	}
-
-	SetupDocking();
-
-	//DrawMenuBar();
-
-	std::vector<std::unique_ptr<IEditorPanel>>::const_iterator panelIterator = panels_.cbegin();
-	while (panelIterator != panels_.cend())
-	{
-		IEditorPanel* panel = panelIterator->get();
-
-		if (panel->GetIsOpen())
-		{
-			panel->Draw();
-		}
-
-		++panelIterator;
-	}
-
-	return;
-
-	DrawDrawInfo();
-
-	if (EditorContext::Get()->objectToCreateType != EditorSelectionType::None)
-	{
-		DrawObjectNameToCreateWindow();
-	}
-
-	EditorContext::Get()->viewportRenderTarget->SetIsActive(true);// windowOpenMap_[viewportWindowName_] || shouldDrawGeometryBuffersWindow);
-
-	EditorContext::Get()->viewportCamera->GetFreeCameraController()->SetIsActive(shouldFreeCameraControllerBeEnabled_);
-}
-
-void EditorHUD::DrawDrawInfo()
-{
-}
-
-void EditorHUD::DrawObjectsWindow()
-{
-	BeginWindow("Objects", dockableWindowFlags_);
-	if (ImGui::TreeNode("Lights"))
-	{
-		if (ImGui::Button("Directional Light"))
-		{
-			EditorContext::Get()->objectToCreateType = EditorSelectionType::DirectionalLight;
-			EditorContext::Get()->objectToCreateName = "Directional Light";
-		}
-		else if (ImGui::Button("Point Light"))
-		{
-			EditorContext::Get()->objectToCreateType = EditorSelectionType::PointLight;
-			EditorContext::Get()->objectToCreateName = "Point Light";
-		}
-		else if (ImGui::Button("Spot Light"))
-		{
-			EditorContext::Get()->objectToCreateType = EditorSelectionType::SpotLight;
-			EditorContext::Get()->objectToCreateName = "Spot Light";
-		}
-
-		ImGui::TreePop();
-	}
-	ImGui::Separator();
-	if (ImGui::TreeNode("Objects"))
-	{
-		static const auto& objects = DynamicObjectFactory::GetInstance()->GetObjectMap();
-
-		for (auto object : objects)
-		{
-			std::string name = object.first;
-			if (ImGui::Button(name.c_str()))
-			{
-				EditorContext::Get()->objectToCreateType = EditorSelectionType::Object;
-				EditorContext::Get()->objectToCreateName = name;
-			}
-		}
-
-		ImGui::TreePop();
-	}
-	ImGui::Separator();
-	EndWindow();
-}
-
 void EditorHUD::DrawGameOptionsBar()
 {
 	BeginWindow("GameOptions", ImGuiWindowFlags_NoTitleBar);
@@ -558,11 +453,6 @@ void EditorHUD::DrawGameOptionsBar()
 	}
 
 	EndWindow();
-}
-
-void EditorHUD::DrawCheckbox(const std::string& name, bool& value)
-{
-	ImGui::Checkbox(name.c_str(), &value);
 }
 
 //bool EditorHUD::DrawAssetSelector(std::string& selectedAssetPath)
@@ -613,12 +503,13 @@ void EditorHUD::EndWindow()
 
 void EditorHUD::FocusToPosition(const Vector3& position)
 {
-	EditorContext::Get()->viewportCamera->SetWorldPosition(position - 20.f * EditorContext::Get()->viewportCamera->GetForwardVector());
+	EditorContext::Get()->viewportCameraObject->SetWorldPosition(position - 20.f * EditorContext::Get()->viewportCameraObject->GetForwardVector());
 }
 
 DirectionalLight* EditorHUD::CreateDirectionalLight()
 {
 	DirectionalLight* newDirectionalLight = new DirectionalLight();
+	newDirectionalLight->SetIsShadowEnabled(true);
 	EditorContext::Get()->selectedObjectType = EditorSelectionType::DirectionalLight;
 	EditorContext::Get()->selectedObject = newDirectionalLight;
 
@@ -628,6 +519,7 @@ DirectionalLight* EditorHUD::CreateDirectionalLight()
 PointLight* EditorHUD::CreatePointLight()
 {
 	PointLight* newPointLight = new PointLight();
+	newPointLight->SetIsShadowEnabled(true);
 	EditorContext::Get()->selectedObjectType = EditorSelectionType::PointLight;
 	EditorContext::Get()->selectedObject = newPointLight;
 	return newPointLight;
@@ -636,6 +528,7 @@ PointLight* EditorHUD::CreatePointLight()
 SpotLight* EditorHUD::CreateSpotLight()
 {
 	SpotLight* newSpotLight = new SpotLight();
+	newSpotLight->SetIsShadowEnabled(true);
 	EditorContext::Get()->selectedObjectType = EditorSelectionType::SpotLight;
 	EditorContext::Get()->selectedObject = newSpotLight;
 	return newSpotLight;
@@ -655,14 +548,4 @@ ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
 	EditorContext::Get()->selectedObject = newObjectBase;
 
 	return newObjectBase;
-}
-
-void EditorHUD::DrawObjectNameToCreateWindow()
-{
-	double x, y;
-	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetMainWindow(), x, y);
-	ImGui::SetNextWindowPos({ (float)x, (float)y });
-	BeginTransparentWindow("ObjectToCreateNameWindow", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
-	ImGui::Text(EditorContext::Get()->objectToCreateName.c_str());
-	EndWindow();
 }

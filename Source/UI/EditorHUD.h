@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Goknar/Core.h"
+#include "Goknar/GoknarAssert.h"
 #include "Goknar/Delegates/Delegate.h"
 #include "Goknar/UI/HUD.h"
 
@@ -49,7 +50,7 @@ public:
 
     virtual void BeginGame() override;
 
-	virtual void SetupDocking();
+	virtual void DrawBackgroundWindow();
 
     virtual void UpdateHUD() override;
 
@@ -62,6 +63,20 @@ public:
 	const std::vector<std::unique_ptr<IEditorPanel>>& GetPanels() const
 	{
 		return panels_;
+	}
+
+	template<typename T>
+	IEditorPanel* GetPanel() const
+	{
+		std::string mapKey = std::string(typeid(T).name());
+		auto it = panelIndexMap_.find(mapKey);
+
+		if (it == panelIndexMap_.end())
+		{
+			return nullptr;
+		}
+
+		return panels_[panelIndexMap_.at(mapKey)].get();
 	}
 
 protected:
@@ -82,12 +97,7 @@ private:
 
 	void DrawEditorHUD();
 
-	void DrawDrawInfo();
 	void DrawGameOptionsBar();
-
-	void DrawObjectsWindow();
-
-	void DrawCheckbox(const std::string& name, bool& value);
 
 	//bool DrawAssetSelector(std::string& selectedPath);
 
@@ -106,7 +116,6 @@ private:
 
 	void OnPlaceObject();
 	Vector3 RaycastWorld();
-	void DrawObjectNameToCreateWindow();
 
 
 	Delegate<void(int, int, int, int)> onKeyboardEventDelegate_;
@@ -122,25 +131,9 @@ private:
 	Delegate<void()> onFocusInputPressedDelegate_;
 	Delegate<void()> onCancelInputPressedDelegate_;
 
-	Vector2i windowSize_;
-
-	ImVec2 buttonSize_{ 100.f, 40.f };
-
-	ImVec2 viewportSize_{ 0.f, 0.f };
-	ImVec2 viewportPosition_{ 0.f, 0.f };
-
-	std::unordered_map<std::string, std::function<void(ObjectBase*)>> objectBaseReflections;
-	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsObjectReflections;
-
 	Image* uiImage_;
 
 	std::unordered_map<std::string, bool> windowOpenMap_;
-
-	ImGuiWindowFlags dockableWindowFlags_{ ImGuiWindowFlags_None };
-
-	bool drawCollisionWorld_{ false }; 
-	bool shouldFreeCameraControllerBeEnabled_{ true };
-
 
 	template<typename T>
 	void AddPanel();
@@ -159,11 +152,17 @@ inline void EditorHUD::AddPanel()
 template<typename T>
 inline void EditorHUD::ShowPanel()
 {
+	std::string mapKey = typeid(T).name();
+	GOKNAR_ASSERT(panelIndexMap_.find(mapKey) != panelIndexMap_.end());
+	
 	panels_[panelIndexMap_[typeid(T).name()]]->SetIsOpen(true);
 }
 
 template<typename T>
 inline void EditorHUD::HidePanel()
 {
+	std::string mapKey = typeid(T).name();
+	GOKNAR_ASSERT(panelIndexMap_.find(mapKey) != panelIndexMap_.end());
+
 	panels_[panelIndexMap_[typeid(T).name()]]->SetIsOpen(false);
 }
