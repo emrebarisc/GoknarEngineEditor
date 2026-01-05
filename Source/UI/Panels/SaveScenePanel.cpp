@@ -13,7 +13,7 @@
 void SaveScenePanel::Draw()
 {
 	std::string resultText;
-	if (EditorWidgets::DrawOneTextBoxOneButton(
+	if (EditorWidgets::DrawWindowWithOneTextBoxOneButton(
 		title_,
 		"Path: ",
 		EditorContext::Get()->sceneSavePath,

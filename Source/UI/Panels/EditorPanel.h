@@ -36,28 +36,39 @@ public:
 
 	const std::string& GetTitle() const { return title_; }
 
+	inline bool IsCursorOn()
+	{
+		if (!isOpen_)
+		{
+			return false;
+		}
+
+		ImVec2 mousePos = ImGui::GetMousePos();
+
+		bool isMouseInside = mousePos.x >= position_.x && mousePos.x <= position_.x + size_.x &&
+			mousePos.y >= position_.y && mousePos.y <= position_.y + size_.y;
+
+		return isMouseInside;
+	}
+
+	const Vector2i& GetPosition() const
+	{
+		return position_;
+	}
+
+	const Vector2i& GetSize() const
+	{
+		return size_;
+	}
+
 protected:
-	inline bool IsCursorOn();
 
 	std::string title_{ "" };
 
-	Vector2 position_{ Vector2::ZeroVector };
-	Vector2 size_{ Vector2::ZeroVector };
+	Vector2i position_{ Vector2i::ZeroVector };
+	Vector2i size_{ Vector2i::ZeroVector };
 
 	EditorHUD* hud_{ nullptr };
 
 	bool isOpen_{ true };
 };
-
-bool IEditorPanel::IsCursorOn()
-{
-	ImVec2 windowPos = ImGui::GetWindowPos();
-	ImVec2 windowSize = ImGui::GetWindowSize();
-
-	ImVec2 mousePos = ImGui::GetMousePos();
-
-	bool isMouseInside = mousePos.x >= windowPos.x && mousePos.x <= windowPos.x + windowSize.x &&
-		mousePos.y >= windowPos.y && mousePos.y <= windowPos.y + windowSize.y;
-
-	return isMouseInside;
-}

@@ -32,6 +32,7 @@ void ContentBrowserPanel::Draw()
 	ImGui::Begin(title_.c_str(), &isOpen_);
 
 	DrawFolder(rootFolder_);
+
 	ImGui::End();
 }
 

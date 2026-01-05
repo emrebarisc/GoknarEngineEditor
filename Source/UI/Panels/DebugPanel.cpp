@@ -24,11 +24,11 @@ void DebugPanel::Draw()
 
 	ImGui::Text((std::string("Draw call count: ") + std::to_string(engine->GetRenderer()->drawCallCount)).c_str());
 
-	ImGui::Text((std::string("Position: ") + EditorContext::Get()->viewportCamera->GetWorldPosition().ToString()).c_str());
-	ImGui::Text((std::string("Rotation: ") + EditorContext::Get()->viewportCamera->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
-	ImGui::Text((std::string("Forward Vector: ") + EditorContext::Get()->viewportCamera->GetForwardVector().ToString()).c_str());
-	ImGui::Text((std::string("Left Vector: ") + EditorContext::Get()->viewportCamera->GetLeftVector().ToString()).c_str());
-	ImGui::Text((std::string("Up Vector: ") + EditorContext::Get()->viewportCamera->GetUpVector().ToString()).c_str());
+	ImGui::Text((std::string("Position: ") + EditorContext::Get()->viewportCameraObject->GetWorldPosition().ToString()).c_str());
+	ImGui::Text((std::string("Rotation: ") + EditorContext::Get()->viewportCameraObject->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
+	ImGui::Text((std::string("Forward Vector: ") + EditorContext::Get()->viewportCameraObject->GetForwardVector().ToString()).c_str());
+	ImGui::Text((std::string("Left Vector: ") + EditorContext::Get()->viewportCameraObject->GetLeftVector().ToString()).c_str());
+	ImGui::Text((std::string("Up Vector: ") + EditorContext::Get()->viewportCameraObject->GetUpVector().ToString()).c_str());
 
 	ImGui::End();
 }
