@@ -101,7 +101,7 @@ void EditorWidgets::DrawCheckbox(const std::string& name, bool& value)
 	ImGui::Checkbox(name.c_str(), &value);
 }
 
-bool EditorWidgets::DrawOneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText, const Vector2i& size, std::string& resultText, bool& isOpen, ImGuiWindowFlags flags)
+bool EditorWidgets::DrawWindowWithOneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText, const Vector2i& size, std::string& resultText, bool& isOpen, ImGuiWindowFlags flags)
 {
 	ImGui::SetNextWindowPos(EditorUtils::ToImVec2((EditorContext::Get()->windowSize - size) * 0.5f));
 	ImGui::SetNextWindowSize(EditorUtils::ToImVec2(size));

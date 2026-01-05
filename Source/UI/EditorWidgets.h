@@ -19,7 +19,7 @@ public:
 	static void DrawInputQuaternion(const  std::string& name, Quaternion& quaternion);
 	static void DrawCheckbox(const std::string& name, bool& value);
 
-	static bool DrawOneTextBoxOneButton(
+	static bool DrawWindowWithOneTextBoxOneButton(
 		const std::string& windowTitle,
 		const std::string& text,
 		const std::string& currentValue,
