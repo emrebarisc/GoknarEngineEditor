@@ -47,7 +47,7 @@ private:
 	void OnAssetSelected(const std::string& path);
 
 	void* assetSelectionComponent_;
-	EditorComponentType assetSelectionComponentType_;
+	EditorAssetType assetSelectionComponentType_;
 
 	std::unordered_map<std::string, std::function<void(ObjectBase*)>> objectReflections_;
 	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsReflections_;

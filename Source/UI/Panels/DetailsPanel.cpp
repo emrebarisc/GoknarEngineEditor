@@ -81,9 +81,9 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 {
 	switch (assetSelectionComponentType_)
 	{
-	case EditorComponentType::None:
+	case EditorAssetType::None:
 		break;
-	case EditorComponentType::StaticMeshComponent:
+	case EditorAssetType::StaticMeshComponent:
 	{
 		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
 		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(path);
@@ -93,20 +93,18 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		}
 		break;
 	}
-	case EditorComponentType::SkeletalMeshComponent:
+	case EditorAssetType::SkeletalMeshComponent:
 		break;
-	case EditorComponentType::DirectionalLightComponent:
+	case EditorAssetType::Image:
 		break;
-	case EditorComponentType::PointLightComponent:
-		break;
-	case EditorComponentType::SpotLightComponent:
+	case EditorAssetType::Audio:
 		break;
 	default: 
 		break;
 	}
 
 	assetSelectionComponent_ = nullptr;
-	assetSelectionComponentType_ = EditorComponentType::None;
+	assetSelectionComponentType_ = EditorAssetType::None;
 }
 
 void DetailsPanel::Draw()
@@ -620,7 +618,7 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	if (ImGui::Button(specialName.c_str()))
 	{
 		assetSelectionComponent_ = staticMeshComponent;
-		assetSelectionComponentType_ = EditorComponentType::StaticMeshComponent;
+		assetSelectionComponentType_ = EditorAssetType::StaticMeshComponent;
 
 		AssetSelectorPanel::OnAssetSelected = 
 			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);

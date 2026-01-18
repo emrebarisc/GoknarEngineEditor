@@ -24,14 +24,13 @@ enum class EditorSelectionType
 	SpotLight
 };
 
-enum class EditorComponentType
+enum class EditorAssetType
 {
 	None = 0,
 	StaticMeshComponent,
 	SkeletalMeshComponent,
-	DirectionalLightComponent,
-	PointLightComponent,
-	SpotLightComponent
+	Image,
+	Audio
 };
 
 struct Folder
