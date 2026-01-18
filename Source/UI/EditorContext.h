@@ -2,7 +2,10 @@
 
 #include "Goknar/Core.h"
 
+#include <filesystem>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "Goknar/Math/GoknarMath.h"
 
@@ -21,6 +24,25 @@ enum class EditorSelectionType
 	SpotLight
 };
 
+enum class EditorComponentType
+{
+	None = 0,
+	StaticMeshComponent,
+	SkeletalMeshComponent,
+	DirectionalLightComponent,
+	PointLightComponent,
+	SpotLightComponent
+};
+
+struct Folder
+{
+	std::string name;
+	std::string path;
+	std::vector<Folder*> subFolders;
+	std::vector<std::string> files;
+	bool isOpen = false;
+};
+
 class GOKNAR_API EditorContext
 {
 public:
@@ -29,12 +51,16 @@ public:
 		if (!instance_)
 		{
 			instance_ = new EditorContext();
+			instance_->Init();
 		}
 
 		return instance_;
 	}
 
 	~EditorContext();
+
+	void Init();
+	void BuildFileTree();
 
 	void SetSelection(void* obj, EditorSelectionType type)
 	{
@@ -78,6 +104,9 @@ public:
 
 	EditorSelectionType selectedObjectType = EditorSelectionType::None;
 	EditorSelectionType objectToCreateType = EditorSelectionType::None;
+
+	Folder* rootFolder{ nullptr };
+	std::unordered_map<std::string, Folder*> folderMap{};
 
 	bool isPlacingObject = false;
 private:

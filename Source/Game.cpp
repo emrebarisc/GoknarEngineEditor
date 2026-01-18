@@ -8,11 +8,7 @@
 #include <Core.h>
 
 #include "Goknar/Scene.h"
-#include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Materials/Material.h"
-#include "Goknar/Managers/ResourceManager.h"
-#include "Goknar/Camera.h"
-#include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/WindowManager.h"
 #include "Data/MaterialInitializer.h"
 
