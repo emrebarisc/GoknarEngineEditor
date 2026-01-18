@@ -2,8 +2,11 @@
 
 #include "imgui.h"
 
+#include "Goknar/Engine.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Components/StaticMeshComponent.h"
+#include "Goknar/Managers/ResourceManager.h"
+#include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
@@ -15,8 +18,9 @@
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
 
-#include "UI/EditorContext.h"
+#include "UI/EditorHUD.h"
 #include "UI/EditorWidgets.h"
+#include "UI/Panels/AssetSelectorPanel.h"
 
 template <class T>
 void AddCollisionComponent(PhysicsObject* physicsObject)
@@ -71,6 +75,38 @@ void DetailsPanel::SetupReflections()
 		{
 			AddCollisionComponent<NonMovingTriangleMeshCollisionComponent>(physicsObject);
 		};
+}
+
+void DetailsPanel::OnAssetSelected(const std::string& path)
+{
+	switch (assetSelectionComponentType_)
+	{
+	case EditorComponentType::None:
+		break;
+	case EditorComponentType::StaticMeshComponent:
+	{
+		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
+		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(path);
+		if (newStaticMesh)
+		{
+			staticMeshComponent->SetMesh(newStaticMesh);
+		}
+		break;
+	}
+	case EditorComponentType::SkeletalMeshComponent:
+		break;
+	case EditorComponentType::DirectionalLightComponent:
+		break;
+	case EditorComponentType::PointLightComponent:
+		break;
+	case EditorComponentType::SpotLightComponent:
+		break;
+	default: 
+		break;
+	}
+
+	assetSelectionComponent_ = nullptr;
+	assetSelectionComponentType_ = EditorComponentType::None;
 }
 
 void DetailsPanel::Draw()
@@ -583,22 +619,14 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	ImGui::SameLine();
 	if (ImGui::Button(specialName.c_str()))
 	{
-		//windowOpenMap_[specialName.c_str()] = true;
-	}
+		assetSelectionComponent_ = staticMeshComponent;
+		assetSelectionComponentType_ = EditorComponentType::StaticMeshComponent;
 
-	//if (windowOpenMap_[specialName.c_str()])
-	//{
-	//	std::string selectedAssetPath;
-	//	if (DrawAssetSelector(selectedAssetPath))
-	//	{
-	//		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(selectedAssetPath);
-	//		if (newStaticMesh)
-	//		{
-	//			staticMeshComponent->SetMesh(newStaticMesh);
-	//			windowOpenMap_[specialName.c_str()] = false;
-	//		}
-	//	}
-	//}
+		AssetSelectorPanel::OnAssetSelected = 
+			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+		hud_->ShowPanel<AssetSelectorPanel>();
+	}
 
 	ImGui::Text("Render mask: ");
 

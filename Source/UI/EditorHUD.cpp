@@ -35,6 +35,8 @@
 
 #include "EditorContext.h"
 #include "EditorUtils.h"
+
+#include "Panels/AssetSelectorPanel.h"
 #include "Panels/DebugPanel.h"
 #include "Panels/DetailsPanel.h"
 #include "Panels/FileBrowserPanel.h"
@@ -61,6 +63,7 @@ EditorHUD::EditorHUD() : HUD()
 {
 	engine->SetHUD(this);
 
+	AddPanel<AssetSelectorPanel>();
 	AddPanel<MenuBar>();
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();

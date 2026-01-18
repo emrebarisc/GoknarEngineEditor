@@ -2,6 +2,8 @@
 
 #include "EditorPanel.h"
 
+struct Folder;
+
 class FileBrowserPanel : public IEditorPanel
 {
 public:
@@ -17,19 +19,5 @@ public:
 	virtual void Init() override;
 
 private:
-	struct Folder
-	{
-		std::string folderName;
-		std::string fullPath;
-		std::vector<Folder*> subFolders;
-		std::vector<std::string> fileNames;
-	};
-
-	void BuildFileTree();
-	void DrawFileTree(Folder* folder);
-	void DrawFileGrid(Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
-
-	Folder* rootFolder{ nullptr };
-	std::unordered_map<std::string, Folder*> folderMap{};
-
+	void DrawFileTree(const Folder* folder);
 };

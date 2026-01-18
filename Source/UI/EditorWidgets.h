@@ -9,6 +9,8 @@
 class Vector3;
 class Quaternion;
 
+struct Folder;
+
 class EditorWidgets
 {
 public:
@@ -28,4 +30,7 @@ public:
 		std::string& resultText,
 		bool& isOpen,
 		ImGuiWindowFlags flags);
+
+
+	static void DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
 };

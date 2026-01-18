@@ -129,3 +129,32 @@ bool EditorWidgets::DrawWindowWithOneTextBoxOneButton(const std::string& windowT
 
 	return buttonClicked;
 }
+
+void EditorWidgets::DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected)
+{
+	for (const Folder* subFolder : folder->subFolders)
+	{
+		if (ImGui::TreeNode(subFolder->name.c_str()))
+		{
+			DrawFileGrid(subFolder, selectedFileName, isAFileSelected);
+			ImGui::TreePop();
+		}
+	}
+
+	ImGui::Columns(4, nullptr, false);
+	int fileCount = folder->files.size();
+	for (int fileIndex = 0; fileIndex < fileCount; ++fileIndex)
+	{
+		std::string fileName = folder->files[fileIndex];
+
+		if (ImGui::Button(fileName.c_str(), { 150.f, 30.f }))
+		{
+			selectedFileName = folder->path + fileName;
+			isAFileSelected = true;
+		}
+
+		ImGui::NextColumn();
+	}
+	ImGui::Columns(1, nullptr, false);
+}
+
