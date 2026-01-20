@@ -28,7 +28,6 @@ EditorContext::EditorContext()
 
 	viewportRenderTarget = new RenderTarget();
 	viewportRenderTarget->SetCamera(viewportCamera);
-	viewportRenderTarget->Init();
 }
 
 EditorContext::~EditorContext()
@@ -49,31 +48,10 @@ EditorContext::~EditorContext()
 
 void EditorContext::Init()
 {
-	//rootFolder = new Folder();
-	//BuildFileTree("Content", rootFolder);
+	viewportRenderTarget->Init();
 
 	BuildFileTree();
 }
-
-//void EditorContext::BuildFileTree(const std::filesystem::path& path, Folder* folder)
-//{
-//	folder->path = path.string();
-//	folder->name = path.filename().string();
-//
-//	for (const auto& entry : std::filesystem::directory_iterator(path))
-//	{
-//		if (entry.is_directory())
-//		{
-//			Folder* subFolder = new Folder();
-//			BuildFileTree(entry.path(), subFolder);
-//			folder->subFolders.push_back(subFolder);
-//		}
-//		else
-//		{
-//			folder->files.push_back(entry.path().filename().string());
-//		}
-//	}
-//}
 
 void EditorContext::SetCameraMovement(bool value)
 {

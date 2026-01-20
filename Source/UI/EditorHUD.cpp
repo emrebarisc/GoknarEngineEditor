@@ -93,6 +93,8 @@ EditorHUD::EditorHUD() : HUD()
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
 
 	engine->GetRenderer()->SetDrawOnWindow(true);
+
+	context_ = EditorContext::Get();
 }
 
 EditorHUD::~EditorHUD()
@@ -117,7 +119,7 @@ EditorHUD::~EditorHUD()
 	ImGui_DestroyDeviceObjects();
 	ImGui_Shutdown();
 
-	delete EditorContext::Get();
+	delete context_;
 }
 
 void EditorHUD::PreInit()
@@ -139,6 +141,8 @@ void EditorHUD::PreInit()
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
+
+	context_->Init();
 }
 
 void EditorHUD::Init()
@@ -191,7 +195,7 @@ void EditorHUD::UpdateHUD()
 	}
 
 	WindowManager* windowManager = engine->GetWindowManager();
-	EditorContext::Get()->windowSize = windowManager->GetWindowSize();
+	context_->windowSize = windowManager->GetWindowSize();
 
 	ImGui_NewFrame();
 	ImGui::NewFrame();
@@ -248,13 +252,13 @@ void EditorHUD::DrawEditorHUD()
 		++panelIterator;
 	}
 
-	EditorContext::Get()->viewportRenderTarget->SetIsActive(true);
+	context_->viewportRenderTarget->SetIsActive(true);
 
 	bool isViewportCameraMovable =
 		GetPanel<ViewportPanel>()->IsCursorOn() ||
 		(GetPanel<GeometryBuffersPanel>() && GetPanel<GeometryBuffersPanel>()->IsCursorOn());
 
-	EditorContext::Get()->viewportCameraObject->GetFreeCameraController()->SetIsActive(isViewportCameraMovable);
+	context_->viewportCameraObject->GetFreeCameraController()->SetIsActive(isViewportCameraMovable);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
@@ -284,7 +288,7 @@ void EditorHUD::OnLeftClickPressed()
 	ImGuiIO& io = ImGui::GetIO();
 	io.MouseDown[GLFW_MOUSE_BUTTON_1] = true;
 
-	if (EditorContext::Get()->objectToCreateType != EditorSelectionType::None)
+	if (context_->objectToCreateType != EditorSelectionType::None)
 	{
 		OnPlaceObject();
 	}
@@ -304,23 +308,23 @@ void EditorHUD::OnCharPressed(unsigned int codePoint)
 
 void EditorHUD::OnWindowSizeChanged(int width, int height)
 {
-	EditorContext::Get()->windowSize = Vector2i(width, height);
-	Vector2 buttonSizeVector = EditorContext::Get()->windowSize * 0.05f;
-	EditorContext::Get()->buttonSize = Vector2i(buttonSizeVector.x, buttonSizeVector.y);
+	context_->windowSize = Vector2i(width, height);
+	Vector2 buttonSizeVector = context_->windowSize * 0.05f;
+	context_->buttonSize = Vector2i(buttonSizeVector.x, buttonSizeVector.y);
 
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = EditorUtils::ToImVec2(EditorContext::Get()->windowSize);
+	io.DisplaySize = EditorUtils::ToImVec2(context_->windowSize);
 }
 
 void EditorHUD::OnPlaceObject()
 {
 	Vector3 raycastPosition = RaycastWorld();
 
-	switch (EditorContext::Get()->objectToCreateType)
+	switch (context_->objectToCreateType)
 	{
 	case EditorSelectionType::Object:
 	{
-		ObjectBase* object = CreateObject(EditorContext::Get()->objectToCreateName);
+		ObjectBase* object = CreateObject(context_->objectToCreateName);
 		if (object)
 		{
 			object->SetWorldPosition(raycastPosition);
@@ -350,16 +354,16 @@ void EditorHUD::OnPlaceObject()
 		break;
 	}
 
-	EditorContext::Get()->isPlacingObject = false;
-	EditorContext::Get()->objectToCreateType = EditorSelectionType::None;
-	EditorContext::Get()->objectToCreateName = "";
+	context_->isPlacingObject = false;
+	context_->objectToCreateType = EditorSelectionType::None;
+	context_->objectToCreateName = "";
 
 	HidePanel<ObjectNameToCreatePanel>();
 }
 
 Vector3 EditorHUD::RaycastWorld()
 {
-	Camera* activeCamera = EditorContext::Get()->viewportRenderTarget->GetCamera();
+	Camera* activeCamera = context_->viewportRenderTarget->GetCamera();
 
 	InputManager* inputManager = engine->GetInputManager();
 
@@ -387,41 +391,41 @@ Vector3 EditorHUD::RaycastWorld()
 
 void EditorHUD::OnDeleteInputPressed()
 {
-	switch (EditorContext::Get()->selectedObjectType)
+	switch (context_->selectedObjectType)
 	{
 	case EditorSelectionType::Object:
-		((ObjectBase*)EditorContext::Get()->selectedObject)->Destroy();
+		((ObjectBase*)context_->selectedObject)->Destroy();
 		break;
 	case EditorSelectionType::DirectionalLight:
-		delete ((DirectionalLight*)EditorContext::Get()->selectedObject);
+		delete ((DirectionalLight*)context_->selectedObject);
 		break;
 	case EditorSelectionType::PointLight:
-		delete ((PointLight*)EditorContext::Get()->selectedObject);
+		delete ((PointLight*)context_->selectedObject);
 		break;
 	case EditorSelectionType::SpotLight:
-		delete ((SpotLight*)EditorContext::Get()->selectedObject);
+		delete ((SpotLight*)context_->selectedObject);
 		break;
 	case EditorSelectionType::None:
 	default:
 		return;
 	}
 
-	EditorContext::Get()->selectedObjectType = EditorSelectionType::None;
-	EditorContext::Get()->selectedObject = nullptr;
+	context_->selectedObjectType = EditorSelectionType::None;
+	context_->selectedObject = nullptr;
 }
 
 void EditorHUD::OnFocusInputPressed()
 {
 	Vector3 position = Vector3::ZeroVector;
-	switch (EditorContext::Get()->selectedObjectType)
+	switch (context_->selectedObjectType)
 	{
 	case EditorSelectionType::Object:
-		position = ((ObjectBase*)EditorContext::Get()->selectedObject)->GetWorldPosition();
+		position = ((ObjectBase*)context_->selectedObject)->GetWorldPosition();
 		break;
 	case EditorSelectionType::DirectionalLight:
 	case EditorSelectionType::PointLight:
 	case EditorSelectionType::SpotLight:
-		position = ((Light*)EditorContext::Get()->selectedObject)->GetPosition();
+		position = ((Light*)context_->selectedObject)->GetPosition();
 		break;
 	case EditorSelectionType::None:
 	default:
@@ -433,7 +437,7 @@ void EditorHUD::OnFocusInputPressed()
 
 void EditorHUD::OnCancelInputPressed()
 {
-	EditorContext::Get()->ClearCreateData();
+	context_->ClearCreateData();
 }
 
 void EditorHUD::DrawGameOptionsBar()
@@ -506,15 +510,15 @@ void EditorHUD::EndWindow()
 
 void EditorHUD::FocusToPosition(const Vector3& position)
 {
-	EditorContext::Get()->viewportCameraObject->SetWorldPosition(position - 20.f * EditorContext::Get()->viewportCameraObject->GetForwardVector());
+	context_->viewportCameraObject->SetWorldPosition(position - 20.f * context_->viewportCameraObject->GetForwardVector());
 }
 
 DirectionalLight* EditorHUD::CreateDirectionalLight()
 {
 	DirectionalLight* newDirectionalLight = new DirectionalLight();
 	newDirectionalLight->SetIsShadowEnabled(true);
-	EditorContext::Get()->selectedObjectType = EditorSelectionType::DirectionalLight;
-	EditorContext::Get()->selectedObject = newDirectionalLight;
+	context_->selectedObjectType = EditorSelectionType::DirectionalLight;
+	context_->selectedObject = newDirectionalLight;
 
 	return newDirectionalLight;
 }
@@ -523,8 +527,8 @@ PointLight* EditorHUD::CreatePointLight()
 {
 	PointLight* newPointLight = new PointLight();
 	newPointLight->SetIsShadowEnabled(true);
-	EditorContext::Get()->selectedObjectType = EditorSelectionType::PointLight;
-	EditorContext::Get()->selectedObject = newPointLight;
+	context_->selectedObjectType = EditorSelectionType::PointLight;
+	context_->selectedObject = newPointLight;
 	return newPointLight;
 }
 
@@ -532,8 +536,8 @@ SpotLight* EditorHUD::CreateSpotLight()
 {
 	SpotLight* newSpotLight = new SpotLight();
 	newSpotLight->SetIsShadowEnabled(true);
-	EditorContext::Get()->selectedObjectType = EditorSelectionType::SpotLight;
-	EditorContext::Get()->selectedObject = newSpotLight;
+	context_->selectedObjectType = EditorSelectionType::SpotLight;
+	context_->selectedObject = newSpotLight;
 	return newSpotLight;
 }
 
@@ -547,8 +551,8 @@ ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
 	}
 
 	newObjectBase->SetName(typeName);
-	EditorContext::Get()->selectedObjectType = EditorSelectionType::Object;
-	EditorContext::Get()->selectedObject = newObjectBase;
+	context_->selectedObjectType = EditorSelectionType::Object;
+	context_->selectedObject = newObjectBase;
 
 	return newObjectBase;
 }

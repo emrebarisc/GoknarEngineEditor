@@ -33,6 +33,8 @@ class MovingTriangleMeshCollisionComponent;
 class NonMovingTriangleMeshCollisionComponent;
 class RenderTarget;
 
+class EditorContext;
+
 class GOKNAR_API EditorHUD : public HUD
 {
 public:
@@ -140,6 +142,8 @@ private:
 
 	std::vector<std::unique_ptr<IEditorPanel>> panels_;
 	std::unordered_map<std::string, int> panelIndexMap_;
+
+	EditorContext* context_;
 };
 
 template<typename T>

@@ -99,7 +99,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		break;
 	case EditorAssetType::Audio:
 		break;
-	default: 
+	default:
 		break;
 	}
 

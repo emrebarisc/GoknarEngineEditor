@@ -50,7 +50,6 @@ public:
 		if (!instance_)
 		{
 			instance_ = new EditorContext();
-			instance_->Init();
 		}
 
 		return instance_;
