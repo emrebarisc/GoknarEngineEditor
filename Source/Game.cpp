@@ -22,6 +22,7 @@
 #include "Objects/Environment/EnvironmentStones.h"
 #include "Objects/Environment/EnvironmentTrees.h"
 #include "Objects/Environment/EnvironmentPlants.h"
+#include "Objects/DefaultScene/DefaultSceneObjects.h"
 
 Game::Game() : Application()
 {
@@ -40,6 +41,11 @@ Game::Game() : Application()
 	REGISTER_CLASS(EnvironmentTree_01);
 	REGISTER_CLASS(EnvironmentGrass_01);
 	REGISTER_CLASS(EnvironmentMushrooms_01);
+	REGISTER_CLASS(DefaultSceneArch);
+	REGISTER_CLASS(DefaultSceneCube);
+	REGISTER_CLASS(DefaultSceneRadialStaircase);
+	REGISTER_CLASS(DefaultSceneRadialStaircaseMirrored);
+	REGISTER_CLASS(DefaultSceneRoundCorner);
 
 	materialInitializer_ = new MaterialInitializer();
 	
@@ -48,7 +54,7 @@ Game::Game() : Application()
 	engine->GetRenderer()->SetMainRenderType(RenderPassType::Deferred);
 
 	std::chrono::steady_clock::time_point lastFrameTimePoint = std::chrono::steady_clock::now();
-	mainScene_->ReadSceneData("Scenes/Scene.xml");
+	mainScene_->ReadSceneData("Scenes/DefaultScene.xml");
 
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();

@@ -23,6 +23,7 @@ void SaveScenePanel::Draw()
 		isOpen_,
 		ImGuiWindowFlags_NoResize))
 	{
+		EditorContext::Get()->sceneSavePath = resultText;
 		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + resultText);
 
 		hud_->HidePanel<SaveScenePanel>();
