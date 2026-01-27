@@ -709,7 +709,7 @@ void DetailsPanel::DrawPhysicsDetails()
 	PhysicsObject* physicsObject = EditorContext::Get()->GetSelectionAs<PhysicsObject>();
 
 	char nameBuf[64];
-	strcpy_s(nameBuf, physicsObject->GetName().c_str());
+	strcpy(nameBuf, physicsObject->GetName().c_str());
 	if (ImGui::InputText("Name", nameBuf, 64))
 	{
 		physicsObject->SetName(nameBuf);
