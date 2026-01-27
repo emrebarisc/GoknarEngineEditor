@@ -2,7 +2,7 @@ isDebugBuild=true
 cleanBuild=false
 runAfterBuild=false
 directoryName=""
-gameName="TheDarkConquest"
+gameName="GoknarEngineEditor"
 
 for argument in "$@"
 do
