@@ -90,6 +90,10 @@ private:
 	void OnScroll(double xOffset, double yOffset);
 	void OnLeftClickPressed();
 	void OnLeftClickReleased();
+	void OnRightClickPressed();
+	void OnRightClickReleased();
+	void OnMiddleClickPressed();
+	void OnMiddleClickReleased();
 	void OnCharPressed(unsigned int codePoint);
 	void OnWindowSizeChanged(int width, int height);
 
@@ -125,6 +129,10 @@ private:
 	Delegate<void(double, double)> onScrollDelegate_;
 	Delegate<void()> onLeftClickPressedDelegate_;
 	Delegate<void()> onLeftClickReleasedDelegate_;
+	Delegate<void()> onRightClickPressedDelegate_;
+	Delegate<void()> onRightClickReleasedDelegate_;
+	Delegate<void()> onMiddleClickPressedDelegate_;
+	Delegate<void()> onMiddleClickReleasedDelegate_;
 	Delegate<void(unsigned int)> onCharPressedDelegate_;
 
 	Delegate<void(int, int)> onWindowSizeChangedDelegate_;

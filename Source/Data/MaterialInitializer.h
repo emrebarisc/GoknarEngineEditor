@@ -8,16 +8,20 @@ class Game;
 class GOKNAR_API MaterialInitializer
 {
 public:
-	MaterialInitializer();
+	MaterialInitializer() = delete;
+
+	static void Init();
 
 protected:
 
 private:
-	void Skills_InitializeTargetObjectMaterials();
-	void Skills_InitializeFireBurstCastedObjectMaterials();
-	void Skills_InitializeSlashMaterials();
-	void Environment_InitializePortalMaterials();
-	void Environment_InitializeGrassMaterials();
-	void Environment_InitializeMushroomMaterials();
-	void Environment_InitializePondMaterials();
+	static void Skills_InitializeTargetObjectMaterials();
+	static void Skills_InitializeFireBurstCastedObjectMaterials();
+	static void Skills_InitializeSlashMaterials();
+	static void Environment_InitializePortalMaterials();
+	static void Environment_InitializeGrassMaterials();
+	static void Environment_InitializeMushroomMaterials();
+	static void Environment_InitializePondMaterials();
+
+	static void DefaultSceneAssets();
 };

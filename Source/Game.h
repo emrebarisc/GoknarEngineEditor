@@ -3,7 +3,6 @@
 class EditorHUD;
 
 class FreeCameraObject;
-class MaterialInitializer;
 
 class GOKNAR_API Game : public Application
 {
@@ -16,5 +15,4 @@ public:
 
 private:
 	EditorHUD* editorHUD_{ nullptr };
-	MaterialInitializer* materialInitializer_{ nullptr };
 };

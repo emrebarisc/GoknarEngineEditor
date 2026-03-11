@@ -18,7 +18,6 @@
 
 #include "Physics/RigidBody.h"
 
-#include "Lighting/Sun.h"
 #include "Objects/Environment/EnvironmentStones.h"
 #include "Objects/Environment/EnvironmentTrees.h"
 #include "Objects/Environment/EnvironmentPlants.h"
@@ -47,7 +46,7 @@ Game::Game() : Application()
 	REGISTER_CLASS(DefaultSceneRadialStaircaseMirrored);
 	REGISTER_CLASS(DefaultSceneRoundCorner);
 
-	materialInitializer_ = new MaterialInitializer();
+	MaterialInitializer::Init();
 	
 	engine->SetApplication(this);
 
@@ -66,13 +65,10 @@ Game::Game() : Application()
 	editorHUD_->SetName("__Editor__HUD");
 
 	engine->GetWindowManager()->SetWindowSize(1900, 1000);
-
-	new Sun();
 }
 
 Game::~Game()
 {
-	delete materialInitializer_;
 }
 
 void Game::Run()

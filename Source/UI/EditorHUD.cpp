@@ -36,6 +36,7 @@
 #include "EditorContext.h"
 #include "EditorUtils.h"
 
+#include "Panels/AnimationGraphPanel.h"
 #include "Panels/AssetSelectorPanel.h"
 #include "Panels/DebugPanel.h"
 #include "Panels/DetailsPanel.h"
@@ -63,6 +64,7 @@ EditorHUD::EditorHUD() : HUD()
 {
 	engine->SetHUD(this);
 
+	AddPanel<AnimationGraphPanel>();
 	AddPanel<AssetSelectorPanel>();
 	AddPanel<MenuBar>();
 	AddPanel<DetailsPanel>();
@@ -84,6 +86,10 @@ EditorHUD::EditorHUD() : HUD()
 	onScrollDelegate_ = Delegate<void(double, double)>::Create<EditorHUD, &EditorHUD::OnScroll>(this);
 	onLeftClickPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnLeftClickPressed>(this);
 	onLeftClickReleasedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnLeftClickReleased>(this);
+	onRightClickPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnRightClickPressed>(this);
+	onRightClickReleasedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnRightClickReleased>(this);
+	onMiddleClickPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnMiddleClickPressed>(this);
+	onMiddleClickReleasedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnMiddleClickReleased>(this);
 	onCharPressedDelegate_ = Delegate<void(unsigned int)>::Create<EditorHUD, &EditorHUD::OnCharPressed>(this);
 	onWindowSizeChangedDelegate_ = Delegate<void(int, int)>::Create<EditorHUD, &EditorHUD::OnWindowSizeChanged>(this);
 	onDeleteInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnDeleteInputPressed>(this);
@@ -108,6 +114,12 @@ EditorHUD::~EditorHUD()
 
 	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_PRESS, onLeftClickPressedDelegate_);
 	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_RELEASE, onLeftClickReleasedDelegate_);
+
+	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_2, INPUT_ACTION::G_PRESS, onRightClickPressedDelegate_);
+	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_2, INPUT_ACTION::G_RELEASE, onRightClickReleasedDelegate_);
+
+	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_3, INPUT_ACTION::G_PRESS, onMiddleClickPressedDelegate_);
+	inputManager->RemoveMouseInputDelegate(MOUSE_MAP::BUTTON_3, INPUT_ACTION::G_RELEASE, onMiddleClickReleasedDelegate_);
 
 	inputManager->RemoveCharDelegate(onCharPressedDelegate_);
 
@@ -135,6 +147,12 @@ void EditorHUD::PreInit()
 
 	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_PRESS, onLeftClickPressedDelegate_);
 	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_1, INPUT_ACTION::G_RELEASE, onLeftClickReleasedDelegate_);
+
+	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_2, INPUT_ACTION::G_PRESS, onRightClickPressedDelegate_);
+	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_2, INPUT_ACTION::G_RELEASE, onRightClickReleasedDelegate_);
+
+	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_3, INPUT_ACTION::G_PRESS, onMiddleClickPressedDelegate_);
+	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_3, INPUT_ACTION::G_RELEASE, onMiddleClickReleasedDelegate_);
 
 	inputManager->AddCharDelegate(onCharPressedDelegate_);
 
@@ -286,7 +304,7 @@ void EditorHUD::OnScroll(double xOffset, double yOffset)
 void EditorHUD::OnLeftClickPressed()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[GLFW_MOUSE_BUTTON_1] = true;
+	io.MouseDown[ImGuiMouseButton_Left] = true;
 
 	if (context_->objectToCreateType != EditorSelectionType::None)
 	{
@@ -297,7 +315,31 @@ void EditorHUD::OnLeftClickPressed()
 void EditorHUD::OnLeftClickReleased()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[GLFW_MOUSE_BUTTON_1] = false;
+	io.MouseDown[ImGuiMouseButton_Left] = false;
+}
+
+void EditorHUD::OnRightClickPressed()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[ImGuiMouseButton_Right] = true;
+}
+
+void EditorHUD::OnRightClickReleased()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[ImGuiMouseButton_Right] = false;
+}
+
+void EditorHUD::OnMiddleClickPressed()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[ImGuiMouseButton_Middle] = true;
+}
+
+void EditorHUD::OnMiddleClickReleased()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.MouseDown[ImGuiMouseButton_Middle] = false;
 }
 
 void EditorHUD::OnCharPressed(unsigned int codePoint)
@@ -391,6 +433,13 @@ Vector3 EditorHUD::RaycastWorld()
 
 void EditorHUD::OnDeleteInputPressed()
 {
+	ImGuiIO& io = ImGui::GetIO();
+
+	if (io.WantCaptureKeyboard)
+	{
+		return;
+	}
+
 	switch (context_->selectedObjectType)
 	{
 	case EditorSelectionType::Object:
@@ -416,6 +465,13 @@ void EditorHUD::OnDeleteInputPressed()
 
 void EditorHUD::OnFocusInputPressed()
 {
+	ImGuiIO& io = ImGui::GetIO();
+
+	if (io.WantCaptureKeyboard)
+	{
+		return;
+	}
+
 	Vector3 position = Vector3::ZeroVector;
 	switch (context_->selectedObjectType)
 	{
