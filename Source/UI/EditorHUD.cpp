@@ -47,6 +47,7 @@
 #include "Panels/ObjectNameToCreatePanel.h"
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
+#include "Panels/ShaderEditorPanel.h"
 #include "Panels/ViewportPanel.h"
 
 template <class T>
@@ -71,6 +72,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<FileBrowserPanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
+	AddPanel<ShaderEditorPanel>();
 	AddPanel<ViewportPanel>();
 	AddPanel<DebugPanel>();
 	AddPanel<ObjectCreationPanel>();
