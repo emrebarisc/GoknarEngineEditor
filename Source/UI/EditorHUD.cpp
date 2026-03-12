@@ -42,6 +42,7 @@
 #include "Panels/DetailsPanel.h"
 #include "Panels/FileBrowserPanel.h"
 #include "Panels/GeometryBuffersPanel.h"
+#include "Panels/ImageViewerPanel.h"
 #include "Panels/MenuBar.h"
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
@@ -70,6 +71,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<MenuBar>();
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();
+	AddPanel<ImageViewerPanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
@@ -98,7 +100,7 @@ EditorHUD::EditorHUD() : HUD()
 	onFocusInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
 	onCancelInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnCancelInputPressed>(this);
 
-	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UITexture.png");
+	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UI/T_UI.png");
 
 	engine->GetRenderer()->SetDrawOnWindow(true);
 

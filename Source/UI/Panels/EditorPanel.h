@@ -14,7 +14,7 @@ public:
 	IEditorPanel() = delete;
 	IEditorPanel(const std::string& title, EditorHUD* hud) : 
 		title_(title), 
-		hud_(hud), 
+		hud_(hud),
 		isOpen_(true)
 	{
 

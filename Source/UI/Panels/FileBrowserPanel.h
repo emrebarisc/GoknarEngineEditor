@@ -1,23 +1,18 @@
 #pragma once
 
 #include "EditorPanel.h"
-
-struct Folder;
+#include "UI/EditorContext.h"
 
 class FileBrowserPanel : public IEditorPanel
 {
 public:
-	FileBrowserPanel(EditorHUD* hud) : 
-		IEditorPanel("FileBrowser", hud)
-	{
+	FileBrowserPanel(EditorHUD* hud);
 
-	}
-
-	~FileBrowserPanel();
-	
 	virtual void Draw() override;
-	virtual void Init() override;
 
 private:
-	void DrawFileTree(const Folder* folder);
+	void DrawGrid();
+
+	Folder* currentFolder_{ nullptr };
+	float thumbnailSize_{ 96.0f };
 };

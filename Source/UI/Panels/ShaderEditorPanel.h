@@ -92,6 +92,8 @@ private:
     std::vector<ShaderNode> nodes_;
     std::vector<ShaderLink> links_;
 
+    Material* activeMaterial_{ nullptr };
+
     int nextId_{ 1 };
     
     // Canvas state

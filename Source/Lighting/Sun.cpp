@@ -6,8 +6,6 @@
 #include "Lights/DirectionalLight.h"
 #include "Math/GoknarMath.h"
 
-#include "Goknar/Renderer/ShaderBuilderNew.h"
-
 Sun::Sun() :
 	ObjectBase()
 {

@@ -10,6 +10,7 @@
 
 #include "Goknar/Renderer/ShaderTypes.h"
 #include "Goknar/Materials/Material.h"
+#include "Goknar/Materials/MaterialSerializer.h"
 
 
 ShaderEditorPanel::ShaderEditorPanel(EditorHUD* hud)
@@ -54,8 +55,32 @@ void ShaderEditorPanel::Draw()
 
     if (ImGui::Button("Compile Material"))
     {
-        // In a real scenario, you'd pass the active material's InitializationData here
-        // CompileGraphToMaterial(activeMaterial->GetInitializationData());
+        if (activeMaterial_)
+        {
+            delete activeMaterial_;
+        }
+
+        activeMaterial_ = new Material();
+
+        // 2. Retrieve the temporary InitializationData from the Material
+        MaterialInitializationData* initData = activeMaterial_->GetInitializationData();
+
+        if (initData)
+        {
+            // 3. Run the Graph Compiler to populate initData with GLSL strings
+            CompileGraphToMaterial(initData);
+
+            MaterialSerializer().Serialize("M_TestMaterial", activeMaterial_->GetInitializationData());
+
+            // 4. Call the Material's Build function to generate and compile actual Shaders
+            // We pass a null or dummy mesh unit if we just want to compile the shaders
+            activeMaterial_->Build(nullptr);
+
+            // 5. Re-initialize the shader on the GPU
+            activeMaterial_->PreInit();
+            activeMaterial_->Init();
+            activeMaterial_->PostInit();
+        }
     }
 
     ImGui::Separator();
@@ -616,7 +641,10 @@ ShaderNode* ShaderEditorPanel::FindNode(int nodeId)
 
 void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMaterialData)
 {
-    if (!outMaterialData) return;
+    if (!outMaterialData)
+    {
+        return;
+    }
 
     // 1. Clear previous generation
     outMaterialData->baseColor.calculation = "";
@@ -805,8 +833,7 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
         glslBody += "\n";
     }
 
-    // Assign the compiled body to the baseColor calculation so it runs before the final assignments
-    // (Note: Since we build everything backward from the master node, all math logic can safely live inside the baseColor calculation block)
+    // Assign the generated logic to the calculation blocks
     outMaterialData->baseColor.calculation = glslBody;
 
     // 4. Assign Final Results to Goknar Outputs
