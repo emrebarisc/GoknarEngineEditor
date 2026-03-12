@@ -14,5 +14,5 @@ private:
 	void DrawGrid();
 
 	Folder* currentFolder_{ nullptr };
-	float thumbnailSize_{ 96.0f };
+	float thumbnailSize_{ 48.0f };
 };
