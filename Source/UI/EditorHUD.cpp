@@ -102,7 +102,7 @@ EditorHUD::EditorHUD() : HUD()
 
 	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UI/T_UI.png");
 
-	engine->GetRenderer()->SetDrawOnWindow(true);
+	engine->GetRenderer()->SetDrawOnWindow(false);
 
 	context_ = EditorContext::Get();
 }
