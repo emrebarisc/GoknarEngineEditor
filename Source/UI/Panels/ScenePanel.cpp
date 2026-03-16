@@ -26,36 +26,54 @@ void ScenePanel::DrawSceneLights()
         Scene* currentScene = engine->GetApplication()->GetMainScene();
         auto context = EditorContext::Get();
 
-        // Directional Lights
         const std::vector<DirectionalLight*>& directionalLights = currentScene->GetDirectionalLights();
         for (int i = 0; i < directionalLights.size(); ++i)
         {
-            std::string label = "Directional Light " + std::to_string(i);
-            if (ImGui::Selectable(label.c_str(), context->selectedObject == directionalLights[i]))
+            DirectionalLight* directionalLight = directionalLights[i];
+
+            if (directionalLight->GetName().find("__Editor__") != std::string::npos)
             {
-                context->SetSelection(directionalLights[i], EditorSelectionType::DirectionalLight);
+                continue;
+            }
+
+            std::string label = "Directional Light " + std::to_string(i);
+            if (ImGui::Selectable(label.c_str(), context->selectedObject == directionalLight))
+            {
+                context->SetSelection(directionalLight, EditorSelectionType::DirectionalLight);
             }
         }
 
-        // Point Lights
         const std::vector<PointLight*>& pointLights = currentScene->GetPointLights();
         for (int i = 0; i < pointLights.size(); ++i)
         {
-            std::string label = "Point Light " + std::to_string(i);
-            if (ImGui::Selectable(label.c_str(), context->selectedObject == pointLights[i]))
+            PointLight* pointLight = pointLights[i];
+
+            if (pointLight->GetName().find("__Editor__") != std::string::npos)
             {
-                context->SetSelection(pointLights[i], EditorSelectionType::PointLight);
+                continue;
+            }
+
+            std::string label = "Point Light " + std::to_string(i);
+            if (ImGui::Selectable(label.c_str(), context->selectedObject == pointLight))
+            {
+                context->SetSelection(pointLight, EditorSelectionType::PointLight);
             }
         }
 
-        // Spot Lights
         const std::vector<SpotLight*>& spotLights = currentScene->GetSpotLights();
         for (int i = 0; i < spotLights.size(); ++i)
         {
-            std::string label = "Spot Light " + std::to_string(i);
-            if (ImGui::Selectable(label.c_str(), context->selectedObject == spotLights[i]))
+            SpotLight* spotLight = spotLights[i];
+
+            if (spotLight->GetName().find("__Editor__") != std::string::npos)
             {
-                context->SetSelection(spotLights[i], EditorSelectionType::SpotLight);
+                continue;
+            }
+
+            std::string label = "Spot Light " + std::to_string(i);
+            if (ImGui::Selectable(label.c_str(), context->selectedObject == spotLight))
+            {
+                context->SetSelection(spotLight, EditorSelectionType::SpotLight);
             }
         }
 
@@ -70,6 +88,11 @@ void ScenePanel::DrawSceneObjects()
         const std::vector<ObjectBase*>& objects = engine->GetObjectsOfType<ObjectBase>();
         for (ObjectBase* object : objects)
         {
+            if (object->GetName().find("__Editor__") != std::string::npos)
+            {
+                continue;
+            }
+
             if (object->GetParent() == nullptr)
             {
                 DrawSceneObject(object);
@@ -85,7 +108,10 @@ void ScenePanel::DrawSceneObject(ObjectBase* object)
     ImGuiTreeNodeFlags flags = (context->selectedObject == object ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
     
     bool hasChildren = !object->GetChildren().empty();
-    if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
+    if (!hasChildren)
+    {
+        flags |= ImGuiTreeNodeFlags_Leaf;
+    }
 
     bool opened = ImGui::TreeNodeEx((void*)object, flags, "%s", object->GetName().c_str());
     
