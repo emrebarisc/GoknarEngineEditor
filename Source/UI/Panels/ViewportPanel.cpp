@@ -32,7 +32,12 @@ void ViewportPanel::Draw()
 {
 	ImGui::Begin(title_.c_str(), &isOpen_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	ImVec2 newViewportSize = ImGui::GetWindowSize();
+	ImVec2 newViewportSize = ImGui::GetContentRegionAvail();
+
+	if (newViewportSize.x <= 0.0f || newViewportSize.y <= 0.0f)
+	{
+		return;
+	}
 
 	if (size_.x != newViewportSize.x || size_.y != newViewportSize.y)
 	{

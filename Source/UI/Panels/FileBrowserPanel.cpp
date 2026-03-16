@@ -6,8 +6,11 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Renderer/Texture.h"
+#include "Goknar/Model/StaticMesh.h"
+#include "Goknar/Model/SkeletalMesh.h"
 
 #include "ImageViewerPanel.h"
+#include "MeshViewerPanel.h"
 #include "UI/EditorHUD.h"
 
 FileBrowserPanel::FileBrowserPanel(EditorHUD* hud) :
@@ -187,6 +190,25 @@ void FileBrowserPanel::DrawGrid()
 							if (viewer)
 							{
 								viewer->SetTargetTexture(img->GetGeneratedTexture());
+								viewer->SetIsOpen(true);
+							}
+							break;
+						}
+					}
+				}
+				else if (resourceType == ResourceType::Model)
+				{
+					int idx = 0;
+					// Assuming GetStaticMesh(int index) exists on ResourceContainer
+					while (MeshUnit* mesh = engine->GetResourceManager()->GetResourceContainer()->GetMesh(idx++))
+					{
+						// Try to match the clicked file name with the loaded mesh path
+						if (mesh->GetPath().find(file) != std::string::npos)
+						{
+							MeshViewerPanel* viewer = (MeshViewerPanel*)hud_->GetPanel<MeshViewerPanel>();
+							if (viewer)
+							{
+								viewer->SetTargetStaticMesh(dynamic_cast<StaticMesh*>(mesh));
 								viewer->SetIsOpen(true);
 							}
 							break;

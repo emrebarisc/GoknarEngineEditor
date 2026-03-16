@@ -44,6 +44,7 @@
 #include "Panels/GeometryBuffersPanel.h"
 #include "Panels/ImageViewerPanel.h"
 #include "Panels/MenuBar.h"
+#include "Panels/MeshViewerPanel.h"
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
 #include "Panels/SaveScenePanel.h"
@@ -68,10 +69,11 @@ EditorHUD::EditorHUD() : HUD()
 
 	AddPanel<AnimationGraphPanel>();
 	AddPanel<AssetSelectorPanel>();
-	AddPanel<MenuBar>();
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();
 	AddPanel<ImageViewerPanel>();
+	AddPanel<MenuBar>();
+	AddPanel<MeshViewerPanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
@@ -163,13 +165,13 @@ void EditorHUD::PreInit()
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::DLT, INPUT_ACTION::G_PRESS, onDeleteInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
-
-	context_->Init();
 }
 
 void EditorHUD::Init()
 {
 	HUD::Init();
+
+	context_->Init();
 
 	std::vector<std::unique_ptr<IEditorPanel>>::const_iterator panelIterator = panels_.cbegin();
 	while (panelIterator != panels_.cend())
