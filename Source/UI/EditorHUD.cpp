@@ -50,6 +50,7 @@
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
 #include "Panels/ShaderEditorPanel.h"
+#include "Panels/SkeletalMeshViewerPanel.h"
 #include "Panels/ViewportPanel.h"
 
 template <class T>
@@ -69,18 +70,19 @@ EditorHUD::EditorHUD() : HUD()
 
 	AddPanel<AnimationGraphPanel>();
 	AddPanel<AssetSelectorPanel>();
+	AddPanel<DebugPanel>();
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();
 	AddPanel<ImageViewerPanel>();
 	AddPanel<MenuBar>();
 	AddPanel<MeshViewerPanel>();
+	AddPanel<ObjectCreationPanel>();
+	AddPanel<ObjectNameToCreatePanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
+	AddPanel<SkeletalMeshViewerPanel>();
 	AddPanel<ViewportPanel>();
-	AddPanel<DebugPanel>();
-	AddPanel<ObjectCreationPanel>();
-	AddPanel<ObjectNameToCreatePanel>();
 
 	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)
 	{

@@ -86,6 +86,8 @@ void MeshViewerPanel::Draw()
 	bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
 	cameraObject_->GetController()->SetIsActive(isHovered);
 
+	EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
+
 	ImGui::End();
 }
 
@@ -95,5 +97,8 @@ void MeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
 	staticMeshComponent_->SetIsActive(true);
 	staticMeshComponent_->GetMeshInstance()->GetMaterial()->SetEmmisiveColor({ 0.2f });
 	
-	cameraObject_->GetController()->ResetView();
+	if (staticMesh)
+	{
+		cameraObject_->GetController()->ResetViewWithBoundingBox(viewedObject_, staticMesh->GetAABB());
+	}
 }

@@ -11,6 +11,7 @@
 
 #include "ImageViewerPanel.h"
 #include "MeshViewerPanel.h"
+#include "SkeletalMeshViewerPanel.h"
 #include "UI/EditorHUD.h"
 
 FileBrowserPanel::FileBrowserPanel(EditorHUD* hud) :
@@ -199,17 +200,29 @@ void FileBrowserPanel::DrawGrid()
 				else if (resourceType == ResourceType::Model)
 				{
 					int idx = 0;
-					// Assuming GetStaticMesh(int index) exists on ResourceContainer
 					while (MeshUnit* mesh = engine->GetResourceManager()->GetResourceContainer()->GetMesh(idx++))
 					{
-						// Try to match the clicked file name with the loaded mesh path
 						if (mesh->GetPath().find(file) != std::string::npos)
 						{
-							MeshViewerPanel* viewer = (MeshViewerPanel*)hud_->GetPanel<MeshViewerPanel>();
-							if (viewer)
+							if (SkeletalMesh* skeletalMesh = dynamic_cast<SkeletalMesh*>(mesh))
 							{
-								viewer->SetTargetStaticMesh(dynamic_cast<StaticMesh*>(mesh));
-								viewer->SetIsOpen(true);
+								SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
+								if (viewer)
+								{
+									viewer->SetTargetSkeletalMesh(skeletalMesh);
+									viewer->SetIsOpen(true);
+								}
+							}
+							else
+							{
+								StaticMesh* staticMesh = dynamic_cast<StaticMesh*>(mesh);
+
+								MeshViewerPanel* viewer = (MeshViewerPanel*)hud_->GetPanel<MeshViewerPanel>();
+								if (viewer)
+								{
+									viewer->SetTargetStaticMesh(staticMesh);
+									viewer->SetIsOpen(true);
+								}
 							}
 							break;
 						}

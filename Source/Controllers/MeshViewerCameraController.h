@@ -4,6 +4,7 @@
 #include "Goknar/Delegates/Delegate.h"
 #include "Goknar/Math/GoknarMath.h"
 
+class Box;
 class MeshViewerCameraObject;
 
 class MeshViewerCameraController : public Controller
@@ -14,6 +15,14 @@ public:
 
 	virtual void BeginGame() override;
 	virtual void SetIsActive(bool isActive) override;
+
+	void SetOrbitDistance(float orbitDistance)
+	{
+		orbitDistance_ = orbitDistance;
+		UpdateCameraTransform();
+	}
+
+	void ResetViewWithBoundingBox(ObjectBase* viewedObject, const Box& aabb);
 
 	void ResetView();
 

@@ -3,8 +3,9 @@
 #include "Goknar/Application.h"
 #include "Goknar/Camera.h"
 #include "Goknar/Engine.h"
+#include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Managers/InputManager.h"
-#include "Goknar/Managers/WindowManager.h"
+#include "Goknar/Geometry/Box.h"
 
 #include "Objects/MeshViewerCameraObject.h"
 
@@ -57,6 +58,35 @@ void MeshViewerCameraController::ResetView()
 	orbitDistance_ = 10.f;
 	pitch_ = 0.f;
 	yaw_ = 0.f;
+	UpdateCameraTransform();
+}
+
+void MeshViewerCameraController::ResetViewWithBoundingBox(ObjectBase* object, const Box& aabb)
+{
+	// 1. Calculate the center and radius of the mesh's bounding box
+	Vector3 center = (aabb.GetMin() + aabb.GetMax()) * 0.5f;
+	float radius = aabb.GetSize().Length() * 0.5f;
+
+	// 2. Extract frustum data from the camera
+	Camera* camera = cameraObject_->GetCameraComponent()->GetCamera();
+	const Vector4& nearPlane = camera->GetNearPlane(); // Left, Right, Bottom, Top
+	float right = nearPlane.y;
+	float top = nearPlane.w;
+	float nearDist = camera->GetNearDistance();
+
+	// 3. Calculate horizontal and vertical half-FOVs
+	float fovXHalfRad = std::atan2(right, nearDist);
+	float fovYHalfRad = std::atan2(top, nearDist);
+
+	// 4. Calculate required distance to fit the bounding radius on both axes
+	float distX = radius / std::sin(fovXHalfRad);
+	float distY = radius / std::sin(fovYHalfRad);
+
+	// Use the larger distance to ensure it fits completely, adding a 20% margin for padding
+	float distance = GoknarMath::Max(distX, distY) * 1.2f;
+
+	object->SetWorldPosition(-center);
+	SetOrbitDistance(distance);
 	UpdateCameraTransform();
 }
 

@@ -3,8 +3,7 @@
 #include "imgui.h"
 
 #include "Goknar/Math/GoknarMath.h"
-
-#include "UI/EditorContext.h"
+#include "Goknar/Camera.h"
 
 namespace EditorUtils
 {
@@ -35,6 +34,8 @@ namespace EditorUtils
 
 		return isMouseInside;
 	}
+
+	static void DrawWorldAxis(Camera* camera, float padding = 40.0f, float axisLength = 35.0f);
 }
 
 static inline ImVec2 operator*(const ImVec2& lhs, float rhs)
@@ -50,4 +51,34 @@ static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs)
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs)
 {
 	return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y);
+}
+
+static void EditorUtils::DrawWorldAxis(Camera* camera, float padding/* = 40.0f*/, float axisLength/* = 35.0f*/)
+{
+	if (!camera)
+	{
+		return;
+	}
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	ImVec2 winPos = ImGui::GetWindowPos();
+	ImVec2 winSize = ImGui::GetWindowSize();
+
+	// Anchor to the bottom-left of the current ImGui window
+	ImVec2 origin = ImVec2(winPos.x + padding, winPos.y + winSize.y - padding);
+
+	Vector3 left = camera->GetLeftVector();
+	Vector3 up = camera->GetUpVector();
+
+	ImVec2 endX = ImVec2(origin.x + (-left.x * axisLength), origin.y + (-up.x * axisLength));
+	ImVec2 endY = ImVec2(origin.x + (-left.y * axisLength), origin.y + (-up.y * axisLength));
+	ImVec2 endZ = ImVec2(origin.x + (-left.z * axisLength), origin.y + (-up.z * axisLength));
+
+	drawList->AddLine(origin, endX, IM_COL32(255, 50, 50, 255), 2.5f);
+	drawList->AddLine(origin, endY, IM_COL32(50, 255, 50, 255), 2.5f);
+	drawList->AddLine(origin, endZ, IM_COL32(50, 150, 255, 255), 2.5f);
+
+	drawList->AddText(endX, IM_COL32(255, 100, 100, 255), "X");
+	drawList->AddText(endY, IM_COL32(100, 255, 100, 255), "Y");
+	drawList->AddText(endZ, IM_COL32(100, 150, 255, 255), "Z");
 }

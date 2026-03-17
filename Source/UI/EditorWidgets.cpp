@@ -6,6 +6,7 @@
 #include "Goknar/Math/Quaternion.h"
 
 #include "EditorUtils.h"
+#include "EditorContext.h"
 
 void EditorWidgets::DrawInputText(const std::string& name, std::string& value)
 {

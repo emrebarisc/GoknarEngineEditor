@@ -59,5 +59,7 @@ void ViewportPanel::Draw()
 
 	EditorContext::Get()->SetCameraMovement(IsCursorOn());
 
+	EditorUtils::DrawWorldAxis(EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera());
+
 	ImGui::End();
 }
