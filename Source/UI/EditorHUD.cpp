@@ -51,6 +51,7 @@
 #include "Panels/ScenePanel.h"
 #include "Panels/ShaderEditorPanel.h"
 #include "Panels/SkeletalMeshViewerPanel.h"
+#include "Panels/SystemFileBrowserPanel.h"
 #include "Panels/ViewportPanel.h"
 
 template <class T>
@@ -82,6 +83,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
 	AddPanel<SkeletalMeshViewerPanel>();
+	AddPanel<SystemFileBrowserPanel>();
 	AddPanel<ViewportPanel>();
 
 	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)
@@ -238,24 +240,28 @@ void EditorHUD::UpdateHUD()
 void EditorHUD::DrawBackgroundWindow()
 {
 	static bool p_open = true;
-	static bool opt_padding = false;
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(io.DisplaySize, ImGuiCond_Once);
-	ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+	ImGui::SetNextWindowPos(viewport->WorkPos);
+	ImGui::SetNextWindowSize(viewport->WorkSize);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar;
 	window_flags |= ImGuiWindowFlags_NoTitleBar;
 	window_flags |= ImGuiWindowFlags_NoCollapse;
+	window_flags |= ImGuiWindowFlags_NoResize;
 	window_flags |= ImGuiWindowFlags_NoMove;
 	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	window_flags |= ImGuiWindowFlags_NoNavFocus;
 
 	ImGui::Begin("Goknar Engine Editor", &p_open, window_flags);
 
+	ImGui::PopStyleVar(2);
 
 	ImGuiID dockspace_id = ImGui::GetID("Editor");
 	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
@@ -583,7 +589,7 @@ DirectionalLight* EditorHUD::CreateDirectionalLight()
 	newDirectionalLight->SetIsShadowEnabled(true);
 	context_->selectedObjectType = EditorSelectionType::DirectionalLight;
 	context_->selectedObject = newDirectionalLight;
-
+	newDirectionalLight->PreInit();
 	return newDirectionalLight;
 }
 
@@ -593,6 +599,7 @@ PointLight* EditorHUD::CreatePointLight()
 	newPointLight->SetIsShadowEnabled(true);
 	context_->selectedObjectType = EditorSelectionType::PointLight;
 	context_->selectedObject = newPointLight;
+	newPointLight->PreInit();
 	return newPointLight;
 }
 
@@ -602,6 +609,7 @@ SpotLight* EditorHUD::CreateSpotLight()
 	newSpotLight->SetIsShadowEnabled(true);
 	context_->selectedObjectType = EditorSelectionType::SpotLight;
 	context_->selectedObject = newSpotLight;
+	newSpotLight->PreInit();
 	return newSpotLight;
 }
 

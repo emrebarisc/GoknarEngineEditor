@@ -8,11 +8,12 @@
 #include <Core.h>
 
 #include "Goknar/Scene.h"
+#include "Goknar/Factories/DynamicObjectFactory.h"
 #include "Goknar/Materials/Material.h"
+#include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/WindowManager.h"
 #include "Data/MaterialInitializer.h"
 
-#include "Factories/DynamicObjectFactory.h"
 #include "Objects/FreeCameraObject.h"
 #include "UI/EditorHUD.h"
 
@@ -50,10 +51,45 @@ Game::Game() : Application()
 	
 	engine->SetApplication(this);
 
-	engine->GetRenderer()->SetMainRenderType(RenderPassType::Deferred);
+	RenderPassType mainRenderType = RenderPassType::Deferred;
 
 	std::chrono::steady_clock::time_point lastFrameTimePoint = std::chrono::steady_clock::now();
-	mainScene_->ReadSceneData("Scenes/DefaultScene.xml");
+
+	ConfigManager config;
+	if (config.ReadFile("Config/GameConfig.ini"))
+	{
+		int width = config.GetInt("Graphics", "WindowWidth", 1920);
+		int height = config.GetInt("Graphics", "WindowHeight", 1080);
+		engine->GetWindowManager()->SetWindowSize(width, height);
+
+		std::string mainRenderTypeStr = config.GetString("Graphics", "MainRenderType", "Deferred");
+		if (mainRenderTypeStr == "Forward")
+		{
+			mainRenderType = RenderPassType::Forward;
+		}
+		else if (mainRenderTypeStr == "Deferred")
+		{
+			mainRenderType = RenderPassType::Deferred;
+		}
+		else
+		{
+			GOKNAR_CORE_WARN("Unknown MainRenderType: {}. Falling back to Deferred.", mainRenderTypeStr);
+			mainRenderType = RenderPassType::Deferred;
+		}
+
+		std::string contentDir = config.GetString("Core", "ContentDir", CONTENT_DIR);
+
+		ContentDir = contentDir;
+
+		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
+		mainScene_->ReadSceneData(mainScenePath);
+	}
+	else
+	{
+		GOKNAR_CORE_ERROR("Failed to load GameConfig.ini. Falling back to defaults.");
+	}
+
+	engine->GetRenderer()->SetMainRenderType(mainRenderType);
 
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();
@@ -63,8 +99,6 @@ Game::Game() : Application()
 
 	editorHUD_ = new EditorHUD();
 	editorHUD_->SetName("__Editor__HUD");
-
-	engine->GetWindowManager()->SetWindowSize(1900, 1000);
 }
 
 Game::~Game()

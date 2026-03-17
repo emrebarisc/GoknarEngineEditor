@@ -5,6 +5,7 @@
 #include "UI/EditorContext.h"
 #include "UI/EditorHUD.h"
 #include "UI/Panels/SaveScenePanel.h"
+#include "UI/Panels/SystemFileBrowserPanel.h"
 
 #include "Goknar/Application.h"
 #include "Goknar/Engine.h"
@@ -24,6 +25,11 @@ void MenuBar::Draw()
 	{
 		if (ImGui::BeginMenu("File"))
 		{
+			if (ImGui::MenuItem("Open Project"))
+			{
+				hud_->ShowPanel<SystemFileBrowserPanel>();
+			}
+
 			if (ImGui::MenuItem("Save scene as"))
 			{
 				hud_->ShowPanel<SaveScenePanel>();
