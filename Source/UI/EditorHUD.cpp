@@ -284,7 +284,7 @@ void EditorHUD::DrawEditorHUD()
 		GetPanel<ViewportPanel>()->IsCursorOn() ||
 		(GetPanel<GeometryBuffersPanel>() && GetPanel<GeometryBuffersPanel>()->IsCursorOn());
 
-	context_->viewportCameraObject->GetFreeCameraController()->SetIsActive(isViewportCameraMovable);
+	context_->viewportCameraObject->GetController()->SetIsActive(isViewportCameraMovable);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)

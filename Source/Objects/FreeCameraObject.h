@@ -11,7 +11,7 @@ class GOKNAR_API FreeCameraObject : public ObjectBase
 public:
 	FreeCameraObject();
 
-	FreeCameraController* GetFreeCameraController() const 
+	FreeCameraController* GetController() const 
 	{
 		return freeCameraController_;
 	}

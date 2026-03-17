@@ -98,7 +98,6 @@ void SkeletalMeshViewerPanel::Draw()
 		bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
 		cameraObject_->GetController()->SetIsActive(isHovered);
 
-
 		EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
 	}
 	ImGui::EndChild();

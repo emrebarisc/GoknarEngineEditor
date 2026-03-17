@@ -7,10 +7,19 @@
 #include "Goknar/Renderer/Texture.h"
 
 #include "UI/EditorContext.h"
+#include "Objects/FreeCameraObject.h"
+#include "Controllers/FreeCameraController.h"
 
 void GeometryBuffersPanel::Draw()
 {
-	ImGui::Begin(title_.c_str(), &isOpen_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	if (!ImGui::Begin(title_.c_str(), &isOpen_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+	{
+		ImGui::End();
+		return;
+	}
+
+	bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
+	EditorContext::Get()->viewportCameraObject->GetController()->SetIsActive(isHovered);
 
 	ImVec2 windowSize = ImGui::GetWindowSize();
 	ImVec2 imageSize = { (float)windowSize.x * 0.3334f, (float)windowSize.y * 0.5f };

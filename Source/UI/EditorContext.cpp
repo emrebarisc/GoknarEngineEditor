@@ -21,7 +21,7 @@ EditorContext::EditorContext()
 
 	viewportCameraObject = new FreeCameraObject();
 	viewportCameraObject->SetName("__Editor__ViewportCamera");
-	viewportCameraObject->GetFreeCameraController()->SetName("__Editor__FreeCameraController");
+	viewportCameraObject->GetController()->SetName("__Editor__FreeCameraController");
 
 	Camera* viewportCamera = viewportCameraObject->GetCameraComponent()->GetCamera();
 	viewportCamera->SetCameraType(CameraType::RenderTarget);
@@ -55,7 +55,7 @@ void EditorContext::Init()
 
 void EditorContext::SetCameraMovement(bool value)
 {
-	viewportCameraObject->GetFreeCameraController()->SetIsActive(value);
+	viewportCameraObject->GetController()->SetIsActive(value);
 }
 
 void EditorContext::BuildFileTree()
