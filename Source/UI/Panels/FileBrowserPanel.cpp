@@ -228,6 +228,22 @@ void FileBrowserPanel::DrawGrid()
 						}
 					}
 				}
+				else
+				{
+					// If it's a source code file or other unknown text file
+					if (file.find(".cpp") != std::string::npos || file.find(".h") != std::string::npos || file.find(".hpp") != std::string::npos)
+					{
+						std::string fullPath = currentFolder_->path + "/" + file;
+#ifdef _WIN32
+						std::string command = "start \"\" \"" + fullPath + "\"";
+						system(command.c_str());
+#else
+						// Mac or Linux alternative - though mostly just care about VS on Windows
+						std::string command = "open \"" + fullPath + "\"";
+						system(command.c_str());
+#endif
+					}
+				}
 			}
 
 			ImGui::TextWrapped("%s", file.c_str());

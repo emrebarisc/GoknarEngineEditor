@@ -51,6 +51,7 @@
 #include "Panels/ScenePanel.h"
 #include "Panels/ShaderEditorPanel.h"
 #include "Panels/SkeletalMeshViewerPanel.h"
+#include "Panels/SystemFileBrowserPanel.h"
 #include "Panels/ViewportPanel.h"
 
 template <class T>
@@ -82,6 +83,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
 	AddPanel<SkeletalMeshViewerPanel>();
+	AddPanel<SystemFileBrowserPanel>();
 	AddPanel<ViewportPanel>();
 
 	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)

@@ -60,110 +60,51 @@ void EditorContext::SetCameraMovement(bool value)
 
 void EditorContext::BuildFileTree()
 {
-	std::vector<std::string> contentPaths;
-
-	ResourceManager* resourceManager = engine->GetResourceManager();
-
-#ifdef ENGINE_CONTENT_DIR
-	int resourceIndex = 0;
-	while (MeshUnit* mesh = resourceManager->GetResourceContainer()->GetMesh(resourceIndex))
-	{
-		if (mesh->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
-		{
-			std::string path = mesh->GetPath();
-			contentPaths.emplace_back(path.substr(ContentDir.size()));
-		}
-		++resourceIndex;
-	}
-
-	resourceIndex = 0;
-	while (Image* image = resourceManager->GetResourceContainer()->GetImage(resourceIndex))
-	{
-		if (image->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
-		{
-			std::string path = image->GetPath();
-			contentPaths.emplace_back(path.substr(ContentDir.size()));
-		}
-		++resourceIndex;
-	}
-#endif
-
-	for (std::string& contentPath : contentPaths)
-	{
-		for (char& c : contentPath)
-		{
-			if (c == '\\')
-			{
-				c = '/';
-			}
-		}
-	}
-
-	resourceIndex = 0;
-	while (Audio* audio = resourceManager->GetResourceContainer()->GetAudio(resourceIndex))
-	{
-#ifdef ENGINE_CONTENT_DIR
-		if (audio->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
-		{
-			std::string path = audio->GetPath();
-			contentPaths.emplace_back(path.substr(ContentDir.size()));
-		}
-#endif
-		++resourceIndex;
-	}
-
-	std::sort(contentPaths.begin(), contentPaths.end());
-
 	rootFolder = new Folder();
-	rootFolder->name = "Content";
+	rootFolder->name = "Project";
 
-	int contentPathsSize = contentPaths.size();
-	for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
-	{
-		std::string currentPath = contentPaths[pathIndex];
-		std::string fullPath = currentPath;
-
-		Folder* parentFolder = rootFolder;
-
-		bool breakTheLoop = false;
-		while (!currentPath.empty())
+	auto AddFolderTree = [this](const std::string& startPath, Folder* root) {
+		std::filesystem::path basePath(startPath);
+		if (!std::filesystem::exists(basePath) || !std::filesystem::is_directory(basePath))
 		{
-			std::string folderName = currentPath.substr(0, currentPath.find_first_of("/"));
-			std::string folderPath = fullPath.substr(0, fullPath.find(folderName) + folderName.size() + 1);
+			return;
+		}
 
-			if (folderName.find('.') != std::string::npos)
+		Folder* baseFolder = new Folder();
+		baseFolder->name = basePath.filename().string();
+		baseFolder->path = basePath.string();
+		root->subFolders.push_back(baseFolder);
+		folderMap[basePath.string()] = baseFolder;
+
+		for (auto& entry : std::filesystem::recursive_directory_iterator(basePath, std::filesystem::directory_options::skip_permission_denied))
+		{
+			const auto& path = entry.path();
+			std::string pathStr = path.string();
+			std::string parentPathStr = path.parent_path().string();
+			std::string filename = path.filename().string();
+
+			if (folderMap.find(parentPathStr) == folderMap.end())
 			{
-				if (parentFolder)
-				{
-					parentFolder->files.push_back(folderName);
-				}
+				continue; // Shouldn't happen with recursive iterator unless it's a hidden/filtered folder we skipped
+			}
 
-				breakTheLoop = true;
+			Folder* parentFolder = folderMap[parentPathStr];
+
+			if (entry.is_directory())
+			{
+				Folder* newFolder = new Folder();
+				newFolder->name = filename;
+				newFolder->path = pathStr;
+				parentFolder->subFolders.push_back(newFolder);
+				folderMap[pathStr] = newFolder;
 			}
 			else
 			{
-				if (folderMap.find(folderPath) == folderMap.end())
-				{
-					folderMap[folderPath] = new Folder();
-					folderMap[folderPath]->name = folderName;
-					folderMap[folderPath]->path = folderPath;
-				}
-
-				if (std::find(parentFolder->subFolders.begin(),
-					parentFolder->subFolders.end(),
-					folderMap[folderPath]) == std::end(parentFolder->subFolders))
-				{
-					parentFolder->subFolders.push_back(folderMap[folderPath]);
-				}
+				parentFolder->files.push_back(filename); // Just push filename to match existing file browser logic
 			}
-
-			if (breakTheLoop)
-			{
-				break;
-			}
-
-			parentFolder = folderMap[folderPath];
-			currentPath = currentPath.substr(folderName.size() + 1);
 		}
-	}
+	};
+
+	AddFolderTree(ContentDir, rootFolder);
+	AddFolderTree("Source", rootFolder);
 }
