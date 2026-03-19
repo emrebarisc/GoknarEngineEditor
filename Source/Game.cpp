@@ -53,6 +53,7 @@ Game::Game() : Application()
 
 	std::chrono::steady_clock::time_point lastFrameTimePoint = std::chrono::steady_clock::now();
 
+<<<<<<< HEAD
 	ConfigManager editorConfig;
 	std::string currentProjectPath = "";
 	if (editorConfig.ReadFile("Config/EditorConfig.ini"))
@@ -107,12 +108,55 @@ Game::Game() : Application()
 	}
 
 	editorHUD_ = new EditorHUD();
+=======
+	ConfigManager config;
+	if (config.ReadFile("Config/GameConfig.ini"))
+	{
+		int width = config.GetInt("Graphics", "WindowWidth", 1920);
+		int height = config.GetInt("Graphics", "WindowHeight", 1080);
+		engine->GetWindowManager()->SetWindowSize(width, height);
+
+		std::string mainRenderTypeStr = config.GetString("Graphics", "MainRenderType", "Deferred");
+		if (mainRenderTypeStr == "Forward")
+		{
+			mainRenderType = RenderPassType::Forward;
+		}
+		else if (mainRenderTypeStr == "Deferred")
+		{
+			mainRenderType = RenderPassType::Deferred;
+		}
+		else
+		{
+			GOKNAR_CORE_WARN("Unknown MainRenderType: {}. Falling back to Deferred.", mainRenderTypeStr);
+			mainRenderType = RenderPassType::Deferred;
+		}
+
+		std::string contentDir = config.GetString("Core", "ContentDir", CONTENT_DIR);
+
+		ContentDir = contentDir;
+
+		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
+		mainScene_->ReadSceneData(mainScenePath);
+	}
+	else
+	{
+		GOKNAR_CORE_ERROR("Failed to load GameConfig.ini. Falling back to defaults.");
+	}
+
+	engine->GetRenderer()->SetMainRenderType(mainRenderType);
+>>>>>>> 527228d1dc43f3fac9c5144b29c6783d4a8c9219
 
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();
 	GOKNAR_CORE_WARN("Scene is read in {} seconds.", elapsedTime);
 
 	lastFrameTimePoint = currentTimePoint;
+<<<<<<< HEAD
+=======
+
+	editorHUD_ = new EditorHUD();
+	editorHUD_->SetName("__Editor__HUD");
+>>>>>>> 527228d1dc43f3fac9c5144b29c6783d4a8c9219
 }
 
 Game::~Game()
