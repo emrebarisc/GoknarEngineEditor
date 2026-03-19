@@ -36,7 +36,6 @@ void FileBrowserPanel::Draw()
 	{
 		if (ImGui::Button(".. Back"))
 		{
-			// Get the current path (e.g., "Content/Textures/Characters/")
 			std::string currentPath = currentFolder_->path;
 
 			// Remove the trailing slash if it exists

@@ -150,7 +150,14 @@ void EditorContext::BuildFileTree()
 	std::sort(contentPaths.begin(), contentPaths.end());
 
 	rootFolder = new Folder();
-	rootFolder->name = "Content";
+	rootFolder->name = "Root";
+
+	Folder* contentFolder = new Folder();
+	contentFolder->name = "Content";
+	contentFolder->path = "Content/";
+	folderMap[contentFolder->path] = contentFolder;
+
+	rootFolder->subFolders.push_back(contentFolder);
 
 	int contentPathsSize = contentPaths.size();
 	for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
@@ -158,7 +165,7 @@ void EditorContext::BuildFileTree()
 		std::string currentPath = contentPaths[pathIndex];
 		std::string fullPath = currentPath;
 
-		Folder* parentFolder = rootFolder;
+		Folder* parentFolder = contentFolder;
 
 		bool breakTheLoop = false;
 		std::string accumulatedPath = "";
@@ -168,7 +175,7 @@ void EditorContext::BuildFileTree()
 			std::string folderName = currentPath.substr(0, currentPath.find_first_of("/"));
 			
 			accumulatedPath += folderName + "/";
-			std::string folderPath = accumulatedPath;
+			std::string folderPath = std::string("Content/") + accumulatedPath;
 
 			if (folderName.find('.') != std::string::npos)
 			{
