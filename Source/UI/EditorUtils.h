@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Goknar/Camera.h"
+#include "Goknar/Engine.h"
 #include "Goknar/Math/GoknarMath.h"
 #include "Goknar/Managers/ResourceManager.h"
 

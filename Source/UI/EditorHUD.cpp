@@ -45,7 +45,7 @@
 #include "Panels/FileBrowserPanel.h"
 #include "Panels/GeometryBuffersPanel.h"
 #include "Panels/ImageViewerPanel.h"
-#include "Panels/MenuBar.h"
+#include "Panels/MenuBarPanel.h"
 #include "Panels/MeshViewerPanel.h"
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
@@ -54,6 +54,7 @@
 #include "Panels/ShaderEditorPanel.h"
 #include "Panels/SkeletalMeshViewerPanel.h"
 #include "Panels/SystemFileBrowserPanel.h"
+#include "Panels/ToolBarPanel.h"
 #include "Panels/ViewportPanel.h"
 
 template <class T>
@@ -79,7 +80,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();
 	AddPanel<ImageViewerPanel>();
-	AddPanel<MenuBar>();
+	AddPanel<MenuBarPanel>();
 	AddPanel<MeshViewerPanel>();
 	AddPanel<ObjectCreationPanel>();
 	AddPanel<ObjectNameToCreatePanel>();
@@ -88,6 +89,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ShaderEditorPanel>();
 	AddPanel<SkeletalMeshViewerPanel>();
 	AddPanel<SystemFileBrowserPanel>();
+	AddPanel<ToolBarPanel>();
 	AddPanel<ViewportPanel>();
 
 	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)
@@ -245,14 +247,20 @@ void EditorHUD::UpdateHUD()
 }
 
 void EditorHUD::DrawBackgroundWindow()
-{
-	static bool p_open = true;
+{static bool p_open = true;
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-	ImGui::SetNextWindowPos(viewport->WorkPos);
-	ImGui::SetNextWindowSize(viewport->WorkSize);
+	float toolbarHeight = 36.0f;
+	ImVec2 workPos = viewport->WorkPos;
+	workPos.y += toolbarHeight;
+	
+	ImVec2 workSize = viewport->WorkSize;
+	workSize.y -= toolbarHeight;
+
+	ImGui::SetNextWindowPos(workPos);
+	ImGui::SetNextWindowSize(workSize);
 	ImGui::SetNextWindowViewport(viewport->ID);
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -292,12 +300,6 @@ void EditorHUD::DrawEditorHUD()
 	}
 
 	context_->viewportRenderTarget->SetIsActive(true);
-
-	bool isViewportCameraMovable =
-		GetPanel<ViewportPanel>()->IsCursorOn() ||
-		(GetPanel<GeometryBuffersPanel>() && GetPanel<GeometryBuffersPanel>()->IsCursorOn());
-
-	context_->viewportCameraObject->GetController()->SetIsActive(isViewportCameraMovable);
 }
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)

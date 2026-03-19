@@ -11,24 +11,59 @@
 DebugPanel::DebugPanel(EditorHUD* hud) : 
 	IEditorPanel("Debug", hud)
 {
+	isOpen_ = true;
+
 	engine->GetRenderer()->countDrawCalls = true;
 }
 
 void DebugPanel::Draw()
 {
-	ImGui::Begin("DrawInfo", &isOpen_, 
-		ImGuiWindowFlags_NoBackground | 
-		ImGuiWindowFlags_NoTitleBar |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoResize);
+}
 
-	ImGui::Text((std::string("Draw call count: ") + std::to_string(engine->GetRenderer()->drawCallCount)).c_str());
+void DebugPanel::DrawOverlay(const Vector2& viewportPos, const Vector2& viewportSize)
+{
+    const float padding = 10.0f;
+    const float titleBarOffset = 25.0f;
 
-	ImGui::Text((std::string("Position: ") + EditorContext::Get()->viewportCameraObject->GetWorldPosition().ToString()).c_str());
-	ImGui::Text((std::string("Rotation: ") + EditorContext::Get()->viewportCameraObject->GetWorldRotation().ToEulerDegrees().ToString()).c_str());
-	ImGui::Text((std::string("Forward Vector: ") + EditorContext::Get()->viewportCameraObject->GetForwardVector().ToString()).c_str());
-	ImGui::Text((std::string("Left Vector: ") + EditorContext::Get()->viewportCameraObject->GetLeftVector().ToString()).c_str());
-	ImGui::Text((std::string("Up Vector: ") + EditorContext::Get()->viewportCameraObject->GetUpVector().ToString()).c_str());
+    ImVec2 overlayPos = ImVec2(
+        viewportPos.x + viewportSize.x - padding,
+        viewportPos.y + padding + titleBarOffset
+    );
 
-	ImGui::End();
+    ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowBgAlpha(0.35f);
+
+    ImGuiWindowFlags overlayFlags =
+        ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoFocusOnAppearing |
+        ImGuiWindowFlags_NoNav |
+        ImGuiWindowFlags_NoMove;
+
+
+    if (!ImGui::Begin("DebugOverlay", nullptr, overlayFlags))
+    {
+        ImGui::End();
+        return;
+    }
+
+    ImVec2 currentPos = ImGui::GetWindowPos();
+    ImVec2 currentSize = ImGui::GetWindowSize();
+
+    position_ = Vector2(currentPos.x, currentPos.y);
+    size_ = Vector2(currentSize.x, currentSize.y);
+
+    ImGui::Text("Draw call count: %d", engine->GetRenderer()->drawCallCount);
+    ImGui::Separator();
+
+    auto* cameraObj = EditorContext::Get()->viewportCameraObject;
+    ImGui::Text("Position: %s", cameraObj->GetWorldPosition().ToString().c_str());
+    ImGui::Text("Rotation: %s", cameraObj->GetWorldRotation().ToEulerDegrees().ToString().c_str());
+    ImGui::Text("Forward Vector: %s", cameraObj->GetForwardVector().ToString().c_str());
+    ImGui::Text("Left Vector: %s", cameraObj->GetLeftVector().ToString().c_str());
+    ImGui::Text("Up Vector: %s", cameraObj->GetUpVector().ToString().c_str());
+
+    ImGui::End();
 }

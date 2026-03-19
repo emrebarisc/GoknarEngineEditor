@@ -89,11 +89,9 @@ void SystemFileBrowserPanel::Draw()
 
 		if (!onDirectorySelectedCallback_.isNull())
 		{
-			onDirectorySelectedCallback_(selectedFolder_);
+			onDirectorySelectedCallback_(selectedFolder_ + '/');
 		}
 
-		// Depending on your requirements, handle the 'Open'
-		// By default this just hides the window to mimic a dialog "accept"
 		SetIsOpen(false);
 	}
 

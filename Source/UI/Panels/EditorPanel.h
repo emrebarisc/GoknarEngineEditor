@@ -36,7 +36,7 @@ public:
 
 	const std::string& GetTitle() const { return title_; }
 
-	inline bool IsCursorOn()
+	inline bool IsItemHovered()
 	{
 		if (!isOpen_)
 		{

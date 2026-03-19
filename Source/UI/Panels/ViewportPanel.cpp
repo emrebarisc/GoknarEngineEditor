@@ -27,6 +27,8 @@ void ViewportPanel::Init()
 {
 	Camera* renderTargetCamera = EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera();
 	EditorContext::Get()->viewportRenderTarget->SetCamera(renderTargetCamera);
+
+    debugPanel_ = static_cast<DebugPanel*>(hud_->GetPanel<DebugPanel>());
 }
 
 void ViewportPanel::Draw()
@@ -38,12 +40,15 @@ void ViewportPanel::Draw()
 	}
 
 	bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
+	isHovered |= debugPanel_->IsItemHovered();
+
 	EditorContext::Get()->viewportCameraObject->GetController()->SetIsActive(isHovered);
 
 	ImVec2 newViewportSize = ImGui::GetContentRegionAvail();
 
 	if (newViewportSize.x <= 0.0f || newViewportSize.y <= 0.0f)
 	{
+		ImGui::End();
 		return;
 	}
 
@@ -65,9 +70,12 @@ void ViewportPanel::Draw()
 		ImVec2{ 1.f, 0.f }
 	);
 
-	EditorContext::Get()->SetCameraMovement(IsCursorOn());
-
 	EditorUtils::DrawWorldAxis(EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera());
+
+    if (showDebugOverlay_ && debugPanel_)
+    {
+        debugPanel_->DrawOverlay(position_, size_);
+    }
 
 	ImGui::End();
 }

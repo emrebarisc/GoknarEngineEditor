@@ -1,9 +1,10 @@
-#include "MenuBar.h"
+#include "MenuBarPanel.h"
 
 #include "imgui.h"
 
 #include "UI/EditorContext.h"
 #include "UI/EditorHUD.h"
+#include "UI/Panels/ViewportPanel.h"
 #include "UI/Panels/SaveScenePanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 
@@ -25,7 +26,7 @@
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MultipleCollisionComponent.h"
 
-void MenuBar::OnProjectSelected(const std::string& directoryPath)
+void MenuBarPanel::OnProjectSelected(const std::string& directoryPath)
 {
 	std::filesystem::path p(directoryPath);
 	std::string projectName = p.filename().string();
@@ -42,7 +43,7 @@ void MenuBar::OnProjectSelected(const std::string& directoryPath)
 	((Game*)engine->GetApplication())->LoadProject(directoryPath);
 }
 
-void MenuBar::Draw()
+void MenuBarPanel::Draw()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -52,7 +53,7 @@ void MenuBar::Draw()
 			{
 				SystemFileBrowserPanel* fileBrowser = static_cast<SystemFileBrowserPanel*>(hud_->GetPanel<SystemFileBrowserPanel>());
 				fileBrowser->SetOnDirectorySelectedCallback(
-					Delegate<void(const std::string&)>::Create<MenuBar, &MenuBar::OnProjectSelected>(this)
+					Delegate<void(const std::string&)>::Create<MenuBarPanel, &MenuBarPanel::OnProjectSelected>(this)
 				);
 				hud_->ShowPanel<SystemFileBrowserPanel>();
 			}
@@ -145,6 +146,14 @@ void MenuBar::Draw()
 						debugObject->Destroy();
 					}
 				}
+			}
+
+			ViewportPanel* viewportPanel = static_cast<ViewportPanel*>(hud_->GetPanel<ViewportPanel>());
+			if (viewportPanel)
+			{
+				static bool showDebugOverlay = viewportPanel->GetDebugOverlayEnabled();
+				ImGui::MenuItem("Debug Overlay", nullptr, &showDebugOverlay);
+				viewportPanel->SetDebugOverlayEnabled(showDebugOverlay);
 			}
 
 			ImGui::EndMenu();

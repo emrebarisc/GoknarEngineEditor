@@ -2,11 +2,11 @@
 
 #include "EditorPanel.h"
 
-class MenuBar : public IEditorPanel
+class MenuBarPanel : public IEditorPanel
 {
 public:
-	MenuBar(EditorHUD* hud) : 
-		IEditorPanel("MenuBar", hud)
+	MenuBarPanel(EditorHUD* hud) : 
+		IEditorPanel("Menu Bar", hud)
 	{
 
 	}
