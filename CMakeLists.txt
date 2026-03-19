@@ -75,3 +75,5 @@ target_include_directories(${APP_NAME} PUBLIC
 add_compile_definitions(GOKNAR_BUILD_DLL GOKNAR_ENABLE_ASSERTS GLFW_INCLUDE_NONE)
 
 file(COPY "Content" DESTINATION ${CMAKE_BINARY_DIR}/)
+file(COPY "EditorContent" DESTINATION ${CMAKE_BINARY_DIR}/)
+file(COPY "Config" DESTINATION ${CMAKE_BINARY_DIR}/)
