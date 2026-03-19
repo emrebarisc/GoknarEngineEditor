@@ -54,7 +54,7 @@ void MeshViewerCameraController::SetIsActive(bool isActive)
 
 void MeshViewerCameraController::ResetView()
 {
-	orbitCenter_ = GetWorldPosition();
+	orbitCenter_ = objectPositionOffset_;
 	orbitDistance_ = 10.f;
 	pitch_ = 0.f;
 	yaw_ = 0.f;
@@ -85,7 +85,7 @@ void MeshViewerCameraController::ResetViewWithBoundingBox(ObjectBase* object, co
 	// Use the larger distance to ensure it fits completely, adding a 20% margin for padding
 	float distance = GoknarMath::Max(distX, distY) * 1.2f;
 
-	object->SetWorldPosition(-center);
+	object->SetWorldPosition(objectPositionOffset_ - center);
 	SetOrbitDistance(distance);
 	UpdateCameraTransform();
 }
@@ -118,7 +118,10 @@ void MeshViewerCameraController::CursorMovement(double x, double y)
 
 void MeshViewerCameraController::ScrollListener(double x, double y)
 {
-	if (!GetIsActive()) return;
+	if (!GetIsActive())
+	{
+		return;
+	}
 
 	orbitDistance_ -= (float)y * zoomSpeed_;
 	orbitDistance_ = GoknarMath::Max(orbitDistance_, 0.1f);

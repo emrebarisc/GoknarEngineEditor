@@ -9,6 +9,8 @@
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
 
+#include "UI/EditorUtils.h"
+
 #include "ImageViewerPanel.h"
 #include "MeshViewerPanel.h"
 #include "SkeletalMeshViewerPanel.h"
@@ -98,7 +100,10 @@ void FileBrowserPanel::Draw()
 
 void FileBrowserPanel::DrawGrid()
 {
-	if (!currentFolder_) return;
+	if (!currentFolder_)
+	{
+		return;
+	}
 
 	// Use the dynamic thumbnailSize_ variable here
 	float padding = 16.0f;
@@ -118,14 +123,16 @@ void FileBrowserPanel::DrawGrid()
 	auto GetUV1 = [&](float x, float y) { return ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize); };
 
 	// Using the specific path requested
-	Image* uiImage = engine->GetResourceManager()->GetContent<Image>("Textures/UI/T_UI.png");
-	if (!uiImage || !uiImage->GetGeneratedTexture()) return;
+	Image* uiImage = EditorUtils::GetEditorContent<Image>("Textures/UI/T_UI.png");
+	if (!uiImage || !uiImage->GetGeneratedTexture())
+	{
+		return;
+	}
 
 	ImTextureID atlasID = (ImTextureID)(intptr_t)uiImage->GetGeneratedTexture()->GetRendererTextureId();
 
 	if (ImGui::BeginTable("FileGrid", columns))
 	{
-		// --- 1. Draw Folders ---
 		for (Folder* sub : currentFolder_->subFolders)
 		{
 			ImGui::TableNextColumn();
@@ -134,12 +141,8 @@ void FileBrowserPanel::DrawGrid()
 			ImVec2 fUv0 = GetUV0(0.0f, 128.0f);
 			ImVec2 fUv1 = GetUV1(0.0f, 128.0f);
 
-			if (ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1))
-			{
-				// Selection logic
-			}
-
-			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			if(ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1))
+			//if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
 				currentFolder_ = sub;
 			}
@@ -148,7 +151,6 @@ void FileBrowserPanel::DrawGrid()
 			ImGui::PopID();
 		}
 
-		// --- 2. Draw Files ---
 		for (const std::string& file : currentFolder_->files)
 		{
 			ImGui::TableNextColumn();
@@ -159,7 +161,6 @@ void FileBrowserPanel::DrawGrid()
 			ImVec2 uv0, uv1;
 			if (resourceType == ResourceType::Image)
 			{
-				// Image icon at (128, 0)
 				uv0 = GetUV0(128.0f, 0.0f);
 				uv1 = GetUV1(128.0f, 0.0f);
 			}
@@ -176,9 +177,10 @@ void FileBrowserPanel::DrawGrid()
 				uv1 = GetUV1(0.0f, 0.0f);
 			}
 
-			ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1);
+			//ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1);
+			//if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 
-			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			if (ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1))
 			{
 				if (resourceType == ResourceType::Image)
 				{
@@ -230,11 +232,10 @@ void FileBrowserPanel::DrawGrid()
 				}
 				else
 				{
-					// If it's a source code file or other unknown text file
 					if (file.find(".cpp") != std::string::npos || file.find(".h") != std::string::npos || file.find(".hpp") != std::string::npos)
 					{
-						std::string fullPath = currentFolder_->path + "/" + file;
-#ifdef _WIN32
+						std::string fullPath = ContentDir + currentFolder_->path + file;
+#ifdef GOKNAR_PLATFORM_WINDOWS
 						std::string command = "start \"\" \"" + fullPath + "\"";
 						system(command.c_str());
 #else

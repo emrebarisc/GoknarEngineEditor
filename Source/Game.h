@@ -13,6 +13,8 @@ public:
 
 	void Run() override;
 
+	void LoadProject(const std::string& projectPath);
+
 private:
 	EditorHUD* editorHUD_{ nullptr };
 };

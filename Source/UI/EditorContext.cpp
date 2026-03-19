@@ -12,6 +12,7 @@
 #include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Contents/Audio.h"
 #include "Goknar/Contents/Image.h"
+#include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Renderer/RenderTarget.h"
 
@@ -60,9 +61,46 @@ void EditorContext::SetCameraMovement(bool value)
 
 void EditorContext::BuildFileTree()
 {
+	for (auto folder : folderMap)
+	{
+		delete folder.second;
+	}
+	folderMap.clear();
+
+	if (rootFolder)
+	{
+		delete rootFolder;
+		rootFolder = nullptr;
+	}
+
 	std::vector<std::string> contentPaths;
 
 	ResourceManager* resourceManager = engine->GetResourceManager();
+
+	auto getRelativePath = [](const std::string& fullPath, const std::string& baseDir) -> std::string {
+		std::string normalizedFullPath = fullPath;
+		std::string normalizedBaseDir = baseDir;
+
+		auto normalizeSlashes = [](std::string& path) {
+			for (char& c : path)
+				if (c == '\\') c = '/';
+			
+			size_t pos;
+			while ((pos = path.find("//")) != std::string::npos) {
+				path.replace(pos, 2, "/");
+			}
+		};
+
+		normalizeSlashes(normalizedFullPath);
+		normalizeSlashes(normalizedBaseDir);
+
+		size_t pos = normalizedFullPath.find(normalizedBaseDir);
+		if (pos != std::string::npos) {
+			return normalizedFullPath.substr(pos + normalizedBaseDir.length());
+		}
+		
+		return "";
+	};
 
 #ifdef ENGINE_CONTENT_DIR
 	int resourceIndex = 0;
@@ -70,8 +108,7 @@ void EditorContext::BuildFileTree()
 	{
 		if (mesh->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
 		{
-			std::string path = mesh->GetPath();
-			contentPaths.emplace_back(path.substr(ContentDir.size()));
+			contentPaths.emplace_back(getRelativePath(mesh->GetPath(), ContentDir));
 		}
 		++resourceIndex;
 	}
@@ -81,8 +118,7 @@ void EditorContext::BuildFileTree()
 	{
 		if (image->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
 		{
-			std::string path = image->GetPath();
-			contentPaths.emplace_back(path.substr(ContentDir.size()));
+			contentPaths.emplace_back(getRelativePath(image->GetPath(), ContentDir));
 		}
 		++resourceIndex;
 	}
@@ -105,8 +141,7 @@ void EditorContext::BuildFileTree()
 #ifdef ENGINE_CONTENT_DIR
 		if (audio->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
 		{
-			std::string path = audio->GetPath();
-			contentPaths.emplace_back(path.substr(ContentDir.size()));
+			contentPaths.emplace_back(getRelativePath(audio->GetPath(), ContentDir));
 		}
 #endif
 		++resourceIndex;
@@ -126,10 +161,14 @@ void EditorContext::BuildFileTree()
 		Folder* parentFolder = rootFolder;
 
 		bool breakTheLoop = false;
+		std::string accumulatedPath = "";
+
 		while (!currentPath.empty())
 		{
 			std::string folderName = currentPath.substr(0, currentPath.find_first_of("/"));
-			std::string folderPath = fullPath.substr(0, fullPath.find(folderName) + folderName.size() + 1);
+			
+			accumulatedPath += folderName + "/";
+			std::string folderPath = accumulatedPath;
 
 			if (folderName.find('.') != std::string::npos)
 			{

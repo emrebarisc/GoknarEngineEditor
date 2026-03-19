@@ -79,6 +79,19 @@ void SystemFileBrowserPanel::Draw()
 	ImGui::SameLine(ImGui::GetWindowWidth() - 100);
 	if (ImGui::Button("Open") && !selectedFolder_.empty())
 	{
+		for (char& c : selectedFolder_)
+		{
+			if (c == '\\')
+			{
+				c = '/';
+			}
+		}
+
+		if (!onDirectorySelectedCallback_.isNull())
+		{
+			onDirectorySelectedCallback_(selectedFolder_);
+		}
+
 		// Depending on your requirements, handle the 'Open'
 		// By default this just hides the window to mimic a dialog "accept"
 		SetIsOpen(false);

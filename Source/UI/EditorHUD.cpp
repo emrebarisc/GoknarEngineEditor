@@ -10,10 +10,12 @@
 
 #include "Goknar/Contents/Image.h"
 
+#include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 
 #include "Goknar/Factories/DynamicObjectFactory.h"
 
+#include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Managers/WindowManager.h"
@@ -67,6 +69,8 @@ void AddCollisionComponent(PhysicsObject* physicsObject)
 
 EditorHUD::EditorHUD() : HUD()
 {
+	SetName("__Editor__HUD");
+
 	engine->SetHUD(this);
 
 	AddPanel<AnimationGraphPanel>();
@@ -106,9 +110,9 @@ EditorHUD::EditorHUD() : HUD()
 	onFocusInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnFocusInputPressed>(this);
 	onCancelInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnCancelInputPressed>(this);
 
-	uiImage_ = engine->GetResourceManager()->GetContent<Image>("Textures/UI/T_UI.png");
+	uiImage_ = EditorUtils::GetEditorContent<Image>("Textures/UI/T_UI.png");
 
-	engine->GetRenderer()->SetDrawOnWindow(false);
+	engine->GetRenderer()->SetDrawOnWindow(true);
 
 	context_ = EditorContext::Get();
 }
@@ -210,6 +214,9 @@ void EditorHUD::BeginGame()
 	ImVec4* colors = style->Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.f);
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
+
+	// For counting draw calls
+	engine->GetCameraManager()->SetActiveCamera(EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera());
 }
 
 void EditorHUD::UpdateHUD()

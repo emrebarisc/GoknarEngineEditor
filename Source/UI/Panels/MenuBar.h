@@ -12,4 +12,7 @@ public:
 	}
 	
 	virtual void Draw() override;
+
+private:
+	void OnProjectSelected(const std::string& directoryPath);
 };

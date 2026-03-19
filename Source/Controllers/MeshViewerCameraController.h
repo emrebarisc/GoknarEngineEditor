@@ -58,7 +58,8 @@ private:
 	bool isOrbiting_{ false };
 	bool isPanning_{ false };
 
-	Vector3 orbitCenter_{ Vector3::ZeroVector };
+	Vector3 objectPositionOffset_{ 0.f, 0.f, 100.f };
+	Vector3 orbitCenter_{ objectPositionOffset_ };
 	float orbitDistance_{ 10.f };
 	float pitch_{ 0.f };
 	float yaw_{ 0.f };

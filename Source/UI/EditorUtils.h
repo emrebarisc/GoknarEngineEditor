@@ -2,8 +2,40 @@
 
 #include "imgui.h"
 
-#include "Goknar/Math/GoknarMath.h"
+#include <string>
+
 #include "Goknar/Camera.h"
+#include "Goknar/Math/GoknarMath.h"
+#include "Goknar/Managers/ResourceManager.h"
+
+
+#include "EditorCore.h"
+#include "Goknar/Contents/Content.h"
+
+namespace
+{
+	template<typename Tag>
+	struct StolenMember {
+		static typename Tag::type ptr;
+	};
+	template<typename Tag>
+	typename Tag::type StolenMember<Tag>::ptr;
+
+	template<typename Tag, typename Tag::type p>
+	struct StealMember {
+		struct Filler {
+			Filler() { StolenMember<Tag>::ptr = p; }
+		};
+		static Filler filler_obj;
+	};
+	template<typename Tag, typename Tag::type p>
+	typename StealMember<Tag, p>::Filler StealMember<Tag, p>::filler_obj;
+
+	struct ResourceManager_LoadContent {
+		using type = Content* (ResourceManager::*)(const std::string&);
+	};
+	template class StealMember<ResourceManager_LoadContent, &ResourceManager::LoadContent>;
+}
 
 namespace EditorUtils
 {
@@ -36,6 +68,9 @@ namespace EditorUtils
 	}
 
 	static void DrawWorldAxis(Camera* camera, float padding = 40.0f, float axisLength = 35.0f);
+
+	template<typename T>
+	static T* GetEditorContent(const std::string& path);
 }
 
 static inline ImVec2 operator*(const ImVec2& lhs, float rhs)
@@ -81,4 +116,20 @@ static void EditorUtils::DrawWorldAxis(Camera* camera, float padding/* = 40.0f*/
 	drawList->AddText(endX, IM_COL32(255, 100, 100, 255), "X");
 	drawList->AddText(endY, IM_COL32(100, 255, 100, 255), "Y");
 	drawList->AddText(endZ, IM_COL32(100, 150, 255, 255), "Z");
+}
+
+template<typename T>
+static T* EditorUtils::GetEditorContent(const std::string& path)
+{
+	std::string fullpath = EditorContentDir + path;
+
+	T* result = engine->GetResourceManager()->GetResourceContainer()->GetContent<T>(fullpath);
+
+	if (!result)
+	{
+		auto loadContentPtr = StolenMember<ResourceManager_LoadContent>::ptr;
+		result = dynamic_cast<T*>((engine->GetResourceManager()->*loadContentPtr)(fullpath));
+	}
+
+	return result;
 }

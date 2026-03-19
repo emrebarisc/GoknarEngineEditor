@@ -1,0 +1,32 @@
+<FileType FileType="MaterialData" BoneCount="0">
+    <BaseColor>
+        <Calculation>
+	// --- ShaderEditorPanel Generated Graph ---
+</Calculation>
+        <Result>vec4(vec3(1.000000f, 1.000000f, 1.000000f), 1.0f);</Result>
+    </BaseColor>
+    <EmissiveColor>
+        <Calculation></Calculation>
+        <Result>vec3(0.000000f, 0.000000f, 0.000000f);</Result>
+    </EmissiveColor>
+    <FragmentNormal>
+        <Calculation></Calculation>
+        <Result>vec3(0.000000f, 0.000000f, 1.000000f);</Result>
+    </FragmentNormal>
+    <VertexNormal>
+        <Calculation></Calculation>
+        <Result></Result>
+    </VertexNormal>
+    <UV>
+        <Calculation></Calculation>
+        <Result></Result>
+    </UV>
+    <VertexPositionOffset>
+        <Calculation></Calculation>
+        <Result>vec3(0.000000f, 0.000000f, 0.000000f);</Result>
+    </VertexPositionOffset>
+    <VertexShaderFunctions><![CDATA[]]></VertexShaderFunctions>
+    <FragmentShaderFunctions><![CDATA[]]></FragmentShaderFunctions>
+    <VertexShaderUniforms><![CDATA[]]></VertexShaderUniforms>
+    <FragmentShaderUniforms><![CDATA[]]></FragmentShaderUniforms>
+</FileType>

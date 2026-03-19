@@ -7,17 +7,40 @@
 #include "UI/Panels/SaveScenePanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 
+#include "Game.h"
+
 #include "Goknar/Application.h"
 #include "Goknar/Engine.h"
 #include "Goknar/Scene.h"
 #include "Goknar/Debug/DebugDrawer.h"
 #include "Goknar/Helpers/SceneParser.h"
+
+#include <filesystem>
+#include <fstream>
+
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
 #include "Goknar/Physics/Components/SphereCollisionComponent.h"
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MultipleCollisionComponent.h"
+
+void MenuBar::OnProjectSelected(const std::string& directoryPath)
+{
+	std::filesystem::path p(directoryPath);
+	std::string projectName = p.filename().string();
+	
+	std::ofstream editorConfig("Config/EditorConfig.ini");
+	if (editorConfig.is_open())
+	{
+		editorConfig << "[Editor]\n";
+		editorConfig << "CurrentProject=" << projectName << "\n";
+		editorConfig << "CurrentProjectPath=" << directoryPath << "/" << "\n";
+		editorConfig.close();
+	}
+
+	((Game*)engine->GetApplication())->LoadProject(directoryPath);
+}
 
 void MenuBar::Draw()
 {
@@ -27,6 +50,10 @@ void MenuBar::Draw()
 		{
 			if (ImGui::MenuItem("Open Project"))
 			{
+				SystemFileBrowserPanel* fileBrowser = static_cast<SystemFileBrowserPanel*>(hud_->GetPanel<SystemFileBrowserPanel>());
+				fileBrowser->SetOnDirectorySelectedCallback(
+					Delegate<void(const std::string&)>::Create<MenuBar, &MenuBar::OnProjectSelected>(this)
+				);
 				hud_->ShowPanel<SystemFileBrowserPanel>();
 			}
 
