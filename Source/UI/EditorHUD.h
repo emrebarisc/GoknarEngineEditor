@@ -13,7 +13,7 @@
 
 #include "imgui.h"
 
-class ImGuiContext;
+struct ImGuiContext;
 
 class DirectionalLight;
 class PointLight;
@@ -158,7 +158,7 @@ template<typename T>
 inline void EditorHUD::AddPanel()
 {
 	panels_.emplace_back(std::make_unique<T>(this));
-	panelIndexMap_[typeid(T).name()] = panels_.size() - 1;
+	panelIndexMap_[typeid(T).name()] = (int)panels_.size() - 1;
 }
 
 template<typename T>

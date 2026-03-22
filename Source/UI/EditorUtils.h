@@ -35,7 +35,7 @@ namespace
 	struct ResourceManager_LoadContent {
 		using type = Content* (ResourceManager::*)(const std::string&);
 	};
-	template class StealMember<ResourceManager_LoadContent, &ResourceManager::LoadContent>;
+	template struct StealMember<ResourceManager_LoadContent, &ResourceManager::LoadContent>;
 }
 
 namespace EditorUtils
@@ -55,7 +55,7 @@ namespace EditorUtils
 		return {(float)value.x, (float)value.y};
 	}
 
-	static bool IsCursorInCurrentWindow()
+	static inline bool IsCursorInCurrentWindow()
 	{
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		ImVec2 windowSize = ImGui::GetWindowSize();
@@ -68,7 +68,7 @@ namespace EditorUtils
 		return isMouseInside;
 	}
 
-	static void DrawWorldAxis(Camera* camera, float padding = 40.0f, float axisLength = 35.0f);
+	static inline void DrawWorldAxis(Camera* camera, float padding = 40.0f, float axisLength = 35.0f);
 
 	template<typename T>
 	static T* GetEditorContent(const std::string& path);
@@ -89,7 +89,7 @@ static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs)
 	return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y);
 }
 
-static void EditorUtils::DrawWorldAxis(Camera* camera, float padding/* = 40.0f*/, float axisLength/* = 35.0f*/)
+static inline void EditorUtils::DrawWorldAxis(Camera* camera, float padding/* = 40.0f*/, float axisLength/* = 35.0f*/)
 {
 	if (!camera)
 	{

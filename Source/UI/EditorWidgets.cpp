@@ -143,7 +143,7 @@ void EditorWidgets::DrawFileGrid(const Folder* folder, std::string& selectedFile
 	}
 
 	ImGui::Columns(4, nullptr, false);
-	int fileCount = folder->files.size();
+	int fileCount = (int)folder->files.size();
 	for (int fileIndex = 0; fileIndex < fileCount; ++fileIndex)
 	{
 		std::string fileName = folder->files[fileIndex];

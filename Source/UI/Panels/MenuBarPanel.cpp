@@ -26,21 +26,73 @@
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MultipleCollisionComponent.h"
 
+#include <filesystem>
+#include <fstream>
+
+#if GOKNAR_PLATFORM_WINDOWS
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+		#include <windows.h>
+		#include <shellapi.h>
+#else
+	#include <unistd.h>
+	#include <sys/types.h>
+#endif
+
 void MenuBarPanel::OnProjectSelected(const std::string& directoryPath)
 {
 	std::filesystem::path p(directoryPath);
+
+	// Safely extract the last directory name. 
+	// If the path ends in a slash, filename() is empty, so we fall back to parent_path().
 	std::string projectName = p.filename().string();
-	
+	if (projectName.empty())
+	{
+		projectName = p.parent_path().filename().string();
+	}
+
+	// 1. Setup EditorConfig.ini so the next instance knows what to load
 	std::ofstream editorConfig("Config/EditorConfig.ini");
 	if (editorConfig.is_open())
 	{
 		editorConfig << "[Editor]\n";
 		editorConfig << "CurrentProject=" << projectName << "\n";
-		editorConfig << "CurrentProjectPath=" << directoryPath << "/" << "\n";
+
+
+		editorConfig << "CurrentProjectPath=" << directoryPath;
+
+		if (directoryPath[directoryPath.size() - 1] != '/')
+		{
+			editorConfig << "/";
+		}
+
+		editorConfig << "\n";
+
 		editorConfig.close();
 	}
 
-	((Game*)engine->GetApplication())->LoadProject(directoryPath);
+#ifdef GOKNAR_PLATFORM_WINDOWS
+	TCHAR szPath[MAX_PATH];
+	GetModuleFileName(NULL, szPath, MAX_PATH);
+	ShellExecute(NULL, NULL, szPath, NULL, NULL, SW_SHOWNORMAL);
+#else
+	pid_t pid = fork();
+
+	if (pid == 0)
+	{
+		char* args[] = { (char*)"./GoknarEditor", NULL };
+		execv(args[0], args);
+
+		_exit(1);
+	}
+	else if (pid < 0)
+	{
+		GOKNAR_CORE_ERROR("Failed to fork process for restart.");
+	}
+#endif
+
+	engine->Exit();
 }
 
 void MenuBarPanel::Draw()

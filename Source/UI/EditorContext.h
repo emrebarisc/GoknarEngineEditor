@@ -59,6 +59,7 @@ public:
 
 	void Init();
 	void BuildFileTree();
+	void BuildSourceFileTree();
 
 	void SetSelection(void* obj, EditorSelectionType type)
 	{

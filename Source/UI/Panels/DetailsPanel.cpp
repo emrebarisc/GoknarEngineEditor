@@ -30,7 +30,7 @@ void AddCollisionComponent(PhysicsObject* physicsObject)
 		return;
 	}
 
-	T* collisionComponent = physicsObject->AddSubComponent<T>();
+	physicsObject->AddSubComponent<T>();
 }
 
 DetailsPanel::DetailsPanel(EditorHUD* hud) : IEditorPanel("Details", hud)
@@ -264,7 +264,7 @@ void DetailsPanel::DrawObjectDetails()
 		bool collisionGroupCheck = ImGui::Combo("##CollisionGroup", &selectedCollisionGroup, collisionGroupNames, IM_ARRAYSIZE(collisionGroupNames));
 		if (collisionGroupCheck)
 		{
-			CollisionGroup collisionGroup = CollisionGroup::Default;
+			CollisionGroup collisionGroup;
 			if (selectedCollisionGroup == 2)
 			{
 				collisionGroup = CollisionGroup::WorldStaticBlock;
@@ -337,6 +337,10 @@ void DetailsPanel::DrawObjectDetails()
 			{
 				collisionGroup = CollisionGroup::Custom9;
 			}
+			else
+			{
+				collisionGroup = CollisionGroup::Default;
+			}
 			rigidBody->SetCollisionGroup(collisionGroup);
 		}
 		ImGui::Columns(1, nullptr, false);
@@ -400,7 +404,7 @@ void DetailsPanel::DrawObjectDetails()
 		bool collisionMaskCheck = ImGui::Combo("##CollisionMask", &selectedCollisionMask, collisionMaskNames, IM_ARRAYSIZE(collisionMaskNames));
 		if (collisionMaskCheck)
 		{
-			CollisionMask collisionMask = CollisionMask::Default;
+			CollisionMask collisionMask;
 			if (selectedCollisionMask == 2)
 			{
 				collisionMask = CollisionMask::BlockWorldDynamic;
@@ -485,6 +489,10 @@ void DetailsPanel::DrawObjectDetails()
 			{
 				collisionMask = CollisionMask::Custom9;
 			}
+			else
+			{
+				collisionMask = CollisionMask::Default;
+			}
 			rigidBody->SetCollisionMask(collisionMask);
 		}
 		ImGui::Columns(1, nullptr, false);
@@ -501,7 +509,7 @@ void DetailsPanel::DrawObjectDetails()
 	ImGui::PopItemWidth();
 }
 
-void DetailsPanel::DrawComponentDetails(ObjectBase* owner, Component* component)
+void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 {
 	if (!component)
 	{
@@ -635,7 +643,7 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 
 	int currentValue = staticMeshInstance->GetRenderMask();
 	EditorWidgets::DrawInputInt("##StaticMeshInstanceRenderMask", currentValue);
-	if (currentValue != staticMeshInstance->GetRenderMask())
+	if (currentValue != (int)staticMeshInstance->GetRenderMask())
 	{
 		staticMeshInstance->SetRenderMask(currentValue);
 	}
@@ -643,7 +651,7 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	ImGui::PopItemWidth();
 }
 
-void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCollisionComponent)
+void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent*)
 {
 }
 

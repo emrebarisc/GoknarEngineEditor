@@ -92,7 +92,7 @@ void MeshViewerCameraController::ResetViewWithBoundingBox(ObjectBase* object, co
 
 void MeshViewerCameraController::CursorMovement(double x, double y)
 {
-	Vector2 currentCursorPosition(x, y);
+	Vector2 currentCursorPosition((float)x, (float)y);
 	Vector2 delta = currentCursorPosition - previousCursorPosition_;
 
 	if (isOrbiting_)
@@ -116,7 +116,7 @@ void MeshViewerCameraController::CursorMovement(double x, double y)
 	previousCursorPosition_ = currentCursorPosition;
 }
 
-void MeshViewerCameraController::ScrollListener(double x, double y)
+void MeshViewerCameraController::ScrollListener(double, double y)
 {
 	if (!GetIsActive())
 	{

@@ -107,7 +107,7 @@ void FreeCameraController::CursorMovement(double x, double y)
 	}
 }
 
-void FreeCameraController::ScrollListener(double x, double y)
+void FreeCameraController::ScrollListener(double, double y)
 {
 	MoveForward(y * movementSpeed_);
 }

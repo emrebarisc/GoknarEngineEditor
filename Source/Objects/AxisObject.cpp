@@ -45,19 +45,19 @@ void AxisObject::BeginGame()
 	//			if (testVectorMatrix.Equals(quaternion2Matrix)/* && 
 	//				quaternion.Equals(quaternion2)*/)//  Vector3::Distance(testVector, resultVector) < 0.001f)
 	//			{
-	//				GOKNAR_INFO("CORRECT! Vector: {} Angle: {} Quaternion: {}", testVector.ToString(), resultVector.ToString(), quaternion.ToString());
+	//				GOKNAR_INFO("CORRECT! Vector: %s Angle: %s Quaternion: %s", testVector.ToString(), resultVector.ToString(), quaternion.ToString());
 	//			}
 	//			else
 	//			{
 
-	//				GOKNAR_INFO("INCORRECT! Vector: {} Angle: {} Quaternion: {}", testVector.ToString(), resultVector.ToString(), quaternion.ToString());
+	//				GOKNAR_INFO("INCORRECT! Vector: %s Angle: %s Quaternion: %s", testVector.ToString(), resultVector.ToString(), quaternion.ToString());
 	//			}
 	//		}
 	//	}
 	//}
 }
 
-void AxisObject::Tick(float deltaTime)
+void AxisObject::Tick(float)
 {
 
 }

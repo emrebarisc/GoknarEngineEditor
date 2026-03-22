@@ -12,35 +12,18 @@
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/WindowManager.h"
-#include "Data/MaterialInitializer.h"
 
 #include "Objects/FreeCameraObject.h"
 #include "UI/EditorHUD.h"
 
 #include "Physics/RigidBody.h"
 
-#include "Objects/Environment/EnvironmentStones.h"
-#include "Objects/Environment/EnvironmentTrees.h"
-#include "Objects/Environment/EnvironmentPlants.h"
 #include "Objects/DefaultScene/DefaultSceneObjects.h"
 
 Game::Game() : Application()
 {
 	REGISTER_CLASS(ObjectBase);
 	REGISTER_CLASS(RigidBody);
-	REGISTER_CLASS(EnvironmentStone_01);
-	REGISTER_CLASS(EnvironmentStone_02);
-	REGISTER_CLASS(EnvironmentStone_03);
-	REGISTER_CLASS(EnvironmentStone_04);
-	REGISTER_CLASS(EnvironmentLStone_01);
-	REGISTER_CLASS(EnvironmentLStone_02);
-	REGISTER_CLASS(EnvironmentLStone_03);
-	REGISTER_CLASS(EnvironmentLStone_04);
-	REGISTER_CLASS(EnvironmentLStone_05);
-	REGISTER_CLASS(EnvironmentLStone_06);
-	REGISTER_CLASS(EnvironmentTree_01);
-	REGISTER_CLASS(EnvironmentGrass_01);
-	REGISTER_CLASS(EnvironmentMushrooms_01);
 	REGISTER_CLASS(DefaultSceneArch);
 	REGISTER_CLASS(DefaultSceneCube);
 	REGISTER_CLASS(DefaultSceneRadialStaircase);
@@ -54,14 +37,11 @@ Game::Game() : Application()
 	std::chrono::steady_clock::time_point lastFrameTimePoint = std::chrono::steady_clock::now();
 
 	ConfigManager editorConfig;
-	std::string currentProjectPath = "";
+	std::string currentProjectPath = "./";
 	if (editorConfig.ReadFile("Config/EditorConfig.ini"))
 	{
 		currentProjectPath = editorConfig.GetString("Editor", "CurrentProjectPath", "");
-	}
-	
-	if (!currentProjectPath.empty())
-	{
+		ProjectDir = currentProjectPath;
 		LoadProject(currentProjectPath);
 	}
 	else
@@ -90,7 +70,7 @@ Game::Game() : Application()
 
 			engine->GetRenderer()->SetMainRenderType(mainRenderType);
 
-			std::string contentDir = config.GetString("Core", "ContentDir", CONTENT_DIR);
+			std::string contentDir = config.GetString("Core", "ContentDir", "Content/");
 
 			ContentDir = contentDir;
 
@@ -98,7 +78,6 @@ Game::Game() : Application()
 			mainScene_->ReadSceneData(mainScenePath);
 
 			editorHUD_ = new EditorHUD();
-			MaterialInitializer::Init();
 		}
 		else
 		{
@@ -126,8 +105,6 @@ void Game::Run()
 
 void Game::LoadProject(const std::string& projectPath)
 {
-	engine->DestroyAllObjectsAndComponents();
-
 	ConfigManager config;
 	std::string configPath = projectPath + "Config/GameConfig.ini";
 	if (config.ReadFile(configPath))
@@ -145,7 +122,7 @@ void Game::LoadProject(const std::string& projectPath)
 
 		engine->GetRenderer()->SetMainRenderType(mainRenderType);
 
-		std::string contentDir = config.GetString("Core", "ContentDir", CONTENT_DIR);
+		std::string contentDir = config.GetString("Core", "ContentDir", "Content/");
 		ContentDir = projectPath + contentDir;
 
 		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");

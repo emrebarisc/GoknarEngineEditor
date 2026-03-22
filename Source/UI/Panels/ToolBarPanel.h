@@ -2,6 +2,8 @@
 
 #include "EditorPanel.h"
 
+#include <future>
+
 class ToolBarPanel : public IEditorPanel
 {
 public:
@@ -12,4 +14,7 @@ public:
 	}
 	
 	virtual void Draw() override;
+
+	std::future<void> asyncCompileResult;
+	std::future<void> asyncRunResult;
 };

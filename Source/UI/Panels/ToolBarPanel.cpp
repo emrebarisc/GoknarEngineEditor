@@ -6,19 +6,18 @@
 #include "UI/EditorUtils.h"
 
 #include "Goknar/Contents/Image.h"
+#include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Renderer/Texture.h"
 
 void ToolBarPanel::Draw()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	float toolbarHeight = 36.0f;
+	float toolbarHeight = 64.0f;
 
-	// Force the position exactly at WorkPos (which starts just below the MenuBar)
 	ImGui::SetNextWindowPos(viewport->WorkPos);
 	ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, toolbarHeight));
 	ImGui::SetNextWindowViewport(viewport->ID);
 
-	// Flags to make it a rigid, non-dockable bar
 	ImGuiWindowFlags window_flags = 0
 		| ImGuiWindowFlags_NoDocking
 		| ImGuiWindowFlags_NoTitleBar
@@ -45,11 +44,9 @@ void ToolBarPanel::Draw()
 			auto GetUV0 = [&](float x, float y) { return ImVec2(x / atlasSize, y / atlasSize); };
 			auto GetUV1 = [&](float x, float y) { return ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize); };
 
-			// Compile Icon (Gear/Code): Column 6, Row 7
 			ImVec2 compileUv0 = GetUV0(768.0f, 896.0f);
 			ImVec2 compileUv1 = GetUV1(768.0f, 896.0f);
 
-			// Play Icon (Triangle): Column 7, Row 7
 			ImVec2 playUv0 = GetUV0(896.0f, 896.0f);
 			ImVec2 playUv1 = GetUV1(896.0f, 896.0f);
 
@@ -57,17 +54,44 @@ void ToolBarPanel::Draw()
 
 			if (ImGui::ImageButton("##CompileButton", atlasID, ImVec2(iconSize, iconSize), compileUv0, compileUv1))
 			{
-				// TODO: Hook up compilation logic
+				std::string command = "cd " + ProjectDir.substr(0, ProjectDir.size() - 1) + " && Build.sh debug";
+
+				asyncCompileResult = std::async(std::launch::async,
+					[command]()
+					{
+						std::system(command.c_str());
+					});
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Compile Current Project");
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Compile Project");
+			}
 
 			ImGui::SameLine();
 
 			if (ImGui::ImageButton("##PlayButton", atlasID, ImVec2(iconSize, iconSize), playUv0, playUv1))
 			{
-				// TODO: Hook up play logic
+				ConfigManager editorConfig;
+				std::string currentProjectName = "";
+				if (editorConfig.ReadFile("Config/EditorConfig.ini"))
+				{
+					currentProjectName = editorConfig.GetString("Editor", "CurrentProject", "");
+				}
+
+				std::string command;
+#if GOKNAR_PLATFORM_WINDOWS
+				command = "cd " + ProjectDir + "Build_Debug/Output/ && " + currentProjectName + ".exe";
+#else
+				command = "cd " + ProjectDir + "Build_Debug/Output/ && ./" + currentProjectName;
+#endif
+				system(command.c_str());
 			}
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("Play Current Project");
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Play Project");
+			}
 		}
 	}
 	ImGui::End();

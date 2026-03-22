@@ -102,8 +102,8 @@ void EditorContext::BuildFileTree()
 		return "";
 	};
 
-#ifdef ENGINE_CONTENT_DIR
 	int resourceIndex = 0;
+#ifdef ENGINE_CONTENT_DIR
 	while (MeshUnit* mesh = resourceManager->GetResourceContainer()->GetMesh(resourceIndex))
 	{
 		if (mesh->GetPath().find(std::string(ENGINE_CONTENT_DIR)) == std::string::npos)
@@ -159,7 +159,7 @@ void EditorContext::BuildFileTree()
 
 	rootFolder->subFolders.push_back(contentFolder);
 
-	int contentPathsSize = contentPaths.size();
+	int contentPathsSize = (int)contentPaths.size();
 	for (size_t pathIndex = 0; pathIndex < contentPathsSize; pathIndex++)
 	{
 		std::string currentPath = contentPaths[pathIndex];
@@ -177,6 +177,137 @@ void EditorContext::BuildFileTree()
 			accumulatedPath += folderName + "/";
 			std::string folderPath = std::string("Content/") + accumulatedPath;
 
+			if (folderName.find('.') != std::string::npos)
+			{
+				if (parentFolder)
+				{
+					parentFolder->files.push_back(folderName);
+				}
+
+				breakTheLoop = true;
+			}
+			else
+			{
+				if (folderMap.find(folderPath) == folderMap.end())
+				{
+					folderMap[folderPath] = new Folder();
+					folderMap[folderPath]->name = folderName;
+					folderMap[folderPath]->path = folderPath;
+				}
+
+				if (std::find(parentFolder->subFolders.begin(),
+					parentFolder->subFolders.end(),
+					folderMap[folderPath]) == std::end(parentFolder->subFolders))
+				{
+					parentFolder->subFolders.push_back(folderMap[folderPath]);
+				}
+			}
+
+			if (breakTheLoop)
+			{
+				break;
+			}
+
+			parentFolder = folderMap[folderPath];
+			currentPath = currentPath.substr(folderName.size() + 1);
+		}
+	}
+	BuildSourceFileTree();
+}
+
+void EditorContext::BuildSourceFileTree()
+{
+	// Derive the Source directory path from ContentDir
+	std::string sourceDirStr = ContentDir;
+	size_t contentPos = sourceDirStr.rfind("Content");
+	if (contentPos != std::string::npos)
+	{
+		sourceDirStr.replace(contentPos, 7, "Source");
+	}
+
+	// Make sure the directory actually exists before trying to parse it
+	if (!std::filesystem::exists(sourceDirStr) || !std::filesystem::is_directory(sourceDirStr))
+	{
+		return;
+	}
+
+	Folder* sourceFolder = new Folder();
+	sourceFolder->name = "Source";
+	sourceFolder->path = "Source/";
+	folderMap[sourceFolder->path] = sourceFolder;
+
+	rootFolder->subFolders.push_back(sourceFolder);
+
+	std::vector<std::string> sourcePaths;
+
+	// Reusing the getRelativePath lambda logic for physical files
+	auto getRelativePath = [](const std::string& fullPath, const std::string& baseDir) -> std::string {
+		std::string normalizedFullPath = fullPath;
+		std::string normalizedBaseDir = baseDir;
+
+		auto normalizeSlashes = [](std::string& path) {
+			for (char& c : path)
+				if (c == '\\') c = '/';
+
+			size_t pos;
+			while ((pos = path.find("//")) != std::string::npos) {
+				path.replace(pos, 2, "/");
+			}
+			};
+
+		normalizeSlashes(normalizedFullPath);
+		normalizeSlashes(normalizedBaseDir);
+
+		size_t pos = normalizedFullPath.find(normalizedBaseDir);
+		if (pos != std::string::npos) {
+			return normalizedFullPath.substr(pos + normalizedBaseDir.length());
+		}
+
+		return "";
+		};
+
+	// Recursively scan the Source directory for files
+	for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDirStr))
+	{
+		if (entry.is_regular_file())
+		{
+			std::string fullPath = entry.path().string();
+			std::string relativePath = getRelativePath(fullPath, sourceDirStr);
+
+			if (!relativePath.empty())
+			{
+				// Strip leading slash if present to match the Content parsing logic format
+				if (relativePath[0] == '/')
+				{
+					relativePath = relativePath.substr(1);
+				}
+				sourcePaths.emplace_back(relativePath);
+			}
+		}
+	}
+
+	std::sort(sourcePaths.begin(), sourcePaths.end());
+
+	// Map the gathered relative paths into the Folder structure
+	int sourcePathsSize = sourcePaths.size();
+	for (size_t pathIndex = 0; pathIndex < sourcePathsSize; pathIndex++)
+	{
+		std::string currentPath = sourcePaths[pathIndex];
+		std::string fullPath = currentPath;
+
+		Folder* parentFolder = sourceFolder;
+
+		bool breakTheLoop = false;
+		std::string accumulatedPath = "";
+
+		while (!currentPath.empty())
+		{
+			std::string folderName = currentPath.substr(0, currentPath.find_first_of("/"));
+
+			accumulatedPath += folderName + "/";
+			std::string folderPath = std::string("Source/") + accumulatedPath;
+
+			// Assuming anything with a '.' is a file (matching original logic)
 			if (folderName.find('.') != std::string::npos)
 			{
 				if (parentFolder)
