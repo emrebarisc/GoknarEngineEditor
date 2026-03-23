@@ -70,7 +70,7 @@ void ShaderEditorPanel::Draw()
             // 3. Run the Graph Compiler to populate initData with GLSL strings
             CompileGraphToMaterial(initData);
 
-            MaterialSerializer().Serialize("M_TestMaterial", activeMaterial_->GetInitializationData());
+            MaterialSerializer().Serialize("M_TestMaterial", activeMaterial_);
 
             // 4. Call the Material's Build function to generate and compile actual Shaders
             // We pass a null or dummy mesh unit if we just want to compile the shaders

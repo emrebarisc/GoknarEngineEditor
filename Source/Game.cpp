@@ -8,6 +8,7 @@
 #include <Core.h>
 
 #include "Goknar/Scene.h"
+#include "Goknar/Helpers/AssetParser.h"
 #include "Goknar/Factories/DynamicObjectFactory.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Managers/ConfigManager.h"
@@ -84,6 +85,8 @@ Game::Game() : Application()
 			GOKNAR_CORE_ERROR("Failed to load GameConfig.ini. Falling back to defaults.");
 		}
 	}
+
+	AssetParser::ParseAssets("AssetContainer");
 
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();
