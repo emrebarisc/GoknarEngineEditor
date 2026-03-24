@@ -19,22 +19,12 @@
 
 #include "Physics/RigidBody.h"
 
-#include "Objects/DefaultScene/DefaultSceneObjects.h"
-
 Game::Game() : Application()
 {
 	REGISTER_CLASS(ObjectBase);
 	REGISTER_CLASS(RigidBody);
-	REGISTER_CLASS(DefaultSceneArch);
-	REGISTER_CLASS(DefaultSceneCube);
-	REGISTER_CLASS(DefaultSceneRadialStaircase);
-	REGISTER_CLASS(DefaultSceneRadialStaircaseMirrored);
-	REGISTER_CLASS(DefaultSceneRoundCorner);
 	
 	engine->SetApplication(this);
-
-	ContentDir = "EditorContent/";
-	AssetParser::ParseAssets("EditorAssetContainer");
 
 	RenderPassType mainRenderType = RenderPassType::Deferred;
 
