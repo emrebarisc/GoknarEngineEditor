@@ -4,16 +4,16 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Physics/Components/NonMovingTriangleMeshCollisionComponent.h"
 
+#include "UI/EditorUtils.h"
+
 DefaultSceneArch::DefaultSceneArch()
 {
-	ResourceManager* resourceManager = engine->GetResourceManager();
-
 	collisionComponent_ = AddSubComponent<NonMovingTriangleMeshCollisionComponent>();
 	SetRootComponent(collisionComponent_);
 
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 
-	StaticMesh* sceneArchStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/DefaultScene/SM_Arch.fbx");
+	StaticMesh* sceneArchStaticMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/DefaultScene/SM_Arch.fbx");
 	if (sceneArchStaticMesh)
 	{
 		collisionComponent_->SetMesh(sceneArchStaticMesh);
@@ -26,14 +26,12 @@ DefaultSceneArch::DefaultSceneArch()
 
 DefaultSceneCube::DefaultSceneCube()
 {
-	ResourceManager* resourceManager = engine->GetResourceManager();
-
 	collisionComponent_ = AddSubComponent<NonMovingTriangleMeshCollisionComponent>();
 	SetRootComponent(collisionComponent_);
 
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 
-	StaticMesh* sceneCubeStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/DefaultScene/SM_UnitCube.fbx");
+	StaticMesh* sceneCubeStaticMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/DefaultScene/SM_UnitCube.fbx");
 	if (sceneCubeStaticMesh)
 	{
 		collisionComponent_->SetMesh(sceneCubeStaticMesh);
@@ -46,14 +44,12 @@ DefaultSceneCube::DefaultSceneCube()
 
 DefaultSceneRadialStaircase::DefaultSceneRadialStaircase()
 {
-	ResourceManager* resourceManager = engine->GetResourceManager();
-
 	collisionComponent_ = AddSubComponent<NonMovingTriangleMeshCollisionComponent>();
 	SetRootComponent(collisionComponent_);
 
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 
-	StaticMesh* sceneRadialStaircaseStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/DefaultScene/SM_RadialStaircase.fbx");
+	StaticMesh* sceneRadialStaircaseStaticMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/DefaultScene/SM_RadialStaircase.fbx");
 	if (sceneRadialStaircaseStaticMesh)
 	{
 		collisionComponent_->SetMesh(sceneRadialStaircaseStaticMesh);
@@ -66,14 +62,12 @@ DefaultSceneRadialStaircase::DefaultSceneRadialStaircase()
 
 DefaultSceneRadialStaircaseMirrored::DefaultSceneRadialStaircaseMirrored()
 {
-	ResourceManager* resourceManager = engine->GetResourceManager();
-
 	collisionComponent_ = AddSubComponent<NonMovingTriangleMeshCollisionComponent>();
 	SetRootComponent(collisionComponent_);
 
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 
-	StaticMesh* sceneRadialStaircaseStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/DefaultScene/SM_RadialStaircaseMirrored.fbx");
+	StaticMesh* sceneRadialStaircaseStaticMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/DefaultScene/SM_RadialStaircaseMirrored.fbx");
 	if (sceneRadialStaircaseStaticMesh)
 	{
 		collisionComponent_->SetMesh(sceneRadialStaircaseStaticMesh);
@@ -87,14 +81,12 @@ DefaultSceneRadialStaircaseMirrored::DefaultSceneRadialStaircaseMirrored()
 
 DefaultSceneRoundCorner::DefaultSceneRoundCorner()
 {
-	ResourceManager* resourceManager = engine->GetResourceManager();
-
 	collisionComponent_ = AddSubComponent<NonMovingTriangleMeshCollisionComponent>();
 	SetRootComponent(collisionComponent_);
 
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 
-	StaticMesh* stairsStaticMesh = resourceManager->GetContent<StaticMesh>("Meshes/DefaultScene/SM_RoundCorner.fbx");
+	StaticMesh* stairsStaticMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/DefaultScene/SM_RoundCorner.fbx");
 	if (stairsStaticMesh)
 	{
 		collisionComponent_->SetMesh(stairsStaticMesh);
