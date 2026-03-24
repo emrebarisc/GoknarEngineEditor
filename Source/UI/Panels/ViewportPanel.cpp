@@ -58,7 +58,11 @@ void ViewportPanel::Draw()
 		EditorContext::Get()->viewportRenderTarget->SetFrameSize({ newViewportSize.x, newViewportSize.y });
 	}
 
-	position_ = EditorUtils::ToVector2(ImGui::GetWindowPos());
+	ImVec2 currentPos = ImGui::GetWindowPos();
+	ImVec2 currentSize = ImGui::GetWindowSize();
+
+	position_ = Vector2(currentPos.x, currentPos.y);
+	size_ = Vector2(currentSize.x, currentSize.y);
 
 	Texture* renderTargetTexture = EditorContext::Get()->viewportRenderTarget->GetTexture();
 

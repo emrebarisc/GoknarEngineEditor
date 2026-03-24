@@ -90,12 +90,13 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<SkeletalMeshViewerPanel>();
 	AddPanel<SystemFileBrowserPanel>();
 	AddPanel<ToolBarPanel>();
-	AddPanel<ViewportPanel>();
 
 	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)
 	{
 		AddPanel<GeometryBuffersPanel>();
 	}
+
+	AddPanel<ViewportPanel>();
 
 	onKeyboardEventDelegate_ = Delegate<void(int, int, int, int)>::Create<EditorHUD, &EditorHUD::OnKeyboardEvent>(this);
 	onCursorMoveDelegate_ = Delegate<void(double, double)>::Create<EditorHUD, &EditorHUD::OnCursorMove>(this);
