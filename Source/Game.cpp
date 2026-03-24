@@ -33,6 +33,9 @@ Game::Game() : Application()
 	
 	engine->SetApplication(this);
 
+	ContentDir = "EditorContent/";
+	AssetParser::ParseAssets("EditorAssetContainer");
+
 	RenderPassType mainRenderType = RenderPassType::Deferred;
 
 	std::chrono::steady_clock::time_point lastFrameTimePoint = std::chrono::steady_clock::now();
