@@ -5,6 +5,7 @@
 #include "Goknar/Engine.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Components/StaticMeshComponent.h"
+#include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Physics/PhysicsWorld.h"
@@ -79,6 +80,12 @@ void DetailsPanel::SetupReflections()
 
 void DetailsPanel::OnAssetSelected(const std::string& path)
 {
+	ConfigManager configManager;
+	configManager.ReadFile("Config/GameConfig.ini");
+	std::string projectContentDir = configManager.GetString("Core", "ContentDir", "");
+
+	std::string normalizedPath = path.substr(projectContentDir.size());
+
 	switch (assetSelectionComponentType_)
 	{
 	case EditorAssetType::None:
@@ -86,7 +93,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 	case EditorAssetType::StaticMeshComponent:
 	{
 		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
-		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(path);
+		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(normalizedPath);
 		if (newStaticMesh)
 		{
 			staticMeshComponent->SetMesh(newStaticMesh);
