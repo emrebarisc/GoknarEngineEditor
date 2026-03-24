@@ -20,7 +20,7 @@ void DebugPanel::Draw()
 {
 }
 
-void DebugPanel::DrawOverlay(const Vector2& viewportPos, const Vector2& viewportSize)
+void DebugPanel::DrawOverlay(const Vector2i& viewportPos, const Vector2i& viewportSize)
 {
     const float padding = 10.0f;
     const float titleBarOffset = 25.0f;

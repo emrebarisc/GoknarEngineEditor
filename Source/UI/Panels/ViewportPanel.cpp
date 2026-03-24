@@ -58,15 +58,11 @@ void ViewportPanel::Draw()
 		EditorContext::Get()->viewportRenderTarget->SetFrameSize({ newViewportSize.x, newViewportSize.y });
 	}
 
-	ImVec2 currentPos = ImGui::GetWindowPos();
-	ImVec2 currentSize = ImGui::GetWindowSize();
-
-	position_ = Vector2(currentPos.x, currentPos.y);
-	size_ = Vector2(currentSize.x, currentSize.y);
+	ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+	position_ = Vector2(cursorScreenPos.x, cursorScreenPos.y);
 
 	Texture* renderTargetTexture = EditorContext::Get()->viewportRenderTarget->GetTexture();
 
-	ImGui::SetCursorPos(ImVec2{ 0.f, 0.f });
 	ImGui::Image(
 		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
 		EditorUtils::ToImVec2(size_),
@@ -76,10 +72,10 @@ void ViewportPanel::Draw()
 
 	EditorUtils::DrawWorldAxis(EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera());
 
-    if (showDebugOverlay_ && debugPanel_)
-    {
-        debugPanel_->DrawOverlay(position_, size_);
-    }
+	if (showDebugOverlay_ && debugPanel_)
+	{
+		debugPanel_->DrawOverlay(position_, size_);
+	}
 
 	ImGui::End();
 }

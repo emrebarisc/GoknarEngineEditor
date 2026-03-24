@@ -24,8 +24,6 @@ public:
 	}
 
 private:
-	Vector2 size_;
-	Vector2 position_;
 	DebugPanel* debugPanel_{ nullptr };
 	bool showDebugOverlay_{ true };
 };

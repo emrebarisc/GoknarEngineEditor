@@ -459,7 +459,7 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 				std::string cleanPath = itemPath;
 				if (!cleanPath.empty() && cleanPath.back() == '/') cleanPath.pop_back();
 				std::filesystem::remove_all(cleanPath);
-				needsRefresh_ = true; // Defer refresh
+				needsRefresh_ = true;
 			}
 			catch (...) {}
 		}
@@ -483,7 +483,7 @@ void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::
 		if (srcPath != destPath && !std::filesystem::exists(destPath))
 		{
 			std::filesystem::rename(srcPath, destPath);
-			needsRefresh_ = true; // Defer refresh
+			needsRefresh_ = true;
 		}
 	}
 	catch (...) {}
@@ -491,13 +491,10 @@ void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::
 
 void FileBrowserPanel::RefreshAndRestore()
 {
-	// Preserve path before mapping pointer gets invalidated
 	std::string currentPathToRestore = currentFolder_ ? currentFolder_->path : "";
 
-	// Refresh file structure via context
 	EditorContext::Get()->BuildFileTree();
 
-	// Restore selected node so we don't boot the user back to root
 	if (!currentPathToRestore.empty())
 	{
 		auto it = EditorContext::Get()->folderMap.find(currentPathToRestore);
