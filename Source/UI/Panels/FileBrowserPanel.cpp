@@ -301,7 +301,9 @@ void FileBrowserPanel::DrawGrid()
 
 			ResourceType resourceType = ResourceManagerUtils::GetResourceType(file);
 
-			ImVec2 uv0, uv1;
+			ImVec2 uv0 = GetUV0(0.0f, 0.0f);
+			ImVec2 uv1 = GetUV0(0.0f, 0.0f);
+
 			if (resourceType == ResourceType::Image)
 			{
 				uv0 = GetUV0(128.0f, 0.0f);
@@ -312,20 +314,20 @@ void FileBrowserPanel::DrawGrid()
 				uv0 = GetUV0(256.0f, 0.0f);
 				uv1 = GetUV1(256.0f, 0.0f);
 			}
-			else if (resourceType == ResourceType::Header)
-			{
-				uv0 = GetUV0(766.f, 0.0f);
-				uv1 = GetUV1(766.f, 0.0f);
-			}
-			else if (resourceType == ResourceType::CPP)
-			{
-				uv0 = GetUV0(896.f, 0.0f);
-				uv1 = GetUV1(896.f, 0.0f);
-			}
 			else
 			{
-				uv0 = GetUV0(0.0f, 0.0f);
-				uv1 = GetUV1(0.0f, 0.0f);
+				std::string extension = ResourceManagerUtils::GetExtension(file);
+
+				if (extension == "h")
+				{
+					uv0 = GetUV0(766.f, 0.0f);
+					uv1 = GetUV1(766.f, 0.0f);
+				}
+				else if (extension == "cpp")
+				{
+					uv0 = GetUV0(896.f, 0.0f);
+					uv1 = GetUV1(896.f, 0.0f);
+				}
 			}
 
 			if (ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1))
@@ -378,16 +380,21 @@ void FileBrowserPanel::DrawGrid()
 						}
 					}
 				}
-				else if (resourceType == ResourceType::Header || resourceType == ResourceType::CPP)
+				else
 				{
-					std::string fullPath = ProjectDir + currentFolder_->path + file;
-					std::string command;
+					std::string extension = ResourceManagerUtils::GetExtension(file);
+
+					if (extension == "h" || extension == "cpp")
+					{
+						std::string fullPath = ProjectDir + currentFolder_->path + file;
+						std::string command;
 #ifdef GOKNAR_PLATFORM_WINDOWS
-					command = "start \"\" \"" + fullPath + "\"";
+						command = "start \"\" \"" + fullPath + "\"";
 #else
-					command = "open \"" + fullPath + "\"";
+						command = "open \"" + fullPath + "\"";
 #endif
-					system(command.c_str());
+						system(command.c_str());
+					}
 				}
 			}
 
