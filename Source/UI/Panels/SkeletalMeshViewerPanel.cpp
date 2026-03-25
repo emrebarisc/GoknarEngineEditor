@@ -79,27 +79,31 @@ void SkeletalMeshViewerPanel::Draw()
 	ImGui::BeginChild("ViewportArea", ImVec2(viewportWidth, contentAvail.y), true);
 	ImVec2 newViewportSize = ImGui::GetContentRegionAvail();
 
-	if (newViewportSize.x > 0.0f && newViewportSize.y > 0.0f)
+	if (newViewportSize.x <= 0.0f || newViewportSize.y <= 0.0f)
 	{
-		if (size_.x != newViewportSize.x || size_.y != newViewportSize.y)
-		{
-			size_ = EditorUtils::ToVector2(newViewportSize);
-			renderTarget_->SetFrameSize({ newViewportSize.x, newViewportSize.y });
-		}
-
-		Texture* renderTargetTexture = renderTarget_->GetTexture();
-		ImGui::Image(
-			(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
-			EditorUtils::ToImVec2(size_),
-			ImVec2{ 0.f, 1.f },
-			ImVec2{ 1.f, 0.f }
-		);
-
-		bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
-		cameraObject_->GetController()->SetIsActive(isHovered);
-
-		EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
+		ImGui::EndChild();
+		ImGui::End();
+		return;
 	}
+
+	if (size_.x != newViewportSize.x || size_.y != newViewportSize.y)
+	{
+		size_ = EditorUtils::ToVector2(newViewportSize);
+		renderTarget_->SetFrameSize({ newViewportSize.x, newViewportSize.y });
+	}
+
+	Texture* renderTargetTexture = renderTarget_->GetTexture();
+	ImGui::Image(
+		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
+		EditorUtils::ToImVec2(size_),
+		ImVec2{ 0.f, 1.f },
+		ImVec2{ 1.f, 0.f }
+	);
+
+	bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
+	cameraObject_->GetController()->SetIsActive(isHovered);
+
+	EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
 	ImGui::EndChild();
 
 	ImGui::SameLine();

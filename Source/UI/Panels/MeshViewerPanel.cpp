@@ -66,6 +66,7 @@ void MeshViewerPanel::Draw()
 
 	if (newViewportSize.x <= 0.0f || newViewportSize.y <= 0.0f)
 	{
+		ImGui::End();
 		return;
 	}
 
