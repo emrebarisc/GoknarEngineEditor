@@ -11,17 +11,25 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
+
+class RenderTarget;
+class MeshViewerCameraObject;
+class ObjectBase;
+class StaticMeshComponent;
 
 enum class ShaderPinType
 {
+    None = 0,
     Float,
     Vector2,
     Vector3,
     Vector4,
     Vector4i,
     Matrix4x4,
-    Texture
+    Texture,
+    Any // NEW: For generic math nodes
 };
 
 enum class ShaderPinKind
@@ -37,7 +45,7 @@ struct ShaderPin
     std::string name;
     ShaderPinType type;
     ShaderPinKind kind;
-    
+
     // Default value if nothing is connected
     std::variant<float, Vector2, Vector3, Vector4, std::string> defaultValue = 0.0f;
 };
@@ -46,12 +54,14 @@ struct ShaderNode
 {
     int id;
     std::string name;
-    std::string typeCategory; // e.g., "Math", "Constants", "Master"
+    std::string typeCategory;
     ImVec2 pos;
     ImVec2 size;
-    
+
     std::vector<ShaderPin> inputs;
     std::vector<ShaderPin> outputs;
+
+    std::string stringData{ "" };
 };
 
 struct ShaderLink
@@ -67,24 +77,23 @@ class ShaderEditorPanel : public IEditorPanel
 {
 public:
     ShaderEditorPanel(EditorHUD* hud);
-    virtual ~ShaderEditorPanel() = default;
+    virtual ~ShaderEditorPanel();
 
     virtual void Init() override;
     virtual void Draw() override;
 
-    // The crucial function: Translates the visual graph into GLSL strings for ShaderBuilder
     void CompileGraphToMaterial(MaterialInitializationData* outMaterialData);
 
 private:
     void DrawNodeCanvas();
     void DrawPropertiesSidebar();
+    void DrawPreview();
 
     ShaderNode SpawnNode(const std::string& category, const std::string& name, ImVec2 pos);
 
     ShaderNode CreateVariableNode(const std::string& name, ShaderPinType type, ImVec2 pos);
     void PopulateVariableNodes();
 
-    // Canvas Helpers
     ImVec2 GetPinPosition(int pinId);
     ShaderPin* FindPin(int pinId);
     ShaderNode* FindNode(int nodeId);
@@ -95,15 +104,29 @@ private:
     Material* activeMaterial_{ nullptr };
 
     int nextId_{ 1 };
-    
-    // Canvas state
+
     ImVec2 scrolling_{ 0.0f, 0.0f };
     float scale_{ 1.0f };
-    
+
     bool isDraggingLink_{ false };
     int draggingStartPinId_{ -1 };
     int selectedNodeId_{ -1 };
     int selectedLinkId_{ -1 };
-    
+
     int masterNodeId_{ -1 };
+
+    std::unordered_set<int> selectedNodeIds_;
+
+    std::vector<ShaderNode> clipboardNodes_;
+    std::vector<ShaderLink> clipboardLinks_;
+
+    bool isDraggingSelection_{ false };
+    ImVec2 selectionStart_{ 0.0f, 0.0f };
+    std::unordered_set<int> preDragSelection_;
+
+    RenderTarget* renderTarget_{ nullptr };
+    MeshViewerCameraObject* cameraObject_{ nullptr };
+    ObjectBase* viewedObject_{ nullptr };
+    StaticMeshComponent* staticMeshComponent_{ nullptr };
+    Vector2 previewSize_{ 300.f, 300.f };
 };
