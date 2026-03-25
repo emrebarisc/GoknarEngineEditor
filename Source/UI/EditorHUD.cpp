@@ -303,12 +303,17 @@ void EditorHUD::DrawEditorHUD()
 	context_->viewportRenderTarget->SetIsActive(true);
 }
 
-void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int)
+void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	bool is_down = (action == GLFW_PRESS || action == GLFW_REPEAT);
 	ImGuiKey imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scanCode);
 	io.AddKeyEvent(imgui_key, is_down);
+
+	io.AddKeyEvent(ImGuiMod_Ctrl, (mod & GLFW_MOD_CONTROL) != 0);
+	io.AddKeyEvent(ImGuiMod_Shift, (mod & GLFW_MOD_SHIFT) != 0);
+	io.AddKeyEvent(ImGuiMod_Alt, (mod & GLFW_MOD_ALT) != 0);
+	io.AddKeyEvent(ImGuiMod_Super, (mod & GLFW_MOD_SUPER) != 0);
 }
 
 void EditorHUD::OnCursorMove(double xPosition, double yPosition)
