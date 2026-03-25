@@ -50,8 +50,10 @@ void ToolBarPanel::Draw()
 			ImVec2 playUv0 = GetUV0(896.0f, 896.0f);
 			ImVec2 playUv1 = GetUV1(896.0f, 896.0f);
 
-			float iconSize = 24.0f;
+			float iconSize = 32.0f;
+			float paddingBetween = 16.0f;
 
+			ImGui::SetCursorPosX((viewport->WorkSize.x - iconSize - paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##CompileButton", atlasID, ImVec2(iconSize, iconSize), compileUv0, compileUv1))
 			{
 				std::string command = "cd " + ProjectDir.substr(0, ProjectDir.size() - 1) + " && Build.sh debug";
@@ -70,6 +72,7 @@ void ToolBarPanel::Draw()
 
 			ImGui::SameLine();
 
+			ImGui::SetCursorPosX((viewport->WorkSize.x + iconSize + paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##PlayButton", atlasID, ImVec2(iconSize, iconSize), playUv0, playUv1))
 			{
 				ConfigManager editorConfig;
