@@ -36,10 +36,17 @@ ShaderEditorPanel::ShaderEditorPanel(EditorHUD* hud)
     // --- Initialize Preview Object ---
     viewedObject_ = new ObjectBase();
     viewedObject_->SetName("__ShaderEditor__PreviewTarget");
-    viewedObject_->SetWorldPosition(Vector3::ZeroVector);
+    viewedObject_->SetWorldPosition({ 0.f, 0.f, 100.f });
 
     staticMeshComponent_ = viewedObject_->AddSubComponent<StaticMeshComponent>();
     staticMeshComponent_->GetMeshInstance()->SetRenderMask(SHADER_EDITOR_RENDER_MASK);
+
+    StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_MaterialSphere.fbx");
+    if (previewMesh)
+    {
+        staticMeshComponent_->SetMesh(previewMesh);
+        staticMeshComponent_->SetIsActive(true);
+    }
 }
 
 ShaderEditorPanel::~ShaderEditorPanel()
@@ -69,14 +76,7 @@ void ShaderEditorPanel::Init()
     renderTarget_->Init();
     renderTarget_->SetFrameSize(previewSize_);
 
-    StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_MaterialSphere.fbx");
-    if (previewMesh)
-    {
-        staticMeshComponent_->SetMesh(previewMesh);
-        staticMeshComponent_->SetIsActive(true);
-        previewMesh->GetMaterial()->SetEmmisiveColor({ 1.f, 1.f, 1.f });
-        cameraObject_->GetController()->ResetViewWithBoundingBox(viewedObject_, previewMesh->GetAABB());
-    }
+    cameraObject_->GetController()->ResetViewWithBoundingBox(viewedObject_, staticMeshComponent_->GetMeshInstance()->GetMesh()->GetAABB());
 }
 
 void ShaderEditorPanel::Draw()
@@ -86,7 +86,10 @@ void ShaderEditorPanel::Draw()
 
     if (ImGui::Button("Compile Material"))
     {
-        if (activeMaterial_) delete activeMaterial_;
+        if (activeMaterial_)
+        {
+            delete activeMaterial_;
+        }
 
         activeMaterial_ = new Material();
         MaterialInitializationData* initData = activeMaterial_->GetInitializationData();
@@ -116,28 +119,21 @@ void ShaderEditorPanel::Draw()
         ImGui::TableSetupColumn("Properties", ImGuiTableColumnFlags_WidthFixed, 300.0f);
         ImGui::TableNextRow();
 
-        // --- LEFT COLUMN: Node Canvas ---
         ImGui::TableSetColumnIndex(0);
         DrawNodeCanvas();
 
-        // --- RIGHT COLUMN: Properties (Top) & Preview (Bottom) ---
         ImGui::TableSetColumnIndex(1);
 
-        // Calculate the exact vertical height the Preview requires
         float colWidth = ImGui::GetContentRegionAvail().x;
-        // Height = Square Image (colWidth) + Text Line Height + Paddings & Separators
         float previewHeight = colWidth + ImGui::GetTextLineHeight() + (ImGui::GetStyle().ItemSpacing.y * 4.0f) + 4.0f;
 
-        // The properties sidebar gets all the remaining vertical space
         float propsHeight = ImGui::GetContentRegionAvail().y - previewHeight;
-        if (propsHeight < 10.0f) propsHeight = 10.0f; // Prevent errors if the window gets dragged too small
+        if (propsHeight < 10.0f) propsHeight = 10.0f;
 
-        // 1. Draw Properties in a scrollable container
         ImGui::BeginChild("PropertiesSidebarChild", ImVec2(0, propsHeight));
         DrawPropertiesSidebar();
         ImGui::EndChild();
 
-        // 2. The cursor is now perfectly snapped to the bottom right, draw the Preview
         DrawPreview();
 
         ImGui::EndTable();
@@ -147,30 +143,34 @@ void ShaderEditorPanel::Draw()
 
 void ShaderEditorPanel::DrawPreview()
 {
+    ImVec2 previewAreaSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x);
+
+    if (previewAreaSize.x <= 0.0f || previewAreaSize.y <= 0.0f)
+    {
+        return;
+    }
+
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Material Preview");
     ImGui::Separator();
 
-    ImVec2 previewAreaSize = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().x);
-
-    if (previewAreaSize.x > 0.0f && previewAreaSize.y > 0.0f)
+    if (previewSize_.x != previewAreaSize.x || previewSize_.y != previewAreaSize.y)
     {
-        if (previewSize_.x != previewAreaSize.x || previewSize_.y != previewAreaSize.y)
-        {
-            previewSize_ = EditorUtils::ToVector2(previewAreaSize);
-            renderTarget_->SetFrameSize({ previewAreaSize.x, previewAreaSize.y });
-        }
-
-        Texture* renderTargetTexture = renderTarget_->GetTexture();
-        ImGui::Image(
-            (ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
-            ImVec2(previewSize_.x, previewSize_.y),
-            ImVec2{ 0.f, 1.f },
-            ImVec2{ 1.f, 0.f }
-        );
-
-        bool isHovered = ImGui::IsItemHovered();
-        cameraObject_->GetController()->SetIsActive(isHovered);
+        previewSize_ = EditorUtils::ToVector2(previewAreaSize);
+        renderTarget_->SetFrameSize({ previewAreaSize.x, previewAreaSize.y });
     }
+
+    Texture* renderTargetTexture = renderTarget_->GetTexture();
+    ImGui::Image(
+        (ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
+        ImVec2(previewSize_.x, previewSize_.y),
+        ImVec2{ 0.f, 1.f },
+        ImVec2{ 1.f, 0.f }
+    );
+
+    bool isHovered = ImGui::IsItemHovered();
+    cameraObject_->GetController()->SetIsActive(isHovered);
+
+    EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
 
     ImGui::Separator();
 }
