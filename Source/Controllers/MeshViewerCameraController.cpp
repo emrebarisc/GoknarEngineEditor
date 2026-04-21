@@ -143,7 +143,7 @@ void MeshViewerCameraController::OnMouseRightClickPressed()
 {
 	double x, y;
 	engine->GetInputManager()->GetCursorPosition(x, y);
-	previousCursorPosition_ = Vector2(x, y);
+	previousCursorPosition_ = Vector2((float)x, (float)y);
 	isOrbiting_ = true;
 }
 
@@ -156,7 +156,7 @@ void MeshViewerCameraController::OnMouseMiddleClickPressed()
 {
 	double x, y;
 	engine->GetInputManager()->GetCursorPosition(x, y);
-	previousCursorPosition_ = Vector2(x, y);
+	previousCursorPosition_ = Vector2((float)x, (float)y);
 	isPanning_ = true;
 }
 

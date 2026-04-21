@@ -29,7 +29,7 @@ enum class ShaderPinType
     Vector4i,
     Matrix4x4,
     Texture,
-    Any // NEW: For generic math nodes
+    Any
 };
 
 enum class ShaderPinKind
@@ -46,7 +46,6 @@ struct ShaderPin
     ShaderPinType type;
     ShaderPinKind kind;
 
-    // Default value if nothing is connected
     std::variant<float, Vector2, Vector3, Vector4, std::string> defaultValue = 0.0f;
 };
 
@@ -84,15 +83,23 @@ public:
 
     void CompileGraphToMaterial(MaterialInitializationData* outMaterialData);
 
+    void OnMaterialOpened(const std::string& path);
+    void OnMaterialSaved(const std::string& path);
+
 private:
+    struct TextureInfo {
+        std::string name;
+        std::string path;
+    };
+
     void DrawNodeCanvas();
     void DrawPropertiesSidebar();
     void DrawPreview();
+    void DrawMaterialProperties();
 
     ShaderNode SpawnNode(const std::string& category, const std::string& name, ImVec2 pos);
 
     ShaderNode CreateVariableNode(const std::string& name, ShaderPinType type, ImVec2 pos);
-    void PopulateVariableNodes();
 
     ImVec2 GetPinPosition(int pinId);
     ShaderPin* FindPin(int pinId);

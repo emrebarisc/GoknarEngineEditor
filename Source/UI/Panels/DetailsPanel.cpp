@@ -271,84 +271,84 @@ void DetailsPanel::DrawObjectDetails()
 		bool collisionGroupCheck = ImGui::Combo("##CollisionGroup", &selectedCollisionGroup, collisionGroupNames, IM_ARRAYSIZE(collisionGroupNames));
 		if (collisionGroupCheck)
 		{
-			CollisionGroup collisionGroup;
+			CollisionGroup newCollisionGroup;
 			if (selectedCollisionGroup == 2)
 			{
-				collisionGroup = CollisionGroup::WorldStaticBlock;
+				newCollisionGroup = CollisionGroup::WorldStaticBlock;
 			}
 			else if (selectedCollisionGroup == 3)
 			{
-				collisionGroup = CollisionGroup::WorldDynamicBlock;
+				newCollisionGroup = CollisionGroup::WorldDynamicBlock;
 			}
 			else if (selectedCollisionGroup == 4)
 			{
-				collisionGroup = CollisionGroup::AllBlock;
+				newCollisionGroup = CollisionGroup::AllBlock;
 			}
 			else if (selectedCollisionGroup == 5)
 			{
-				collisionGroup = CollisionGroup::WorldDynamicOverlap;
+				newCollisionGroup = CollisionGroup::WorldDynamicOverlap;
 			}
 			else if (selectedCollisionGroup == 6)
 			{
-				collisionGroup = CollisionGroup::WorldStaticOverlap;
+				newCollisionGroup = CollisionGroup::WorldStaticOverlap;
 			}
 			else if (selectedCollisionGroup == 7)
 			{
-				collisionGroup = CollisionGroup::AllOverlap;
+				newCollisionGroup = CollisionGroup::AllOverlap;
 			}
 			else if (selectedCollisionGroup == 8)
 			{
-				collisionGroup = CollisionGroup::Character;
+				newCollisionGroup = CollisionGroup::Character;
 			}
 			else if (selectedCollisionGroup == 9)
 			{
-				collisionGroup = CollisionGroup::All;
+				newCollisionGroup = CollisionGroup::All;
 			}
 			else if (selectedCollisionGroup == 10)
 			{
-				collisionGroup = CollisionGroup::Custom0;
+				newCollisionGroup = CollisionGroup::Custom0;
 			}
 			else if (selectedCollisionGroup == 11)
 			{
-				collisionGroup = CollisionGroup::Custom1;
+				newCollisionGroup = CollisionGroup::Custom1;
 			}
 			else if (selectedCollisionGroup == 12)
 			{
-				collisionGroup = CollisionGroup::Custom2;
+				newCollisionGroup = CollisionGroup::Custom2;
 			}
 			else if (selectedCollisionGroup == 13)
 			{
-				collisionGroup = CollisionGroup::Custom3;
+				newCollisionGroup = CollisionGroup::Custom3;
 			}
 			else if (selectedCollisionGroup == 14)
 			{
-				collisionGroup = CollisionGroup::Custom4;
+				newCollisionGroup = CollisionGroup::Custom4;
 			}
 			else if (selectedCollisionGroup == 15)
 			{
-				collisionGroup = CollisionGroup::Custom5;
+				newCollisionGroup = CollisionGroup::Custom5;
 			}
 			else if (selectedCollisionGroup == 16)
 			{
-				collisionGroup = CollisionGroup::Custom6;
+				newCollisionGroup = CollisionGroup::Custom6;
 			}
 			else if (selectedCollisionGroup == 17)
 			{
-				collisionGroup = CollisionGroup::Custom7;
+				newCollisionGroup = CollisionGroup::Custom7;
 			}
 			else if (selectedCollisionGroup == 18)
 			{
-				collisionGroup = CollisionGroup::Custom8;
+				newCollisionGroup = CollisionGroup::Custom8;
 			}
 			else if (selectedCollisionGroup == 19)
 			{
-				collisionGroup = CollisionGroup::Custom9;
+				newCollisionGroup = CollisionGroup::Custom9;
 			}
 			else
 			{
-				collisionGroup = CollisionGroup::Default;
+				newCollisionGroup = CollisionGroup::Default;
 			}
-			rigidBody->SetCollisionGroup(collisionGroup);
+			rigidBody->SetCollisionGroup(newCollisionGroup);
 		}
 		ImGui::Columns(1, nullptr, false);
 
@@ -411,96 +411,96 @@ void DetailsPanel::DrawObjectDetails()
 		bool collisionMaskCheck = ImGui::Combo("##CollisionMask", &selectedCollisionMask, collisionMaskNames, IM_ARRAYSIZE(collisionMaskNames));
 		if (collisionMaskCheck)
 		{
-			CollisionMask collisionMask;
+			CollisionMask newCollisionMask;
 			if (selectedCollisionMask == 2)
 			{
-				collisionMask = CollisionMask::BlockWorldDynamic;
+				newCollisionMask = CollisionMask::BlockWorldDynamic;
 			}
 			else if (selectedCollisionMask == 3)
 			{
-				collisionMask = CollisionMask::BlockWorldStatic;
+				newCollisionMask = CollisionMask::BlockWorldStatic;
 			}
 			else if (selectedCollisionMask == 4)
 			{
-				collisionMask = CollisionMask::BlockCharacter;
+				newCollisionMask = CollisionMask::BlockCharacter;
 			}
 			else if (selectedCollisionMask == 5)
 			{
-				collisionMask = CollisionMask::BlockAll;
+				newCollisionMask = CollisionMask::BlockAll;
 			}
 			else if (selectedCollisionMask == 6)
 			{
-				collisionMask = CollisionMask::BlockAllExceptCharacter;
+				newCollisionMask = CollisionMask::BlockAllExceptCharacter;
 			}
 			else if (selectedCollisionMask == 7)
 			{
-				collisionMask = CollisionMask::OverlapWorldDynamic;
+				newCollisionMask = CollisionMask::OverlapWorldDynamic;
 			}
 			else if (selectedCollisionMask == 8)
 			{
-				collisionMask = CollisionMask::OverlapWorldStatic;
+				newCollisionMask = CollisionMask::OverlapWorldStatic;
 			}
 			else if (selectedCollisionMask == 9)
 			{
-				collisionMask = CollisionMask::OverlapCharacter;
+				newCollisionMask = CollisionMask::OverlapCharacter;
 			}
 			else if (selectedCollisionMask == 10)
 			{
-				collisionMask = CollisionMask::OverlapAll;
+				newCollisionMask = CollisionMask::OverlapAll;
 			}
 			else if (selectedCollisionMask == 11)
 			{
-				collisionMask = CollisionMask::OverlapAllExceptCharacter;
+				newCollisionMask = CollisionMask::OverlapAllExceptCharacter;
 			}
 			else if (selectedCollisionMask == 12)
 			{
-				collisionMask = CollisionMask::BlockAndOverlapAll;
+				newCollisionMask = CollisionMask::BlockAndOverlapAll;
 			}
 			else if (selectedCollisionMask == 13)
 			{
-				collisionMask = CollisionMask::Custom0;
+				newCollisionMask = CollisionMask::Custom0;
 			}
 			else if (selectedCollisionMask == 14)
 			{
-				collisionMask = CollisionMask::Custom1;
+				newCollisionMask = CollisionMask::Custom1;
 			}
 			else if (selectedCollisionMask == 15)
 			{
-				collisionMask = CollisionMask::Custom2;
+				newCollisionMask = CollisionMask::Custom2;
 			}
 			else if (selectedCollisionMask == 16)
 			{
-				collisionMask = CollisionMask::Custom3;
+				newCollisionMask = CollisionMask::Custom3;
 			}
 			else if (selectedCollisionMask == 17)
 			{
-				collisionMask = CollisionMask::Custom4;
+				newCollisionMask = CollisionMask::Custom4;
 			}
 			else if (selectedCollisionMask == 18)
 			{
-				collisionMask = CollisionMask::Custom5;
+				newCollisionMask = CollisionMask::Custom5;
 			}
 			else if (selectedCollisionMask == 19)
 			{
-				collisionMask = CollisionMask::Custom6;
+				newCollisionMask = CollisionMask::Custom6;
 			}
 			else if (selectedCollisionMask == 20)
 			{
-				collisionMask = CollisionMask::Custom7;
+				newCollisionMask = CollisionMask::Custom7;
 			}
 			else if (selectedCollisionMask == 21)
 			{
-				collisionMask = CollisionMask::Custom8;
+				newCollisionMask = CollisionMask::Custom8;
 			}
 			else if (selectedCollisionMask == 22)
 			{
-				collisionMask = CollisionMask::Custom9;
+				newCollisionMask = CollisionMask::Custom9;
 			}
 			else
 			{
-				collisionMask = CollisionMask::Default;
+				newCollisionMask = CollisionMask::Default;
 			}
-			rigidBody->SetCollisionMask(collisionMask);
+			rigidBody->SetCollisionMask(newCollisionMask);
 		}
 		ImGui::Columns(1, nullptr, false);
 	}
@@ -532,27 +532,34 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	std::string componentTypeString;
 
-	if (staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component))
+	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
+	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
+	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
+	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
+	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
+
+	if (staticMeshComponent)
 	{
 		componentTypeString = "StaticMeshComponent";
 	}
-	else if (boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component))
+	else if (boxCollisionComponent)
 	{
 		componentTypeString = "BoxCollisionComponent";
 	}
-	else if (sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component))
+	else if (sphereCollisionComponent)
 	{
 		componentTypeString = "SphereCollisionComponent";
 	}
-	else if (capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component))
+	else if (capsuleCollisionComponent)
 	{
 		componentTypeString = "CapsuleCollisionComponent";
 	}
-	else if (movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component))
+	else if (movingTriangleMeshCollisionComponent)
 	{
 		componentTypeString = "MovingTriangleMeshCollisionComponent";
 	}
-	else if (nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component))
+	else if (nonMvingTriangleMeshCollisionComponent)
 	{
 		componentTypeString = "NonMovingTriangleMeshCollisionComponent";
 	}
@@ -591,27 +598,34 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	EditorWidgets::DrawInputVector3(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
 
-	if (staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component))
+	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
+	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
+	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
+	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
+	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
+
+	if (staticMeshComponent)
 	{
 		DrawStaticMeshComponentDetails(staticMeshComponent);
 	}
-	else if (boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component))
+	else if (boxCollisionComponent)
 	{
 		DrawBoxCollisionComponentDetails(boxCollisionComponent);
 	}
-	else if (sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component))
+	else if (sphereCollisionComponent)
 	{
 		DrawSphereCollisionComponentDetails(sphereCollisionComponent);
 	}
-	else if (capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component))
+	else if (capsuleCollisionComponent)
 	{
 		DrawCapsuleCollisionComponentDetails(capsuleCollisionComponent);
 	}
-	else if (movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component))
+	else if (movingTriangleMeshCollisionComponent)
 	{
 		DrawMovingTriangleMeshCollisionComponentDetails(movingTriangleMeshCollisionComponent);
 	}
-	else if (nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component))
+	else if (nonMvingTriangleMeshCollisionComponent)
 	{
 		DrawNonMovingTriangleMeshCollisionComponentDetails(nonMvingTriangleMeshCollisionComponent);
 	}

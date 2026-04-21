@@ -1,6 +1,13 @@
 #include "ShaderEditorPanel.h"
 
 #include <functional>
+#include <unordered_set>
+#include <cctype>
+#include <sstream>
+#include <algorithm>
+
+#include "tinyxml2.h"
+#include "Goknar/Log.h"
 
 #include "Goknar/Renderer/RenderTarget.h"
 #include "Goknar/Renderer/Texture.h"

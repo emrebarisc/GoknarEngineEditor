@@ -68,7 +68,7 @@ public:
 	}
 
 	template<typename T>
-	IEditorPanel* GetPanel() const
+	T* GetPanel() const
 	{
 		std::string mapKey = std::string(typeid(T).name());
 		auto it = panelIndexMap_.find(mapKey);
@@ -78,7 +78,7 @@ public:
 			return nullptr;
 		}
 
-		return panels_[panelIndexMap_.at(mapKey)].get();
+		return dynamic_cast<T*>(panels_[panelIndexMap_.at(mapKey)].get());
 	}
 
 protected:

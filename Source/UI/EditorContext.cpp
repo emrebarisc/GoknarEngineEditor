@@ -289,7 +289,7 @@ void EditorContext::BuildSourceFileTree()
 	std::sort(sourcePaths.begin(), sourcePaths.end());
 
 	// Map the gathered relative paths into the Folder structure
-	int sourcePathsSize = sourcePaths.size();
+	size_t sourcePathsSize = sourcePaths.size();
 	for (size_t pathIndex = 0; pathIndex < sourcePathsSize; pathIndex++)
 	{
 		std::string currentPath = sourcePaths[pathIndex];

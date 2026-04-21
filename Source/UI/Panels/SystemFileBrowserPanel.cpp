@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include <filesystem>
+#include <cstring>
 
 SystemFileBrowserPanel::SystemFileBrowserPanel(EditorHUD* hud) :
 	IEditorPanel("System File Browser", hud)
@@ -13,7 +14,11 @@ SystemFileBrowserPanel::SystemFileBrowserPanel(EditorHUD* hud) :
 
 void SystemFileBrowserPanel::Draw()
 {
-	ImGui::Begin(title_.c_str(), &isOpen_);
+	if (!ImGui::Begin(title_.c_str(), &isOpen_))
+	{
+		ImGui::End();
+		return;
+	}
 
 	ImGui::Text("Current Path: %s", currentPath_.c_str());
 
