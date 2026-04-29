@@ -4,6 +4,14 @@
 #include "UI/EditorContext.h"
 #include <string>
 
+enum class PendingAssetCreationType
+{
+	None = 0,
+	Material,
+	MaterialFunction,
+	AnimationGraph
+};
+
 class FileBrowserPanel : public IEditorPanel
 {
 public:
@@ -19,19 +27,26 @@ private:
 	void HandleDragDropSource(const std::string& sourcePath, const std::string& payloadName);
 	void HandleDragDropTarget(const std::string& targetPath);
 	void HandleContextMenu(const std::string& itemPath, const std::string& itemName, bool isFolder);
+	void DrawCreateContentMenu(const std::string& targetDirectory);
+	void OpenAssetFile(const std::string& filePath);
 
 	// File system operations
 	void MoveFileSystemItem(const std::string& source, const std::string& targetFolder);
 	void RefreshAndRestore();
+	void FinalizeFolderCreation();
+	void FinalizeAssetCreation();
 
 	Folder* currentFolder_{ nullptr };
 	float thumbnailSize_{ 48.0f };
 
 	// Operation states
 	bool isRenaming_{ false };
-	bool isCreatingFile_{ false }; // NEW: Creating file state
+	bool isCreatingFolder_{ false };
+	bool isCreatingAsset_{ false };
 	bool needsRefresh_{ false };
 	std::string selectedItemForMenu_{ "" };
+	std::string pendingCreationDirectory_{};
+	PendingAssetCreationType pendingAssetCreationType_{ PendingAssetCreationType::None };
 	char renameBuffer_[256]{ 0 };
-	char fileNameBuffer_[256]{ 0 }; // NEW: Buffer for new file names
+	char creationNameBuffer_[256]{ 0 };
 };

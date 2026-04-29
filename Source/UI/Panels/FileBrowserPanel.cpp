@@ -1,10 +1,10 @@
 #include "FileBrowserPanel.h"
 
 #include <filesystem>
-#include <fstream>
 #include <cstring>
 
 #include "imgui.h"
+#include "tinyxml2.h"
 
 #include "Goknar/Engine.h"
 #include "Goknar/Managers/ResourceManager.h"
@@ -12,15 +12,120 @@
 #include "Goknar/Renderer/Texture.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
+#include "Goknar/Materials/MaterialFunction.h"
+#include "Goknar/Materials/MaterialFunctionSerializer.h"
 
+#include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorUtils.h"
 
+#include "AnimationGraphPanel.h"
 #include "ImageViewerPanel.h"
 #include "MeshViewerPanel.h"
+#include "ShaderEditorPanel.h"
 #include "SkeletalMeshViewerPanel.h"
 #include "UI/EditorHUD.h"
 
-extern std::string ProjectDir;
+namespace
+{
+	bool StartsWith(const std::string& value, const std::string& prefix)
+	{
+		return value.size() >= prefix.size() && value.compare(0, prefix.size(), prefix) == 0;
+	}
+
+	std::string NormalizePath(const std::string& path)
+	{
+		return std::filesystem::path(path).lexically_normal().generic_string();
+	}
+
+	std::string EnsureTrailingSlash(const std::string& path)
+	{
+		if (path.empty() || path.back() == '/')
+		{
+			return path;
+		}
+
+		return path + "/";
+	}
+
+	std::string GetAbsoluteProjectPath(const std::string& relativePath)
+	{
+		return NormalizePath((std::filesystem::path(EditorAssetPathUtils::GetProjectRootPath()) / relativePath).generic_string());
+	}
+
+	bool IsContentDirectory(const std::string& path)
+	{
+		return StartsWith(NormalizePath(path), NormalizePath(EditorAssetPathUtils::GetContentRootPath()));
+	}
+
+	std::string TryGetGameAssetFileType(const std::string& filePath)
+	{
+		tinyxml2::XMLDocument document;
+		if (document.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS)
+		{
+			return "";
+		}
+
+		tinyxml2::XMLElement* root = document.FirstChildElement("GameAsset");
+		const char* fileType = root ? root->Attribute("FileType") : nullptr;
+		return fileType ? fileType : "";
+	}
+
+	bool WriteMaterialAssetFile(const std::string& filePath)
+	{
+		tinyxml2::XMLDocument document;
+		tinyxml2::XMLElement* root = document.NewElement("GameAsset");
+		root->SetAttribute("FileType", "Material");
+		document.InsertFirstChild(root);
+		return document.SaveFile(filePath.c_str()) == tinyxml2::XML_SUCCESS;
+	}
+
+	bool WriteAnimationGraphAssetFile(const std::string& filePath)
+	{
+		tinyxml2::XMLDocument document;
+		tinyxml2::XMLElement* root = document.NewElement("GameAsset");
+		root->SetAttribute("FileType", "AnimationGraph");
+		document.InsertFirstChild(root);
+
+		root->InsertEndChild(document.NewElement("Variables"));
+
+		tinyxml2::XMLElement* statesElement = document.NewElement("States");
+		tinyxml2::XMLElement* stateElement = document.NewElement("State");
+		stateElement->SetAttribute("id", 1);
+		stateElement->SetAttribute("name", "RootState");
+		stateElement->InsertEndChild(document.NewElement("OutboundConnections"));
+
+		tinyxml2::XMLElement* entryNodeElement = document.NewElement("EntryNode");
+		entryNodeElement->SetAttribute("id", 1);
+		stateElement->InsertEndChild(entryNodeElement);
+
+		tinyxml2::XMLElement* nodesElement = document.NewElement("Nodes");
+		tinyxml2::XMLElement* nodeElement = document.NewElement("Node");
+		nodeElement->SetAttribute("id", 1);
+		nodeElement->SetAttribute("animationName", "Idle");
+		nodeElement->SetAttribute("loop", false);
+		nodeElement->InsertEndChild(document.NewElement("OutboundConnections"));
+		nodesElement->InsertEndChild(nodeElement);
+
+		stateElement->InsertEndChild(nodesElement);
+		statesElement->InsertEndChild(stateElement);
+		root->InsertEndChild(statesElement);
+
+		return document.SaveFile(filePath.c_str()) == tinyxml2::XML_SUCCESS;
+	}
+
+	bool WriteMaterialFunctionAssetFile(const std::string& filePath)
+	{
+		MaterialFunction materialFunction;
+		materialFunction.SetName(std::filesystem::path(filePath).filename().generic_string());
+		materialFunction.SetGeneratedFunctionName("");
+		materialFunction.SetGeneratedFunctionDefinitions("");
+		materialFunction.SetOutputs({ { "Result", MaterialFunctionPinType::Float } });
+
+		const std::filesystem::path contentRoot = std::filesystem::path(EditorAssetPathUtils::GetContentRootPath());
+		const std::string relativePath = std::filesystem::path(filePath).lexically_relative(contentRoot).generic_string();
+		return MaterialFunctionSerializer::Serialize(relativePath, materialFunction);
+	}
+}
 
 FileBrowserPanel::FileBrowserPanel(EditorHUD* hud) :
 	IEditorPanel("File Browser", hud)
@@ -87,14 +192,10 @@ void FileBrowserPanel::Draw()
 		ImGui::BeginChild("GridRegion", ImVec2(0, -footerHeight));
 		DrawGrid();
 
-		// NEW: Empty space right-click menu (won't open if hovering over a file/folder item)
 		if (ImGui::BeginPopupContextWindow("EmptySpaceMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 		{
-			if (ImGui::MenuItem("Add new file"))
-			{
-				isCreatingFile_ = true;
-				fileNameBuffer_[0] = '\0'; // Clear buffer
-			}
+			const std::string targetDirectory = currentFolder_ ? GetAbsoluteProjectPath(currentFolder_->path) : "";
+			DrawCreateContentMenu(targetDirectory);
 			ImGui::EndPopup();
 		}
 
@@ -160,41 +261,55 @@ void FileBrowserPanel::Draw()
 		ImGui::EndPopup();
 	}
 
-	// NEW: Global Create File Modal Handler
-	if (isCreatingFile_)
+	if (isCreatingFolder_)
 	{
-		ImGui::OpenPopup("Create New File");
+		ImGui::OpenPopup("Create Folder");
 	}
 
-	if (ImGui::BeginPopupModal("Create New File", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal("Create Folder", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::InputText("File Name", fileNameBuffer_, sizeof(fileNameBuffer_));
+		ImGui::InputText("Folder Name", creationNameBuffer_, sizeof(creationNameBuffer_));
 		if (ImGui::Button("OK", ImVec2(120, 0)))
 		{
-			try {
-				std::string targetDir = ProjectDir + currentFolder_->path;
-				if (!targetDir.empty() && targetDir.back() != '/') targetDir += '/';
-
-				std::filesystem::path newFilePath = std::filesystem::path(targetDir) / fileNameBuffer_;
-
-				if (!std::filesystem::exists(newFilePath))
-				{
-					// Create an empty file
-					std::ofstream ofs(newFilePath);
-					ofs.close();
-					needsRefresh_ = true; // Defer refresh
-				}
-			}
-			catch (...) {}
-
-			isCreatingFile_ = false;
+			FinalizeFolderCreation();
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0)))
 		{
-			isCreatingFile_ = false;
+			isCreatingFolder_ = false;
+			pendingCreationDirectory_.clear();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
+	if (isCreatingAsset_)
+	{
+		ImGui::OpenPopup("Create Asset");
+	}
+
+	if (ImGui::BeginPopupModal("Create Asset", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		const char* assetTypeLabel = pendingAssetCreationType_ == PendingAssetCreationType::Material ? "Material" :
+			pendingAssetCreationType_ == PendingAssetCreationType::MaterialFunction ? "Material Function" :
+			pendingAssetCreationType_ == PendingAssetCreationType::AnimationGraph ? "Animation Graph" :
+			"Asset";
+		ImGui::Text("Asset Type: %s", assetTypeLabel);
+		ImGui::InputText("Asset Name", creationNameBuffer_, sizeof(creationNameBuffer_));
+		if (ImGui::Button("OK", ImVec2(120, 0)))
+		{
+			FinalizeAssetCreation();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			isCreatingAsset_ = false;
+			pendingCreationDirectory_.clear();
+			pendingAssetCreationType_ = PendingAssetCreationType::None;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
@@ -214,20 +329,32 @@ void FileBrowserPanel::DrawFolderTree(Folder* folder)
 {
 	if (!folder) return;
 
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+	ImGui::SetNextItemOpen(folder->isOpen, ImGuiCond_Always);
+
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 	if (currentFolder_ == folder) flags |= ImGuiTreeNodeFlags_Selected;
 	if (folder->subFolders.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
 
 	bool isOpen = ImGui::TreeNodeEx(folder->name.c_str(), flags);
+	if (ImGui::IsItemToggledOpen())
+	{
+		folder->isOpen = isOpen;
+	}
 
-	// Navigation
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
 		currentFolder_ = folder;
 	}
 
+	if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+	{
+		folder->isOpen = !folder->isOpen;
+		currentFolder_ = folder;
+		isOpen = folder->isOpen;
+	}
+
 	// Interactions
-	std::string folderFullPath = ProjectDir + folder->path;
+	std::string folderFullPath = GetAbsoluteProjectPath(folder->path);
 	HandleDragDropSource(folderFullPath, "FOLDER_PAYLOAD");
 	HandleDragDropTarget(folderFullPath);
 	HandleContextMenu(folderFullPath, folder->name, true);
@@ -279,13 +406,14 @@ void FileBrowserPanel::DrawGrid()
 			ImVec2 fUv0 = GetUV0(0.0f, 128.0f);
 			ImVec2 fUv1 = GetUV1(0.0f, 128.0f);
 
-			if (ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1))
+			ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1);
+			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
 			{
 				currentFolder_ = sub;
 			}
 
 			// Interactions
-			std::string subFullPath = ProjectDir + sub->path;
+			std::string subFullPath = GetAbsoluteProjectPath(sub->path);
 			HandleDragDropSource(subFullPath, "FOLDER_PAYLOAD");
 			HandleDragDropTarget(subFullPath);
 			HandleContextMenu(subFullPath, sub->name, true);
@@ -330,9 +458,16 @@ void FileBrowserPanel::DrawGrid()
 				}
 			}
 
-			if (ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1))
+			ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1);
+			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
 			{
-				if (resourceType == ResourceType::Image)
+				std::string fileFullPath = GetAbsoluteProjectPath(currentFolder_->path + file);
+				const std::string assetFileType = TryGetGameAssetFileType(fileFullPath);
+				if (!assetFileType.empty())
+				{
+					OpenAssetFile(fileFullPath);
+				}
+				else if (resourceType == ResourceType::Image)
 				{
 					int idx = 0;
 					while (Image* img = engine->GetResourceManager()->GetResourceContainer()->GetImage(idx++))
@@ -386,7 +521,7 @@ void FileBrowserPanel::DrawGrid()
 
 					if (extension == "h" || extension == "cpp")
 					{
-						std::string fullPath = ProjectDir + currentFolder_->path + file;
+						std::string fullPath = fileFullPath;
 						std::string command;
 #ifdef GOKNAR_PLATFORM_WINDOWS
 						command = "start \"\" \"" + fullPath + "\"";
@@ -399,7 +534,7 @@ void FileBrowserPanel::DrawGrid()
 			}
 
 			// Interactions
-			std::string fileFullPath = ProjectDir + currentFolder_->path + file;
+			std::string fileFullPath = GetAbsoluteProjectPath(currentFolder_->path + file);
 			HandleDragDropSource(fileFullPath, "FILE_PAYLOAD");
 			HandleContextMenu(fileFullPath, file, false);
 
@@ -444,8 +579,14 @@ void FileBrowserPanel::HandleDragDropTarget(const std::string& targetPath)
 
 void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std::string& itemName, bool isFolder)
 {
-	if (ImGui::BeginPopupContextItem())
+	if (ImGui::BeginPopupContextItem(itemPath.c_str()))
 	{
+		if (isFolder && IsContentDirectory(itemPath))
+		{
+			DrawCreateContentMenu(itemPath);
+			ImGui::Separator();
+		}
+
 		if (ImGui::MenuItem("Rename"))
 		{
 			isRenaming_ = true;
@@ -464,6 +605,83 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 			catch (...) {}
 		}
 		ImGui::EndPopup();
+	}
+}
+
+void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
+{
+	if (!IsContentDirectory(targetDirectory))
+	{
+		return;
+	}
+
+	if (ImGui::MenuItem("Create Folder"))
+	{
+		isCreatingFolder_ = true;
+		isCreatingAsset_ = false;
+		pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
+		creationNameBuffer_[0] = '\0';
+	}
+
+	if (ImGui::BeginMenu("Create Asset"))
+	{
+		if (ImGui::MenuItem("Material"))
+		{
+			isCreatingFolder_ = false;
+			isCreatingAsset_ = true;
+			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
+			pendingAssetCreationType_ = PendingAssetCreationType::Material;
+			creationNameBuffer_[0] = '\0';
+		}
+
+		if (ImGui::MenuItem("Material Function"))
+		{
+			isCreatingFolder_ = false;
+			isCreatingAsset_ = true;
+			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
+			pendingAssetCreationType_ = PendingAssetCreationType::MaterialFunction;
+			creationNameBuffer_[0] = '\0';
+		}
+
+		if (ImGui::MenuItem("Animation Graph"))
+		{
+			isCreatingFolder_ = false;
+			isCreatingAsset_ = true;
+			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
+			pendingAssetCreationType_ = PendingAssetCreationType::AnimationGraph;
+			creationNameBuffer_[0] = '\0';
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void FileBrowserPanel::OpenAssetFile(const std::string& filePath)
+{
+	const std::string fileType = TryGetGameAssetFileType(filePath);
+	if (fileType == "Material")
+	{
+		if (ShaderEditorPanel* shaderEditorPanel = hud_->GetPanel<ShaderEditorPanel>())
+		{
+			shaderEditorPanel->OnMaterialOpened(filePath);
+			shaderEditorPanel->SetIsOpen(true);
+		}
+	}
+	else if (fileType == "MaterialFunction")
+	{
+		if (ShaderEditorPanel* shaderEditorPanel = hud_->GetPanel<ShaderEditorPanel>())
+		{
+			shaderEditorPanel->OnMaterialFunctionOpened(filePath);
+			shaderEditorPanel->SetIsOpen(true);
+		}
+	}
+	else if (fileType == "AnimationGraph")
+	{
+		if (AnimationGraphPanel* animationGraphPanel = hud_->GetPanel<AnimationGraphPanel>())
+		{
+			animationGraphPanel->OpenAnimationGraph(filePath);
+			animationGraphPanel->SetIsOpen(true);
+		}
 	}
 }
 
@@ -505,4 +723,69 @@ void FileBrowserPanel::RefreshAndRestore()
 		}
 	}
 	currentFolder_ = EditorContext::Get()->rootFolder;
+}
+
+void FileBrowserPanel::FinalizeFolderCreation()
+{
+	try
+	{
+		if (!pendingCreationDirectory_.empty() && creationNameBuffer_[0] != '\0')
+		{
+			const std::filesystem::path newFolderPath = std::filesystem::path(pendingCreationDirectory_) / creationNameBuffer_;
+			if (!std::filesystem::exists(newFolderPath))
+			{
+				std::filesystem::create_directories(newFolderPath);
+				needsRefresh_ = true;
+			}
+		}
+	}
+	catch (...)
+	{
+	}
+
+	isCreatingFolder_ = false;
+	pendingCreationDirectory_.clear();
+	creationNameBuffer_[0] = '\0';
+}
+
+void FileBrowserPanel::FinalizeAssetCreation()
+{
+	try
+	{
+		if (!pendingCreationDirectory_.empty() && creationNameBuffer_[0] != '\0')
+		{
+			const std::filesystem::path newAssetPath = std::filesystem::path(pendingCreationDirectory_) / creationNameBuffer_;
+			if (!std::filesystem::exists(newAssetPath))
+			{
+				std::filesystem::create_directories(newAssetPath.parent_path());
+
+				bool isSaved = false;
+				if (pendingAssetCreationType_ == PendingAssetCreationType::Material)
+				{
+					isSaved = WriteMaterialAssetFile(newAssetPath.generic_string());
+				}
+				else if (pendingAssetCreationType_ == PendingAssetCreationType::MaterialFunction)
+				{
+					isSaved = WriteMaterialFunctionAssetFile(newAssetPath.generic_string());
+				}
+				else if (pendingAssetCreationType_ == PendingAssetCreationType::AnimationGraph)
+				{
+					isSaved = WriteAnimationGraphAssetFile(newAssetPath.generic_string());
+				}
+
+				if (isSaved)
+				{
+					needsRefresh_ = true;
+				}
+			}
+		}
+	}
+	catch (...)
+	{
+	}
+
+	isCreatingAsset_ = false;
+	pendingCreationDirectory_.clear();
+	pendingAssetCreationType_ = PendingAssetCreationType::None;
+	creationNameBuffer_[0] = '\0';
 }

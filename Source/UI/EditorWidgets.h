@@ -4,6 +4,7 @@
 
 #include "imgui.h"
 
+#include "UI/EditorContext.h"
 #include "Goknar/Math/GoknarMath.h"
 
 struct Vector3;
@@ -32,5 +33,5 @@ public:
 		ImGuiWindowFlags flags);
 
 
-	static void DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected);
+	static void DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected, EditorAssetType filter = EditorAssetType::None);
 };

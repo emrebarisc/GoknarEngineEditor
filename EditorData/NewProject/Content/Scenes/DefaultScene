@@ -1,0 +1,46 @@
+<GameAsset FileType="Scene">
+    <Lights>
+        <DirectionalLight>
+            <Direction>0.577350 0.577350 -0.577350</Direction>
+            <Color>1.000000 0.990000 0.900000</Color>
+            <Intensity>1</Intensity>
+            <IsCastingShadow>1</IsCastingShadow>
+            <ShadowIntensity>0.5</ShadowIntensity>
+            <ShadowMapResolution>8192 8192</ShadowMapResolution>
+        </DirectionalLight>
+        <DirectionalLight>
+            <Direction>-0.577350 -0.577350 -0.577350</Direction>
+            <Color>1.000000 0.990000 0.900000</Color>
+            <Intensity>0.5</Intensity>
+            <IsCastingShadow>0</IsCastingShadow>
+            <ShadowIntensity>0.1</ShadowIntensity>
+            <ShadowMapResolution>1024 1024</ShadowMapResolution>
+        </DirectionalLight>
+    </Lights>
+    <Objects>
+        <RigidBody>
+            <Name>Floor</Name>
+            <WorldPosition>0.000000 0.000000 0.000000</WorldPosition>
+            <EulerWorldRotation>0.000000 0.000000 0.000000</EulerWorldRotation>
+            <WorldScaling>10.000000 10.000000 0.250000</WorldScaling>
+            <Mass>0</Mass>
+            <CollisionGroup>4</CollisionGroup>
+            <CollisionMask>63</CollisionMask>
+            <Components>
+                <BoxCollisionComponent>
+                    <HalfSize>0.500000 0.500000 0.500000</HalfSize>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </BoxCollisionComponent>
+                <StaticMeshComponent>
+                    <MeshPath>Meshes/SM_UnitCube.fbx</MeshPath>
+                    <RenderMask>1</RenderMask>
+                    <RelativePosition>0.000000 0.000000 0.000000</RelativePosition>
+                    <EulerRelativeRotation>0.000000 0.000000 0.000000</EulerRelativeRotation>
+                    <RelativeScaling>1.000000 1.000000 1.000000</RelativeScaling>
+                </StaticMeshComponent>
+            </Components>
+        </RigidBody>
+    </Objects>
+</GameAsset>

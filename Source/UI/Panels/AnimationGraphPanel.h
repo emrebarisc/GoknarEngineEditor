@@ -68,9 +68,20 @@ public:
     virtual void Init() override;
     virtual void Draw() override;
 
+    void ResetToDefaultGraph();
+    void OpenAnimationGraph(const std::string& path);
+    void SaveAnimationGraph(const std::string& path);
+    void SaveCurrentAnimationGraph();
+    bool HasCurrentGraphPath() const { return !currentGraphPath_.empty(); }
+    const std::string& GetCurrentGraphPath() const { return currentGraphPath_; }
+
 private:
     void SaveGraphToXML(const std::string& filepath);
     void LoadGraphFromXML(const std::string& filepath);
+    void SaveEditorReflection(const std::string& assetPath);
+    bool LoadEditorReflection(const std::string& assetPath);
+    void AutoLayoutEditorGraph();
+    void RebuildEditorGraphFromRuntimeData();
 
     void DrawPropertiesPanel();
     void DrawNodeCanvas();
@@ -104,6 +115,8 @@ private:
     int newVarType = 0;
 
     int nextId_{ 1 };
+
+    std::string currentGraphPath_{};
 
     bool isDraggingLink_{ false };
     int draggingStartId_{ -1 };

@@ -1,0 +1,8 @@
+<AssetContainer>
+    <Assets>
+        <Mesh>
+            <Path>Meshes/SM_UnitCube.fbx</Path>
+            <MaterialPath>Materials/M_DefaultMaterial</MaterialPath>
+        </Mesh>
+    </Assets>
+</AssetContainer>

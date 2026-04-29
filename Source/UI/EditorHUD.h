@@ -9,6 +9,7 @@
 #include "Goknar/Delegates/Delegate.h"
 #include "Goknar/UI/HUD.h"
 
+#include "EditorDoubleClickController.h"
 #include "Panels/EditorPanel.h"
 
 #include "imgui.h"
@@ -81,6 +82,9 @@ public:
 		return dynamic_cast<T*>(panels_[panelIndexMap_.at(mapKey)].get());
 	}
 
+	bool WasMouseDoubleClicked(ImGuiMouseButton button) const;
+	bool WasLastItemDoubleClicked(ImGuiMouseButton button) const;
+
 protected:
 
 private:
@@ -122,6 +126,7 @@ private:
 
 	void OnPlaceObject();
 	Vector3 RaycastWorld();
+	ImVec2 GetCursorPositionForUi() const;
 
 
 	Delegate<void(int, int, int, int)> onKeyboardEventDelegate_;
@@ -151,6 +156,7 @@ private:
 	std::vector<std::unique_ptr<IEditorPanel>> panels_;
 	std::unordered_map<std::string, int> panelIndexMap_;
 
+	EditorDoubleClickController doubleClickController_{};
 	EditorContext* context_;
 };
 

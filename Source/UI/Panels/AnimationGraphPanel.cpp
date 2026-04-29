@@ -1,10 +1,13 @@
 #include "pch.h"
 
+#include <filesystem>
 #include <sstream>
 #include <queue>
 
 #include "AnimationGraphPanel.h"
 #include "UI/EditorHUD.h"
+#include "UI/EditorAssetPathUtils.h"
+#include "UI/Panels/SystemFileBrowserPanel.h"
 #include "Goknar/Animation/AnimationCondition.h"
 #include "Goknar/Animation/AnimationGraph.h"
 #include "Goknar/Animation/AnimationSerializer.h"
@@ -12,6 +15,22 @@
 
 #include "imgui_internal.h"
 #include "tinyxml2.h"
+
+namespace
+{
+	constexpr const char* kAnimationGraphEditorReflectionFileType = "AnimationGraphEditorReflection";
+
+	std::string GetAnimationGraphBrowserDirectory(const std::string& currentGraphPath)
+	{
+		if (!currentGraphPath.empty())
+		{
+			const std::filesystem::path absolutePath = std::filesystem::path(EditorAssetPathUtils::GetContentRootPath()) / currentGraphPath;
+			return absolutePath.parent_path().lexically_normal().generic_string();
+		}
+
+		return EditorAssetPathUtils::GetContentRootPath();
+	}
+}
 
 static std::vector<float> ParseFloats(const std::string& str)
 {
@@ -73,7 +92,26 @@ AnimationGraphPanel::~AnimationGraphPanel()
 
 void AnimationGraphPanel::Init()
 {
-    // Default empty state machine setup
+    ResetToDefaultGraph();
+}
+
+void AnimationGraphPanel::ResetToDefaultGraph()
+{
+    activeGraph_ = std::make_shared<AnimationGraph>();
+    editorStates_.clear();
+    stateLinks_.clear();
+    stateNodes_.clear();
+    stateNodeLinks_.clear();
+    currentViewMode_ = EditorAnimationViewMode::StateMachine;
+    viewingState_ = nullptr;
+    selectionType_ = EditorAnimationSelectionType::None;
+    selectedId_ = -1;
+    scrolling_ = ImVec2(0.0f, 0.0f);
+    scale_ = 1.0f;
+    nextId_ = 1;
+    isDraggingLink_ = false;
+    draggingStartId_ = -1;
+
     EditorAnimationState rootState;
     rootState.id = nextId_++;
     rootState.name = "RootState";
@@ -97,15 +135,60 @@ void AnimationGraphPanel::Init()
     activeGraph_->AddState(rootState.animState);
 }
 
+void AnimationGraphPanel::OpenAnimationGraph(const std::string& path)
+{
+    LoadGraphFromXML(path);
+}
+
+void AnimationGraphPanel::SaveAnimationGraph(const std::string& path)
+{
+    SaveGraphToXML(path);
+}
+
+void AnimationGraphPanel::SaveCurrentAnimationGraph()
+{
+    if (!currentGraphPath_.empty())
+    {
+        SaveGraphToXML(currentGraphPath_);
+        return;
+    }
+
+    if (SystemFileBrowserPanel* browser = hud_->GetPanel<SystemFileBrowserPanel>())
+    {
+        browser->SaveFileSelector(
+            Delegate<void(const std::string&)>::Create<AnimationGraphPanel, &AnimationGraphPanel::SaveAnimationGraph>(this),
+            GetAnimationGraphBrowserDirectory(currentGraphPath_),
+            "",
+            EditorAssetPathUtils::GetProjectRootPath());
+    }
+}
+
 void AnimationGraphPanel::Draw()
 {
     ImGui::SetNextWindowSize(ImVec2(1200, 800), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin(title_.c_str(), &isOpen_)) { ImGui::End(); return; }
 
-    // Updated File Paths
-    if (ImGui::Button("Save Graph")) SaveGraphToXML("Animations/AG_DefaultCharacter");
+    if (ImGui::Button("New Graph"))
+    {
+        ResetToDefaultGraph();
+        currentGraphPath_.clear();
+    }
     ImGui::SameLine();
-    if (ImGui::Button("Load Graph")) LoadGraphFromXML("Animations/AG_DefaultCharacter");
+    if (ImGui::Button("Open Graph"))
+    {
+        if (SystemFileBrowserPanel* browser = hud_->GetPanel<SystemFileBrowserPanel>())
+        {
+            browser->OpenFileSelector(
+                Delegate<void(const std::string&)>::Create<AnimationGraphPanel, &AnimationGraphPanel::OpenAnimationGraph>(this),
+                GetAnimationGraphBrowserDirectory(currentGraphPath_),
+                EditorAssetPathUtils::GetProjectRootPath());
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Save Graph"))
+    {
+        SaveCurrentAnimationGraph();
+    }
     ImGui::Separator();
 
     static ImGuiTableFlags rootFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV;
@@ -238,166 +321,306 @@ void AnimationGraphPanel::CollectNodes(const std::shared_ptr<AnimationNode>& nod
 
 void AnimationGraphPanel::SaveGraphToXML(const std::string& filepath)
 {
+    currentGraphPath_ = EditorAssetPathUtils::ToContentRelativePath(filepath);
     AnimationSerializer serializer;
-    serializer.Serialize(activeGraph_.get(), filepath);
+    if (serializer.Serialize(activeGraph_.get(), currentGraphPath_))
+    {
+        SaveEditorReflection(currentGraphPath_);
+    }
 }
 
 void AnimationGraphPanel::LoadGraphFromXML(const std::string& filepath)
 {
+    currentGraphPath_ = EditorAssetPathUtils::ToContentRelativePath(filepath);
     activeGraph_ = std::make_shared<AnimationGraph>();
     AnimationDeserializer deserializer;
-    if (!deserializer.Deserialize(activeGraph_.get(), filepath)) return;
+    if (!deserializer.Deserialize(activeGraph_.get(), currentGraphPath_))
+    {
+        ResetToDefaultGraph();
+        currentGraphPath_.clear();
+        return;
+    }
 
-    editorStates_.clear(); stateLinks_.clear();
-    stateNodes_.clear(); stateNodeLinks_.clear();
+    RebuildEditorGraphFromRuntimeData();
+    if (!LoadEditorReflection(currentGraphPath_))
+    {
+        AutoLayoutEditorGraph();
+        SaveEditorReflection(currentGraphPath_);
+    }
+}
+
+void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
+{
+    editorStates_.clear();
+    stateLinks_.clear();
+    stateNodes_.clear();
+    stateNodeLinks_.clear();
     selectionType_ = EditorAnimationSelectionType::None;
     currentViewMode_ = EditorAnimationViewMode::StateMachine;
     viewingState_ = nullptr;
+    scrolling_ = ImVec2(0.0f, 0.0f);
+    scale_ = 1.0f;
+    nextId_ = 1;
+    isDraggingLink_ = false;
+    draggingStartId_ = -1;
 
     std::unordered_map<const AnimationState*, int> stateToEditorId;
     std::unordered_map<const AnimationNode*, int> nodeToEditorId;
 
-    // ==========================================
-    // 1. STATE MACHINE AUTO-LAYOUT
-    // ==========================================
-    std::unordered_map<const AnimationState*, int> stateDepths;
-    std::unordered_map<int, int> stateRowCounters;
-    std::queue<std::pair<const AnimationState*, int>> stateQ;
-    std::unordered_set<const AnimationState*> stateVisited;
+    for (const auto& state : activeGraph_->GetStates())
+    {
+        EditorAnimationState editorState;
+        editorState.id = nextId_++;
+        editorState.name = state->name;
+        editorState.pos = ImVec2(50.0f, 50.0f);
+        editorState.size = ImVec2(160.0f, 50.0f);
+        editorState.animState = state;
+        editorStates_.push_back(editorState);
+        stateToEditorId[state.get()] = editorState.id;
 
-    // Start BFS with the first state (root)
-    if (!activeGraph_->GetStates().empty()) {
-        auto rootState = activeGraph_->GetStates().front();
-        stateQ.push({ rootState.get(), 0 });
-        stateVisited.insert(rootState.get());
-    }
+        std::unordered_set<const AnimationNode*> visitedNodes;
+        std::vector<std::shared_ptr<AnimationNode>> flatNodes;
+        CollectNodes(state->GetEntryNode(), visitedNodes, flatNodes);
 
-    // Push any disconnected/floating states
-    for (const auto& s : activeGraph_->GetStates()) {
-        if (stateVisited.find(s.get()) == stateVisited.end()) {
-            stateQ.push({ s.get(), 0 });
-            stateVisited.insert(s.get());
+        for (const auto& node : flatNodes)
+        {
+            EditorAnimationNode editorNode;
+            editorNode.id = nextId_++;
+            editorNode.name = node->animationName.empty() ? "Node" : node->animationName;
+            editorNode.pos = ImVec2(50.0f, 50.0f);
+            editorNode.size = ImVec2(160.0f, 50.0f);
+            editorNode.animNode = node;
+            stateNodes_[state.get()].push_back(editorNode);
+            nodeToEditorId[node.get()] = editorNode.id;
         }
     }
 
-    // Calculate hierarchical depths for states
-    while (!stateQ.empty()) {
-        auto [curr, depth] = stateQ.front(); stateQ.pop();
-        stateDepths[curr] = depth;
-        for (const auto& t : curr->outboundConnections) {
-            if (stateVisited.find(t->target.get()) == stateVisited.end()) {
-                stateVisited.insert(t->target.get());
-                stateQ.push({ t->target.get(), depth + 1 });
+    for (const auto& state : activeGraph_->GetStates())
+    {
+        for (const auto& transition : state->outboundConnections)
+        {
+            EditorAnimationStateLink link;
+            link.id = nextId_++;
+            link.startId = stateToEditorId[state.get()];
+            link.endId = stateToEditorId[transition->target.get()];
+            link.transition = transition;
+            stateLinks_.push_back(link);
+        }
+
+        std::unordered_set<const AnimationNode*> visitedNodes;
+        std::vector<std::shared_ptr<AnimationNode>> flatNodes;
+        CollectNodes(state->GetEntryNode(), visitedNodes, flatNodes);
+        for (const auto& node : flatNodes)
+        {
+            for (const auto& transition : node->outboundConnections)
+            {
+                EditorAnimationNodeLink link;
+                link.id = nextId_++;
+                link.startId = nodeToEditorId[node.get()];
+                link.endId = nodeToEditorId[transition->target.get()];
+                link.transition = transition;
+                stateNodeLinks_[state.get()].push_back(link);
+            }
+        }
+    }
+}
+
+void AnimationGraphPanel::AutoLayoutEditorGraph()
+{
+    std::unordered_map<const AnimationState*, int> stateDepths;
+    std::unordered_map<int, int> stateRowCounters;
+    std::queue<std::pair<const AnimationState*, int>> stateQueue;
+    std::unordered_set<const AnimationState*> visitedStates;
+
+    if (!activeGraph_->GetStates().empty())
+    {
+        stateQueue.push({ activeGraph_->GetStates().front().get(), 0 });
+        visitedStates.insert(activeGraph_->GetStates().front().get());
+    }
+
+    for (const auto& state : activeGraph_->GetStates())
+    {
+        if (visitedStates.find(state.get()) == visitedStates.end())
+        {
+            stateQueue.push({ state.get(), 0 });
+            visitedStates.insert(state.get());
+        }
+    }
+
+    while (!stateQueue.empty())
+    {
+        auto [currentState, depth] = stateQueue.front();
+        stateQueue.pop();
+        stateDepths[currentState] = depth;
+
+        for (const auto& transition : currentState->outboundConnections)
+        {
+            if (visitedStates.find(transition->target.get()) == visitedStates.end())
+            {
+                visitedStates.insert(transition->target.get());
+                stateQueue.push({ transition->target.get(), depth + 1 });
             }
         }
     }
 
-    // Rebuild UI States based on depth
-    for (const auto& state : activeGraph_->GetStates())
+    for (EditorAnimationState& state : editorStates_)
     {
-        EditorAnimationState es;
-        es.id = nextId_++;
-        es.name = state->name;
-        es.animState = state;
-        es.size = ImVec2(160, 50);
+        const int depth = stateDepths[state.animState.get()];
+        const int row = stateRowCounters[depth]++;
+        state.pos = ImVec2(50.0f + depth * 250.0f, 50.0f + row * 150.0f);
 
-        int d = stateDepths[state.get()];
-        int r = stateRowCounters[d]++;
-        es.pos = ImVec2(50.0f + d * 250.0f, 50.0f + r * 150.0f);
-
-        stateToEditorId[state.get()] = es.id;
-        editorStates_.push_back(es);
-
-        // ==========================================
-        // 2. INTERNAL NODES AUTO-LAYOUT
-        // ==========================================
-        std::unordered_set<const AnimationNode*> visitedNodesForFlat;
+        std::unordered_set<const AnimationNode*> visitedNodes;
         std::vector<std::shared_ptr<AnimationNode>> flatNodes;
-        CollectNodes(state->GetEntryNode(), visitedNodesForFlat, flatNodes);
+        CollectNodes(state.animState->GetEntryNode(), visitedNodes, flatNodes);
 
         std::unordered_map<const AnimationNode*, int> nodeDepths;
         std::unordered_map<int, int> nodeRowCounters;
-        std::queue<std::pair<const AnimationNode*, int>> nodeQ;
-        std::unordered_set<const AnimationNode*> nodeVisited;
+        std::queue<std::pair<const AnimationNode*, int>> nodeQueue;
+        std::unordered_set<const AnimationNode*> queuedNodes;
 
-        auto entryNode = state->GetEntryNode();
-        if (entryNode) {
-            nodeQ.push({ entryNode.get(), 0 });
-            nodeVisited.insert(entryNode.get());
+        if (state.animState->GetEntryNode())
+        {
+            nodeQueue.push({ state.animState->GetEntryNode().get(), 0 });
+            queuedNodes.insert(state.animState->GetEntryNode().get());
         }
 
-        // Push any disconnected/floating nodes inside this state
-        for (const auto& n : flatNodes) {
-            if (nodeVisited.find(n.get()) == nodeVisited.end()) {
-                nodeQ.push({ n.get(), 0 });
-                nodeVisited.insert(n.get());
+        for (const auto& node : flatNodes)
+        {
+            if (queuedNodes.find(node.get()) == queuedNodes.end())
+            {
+                nodeQueue.push({ node.get(), 0 });
+                queuedNodes.insert(node.get());
             }
         }
 
-        // Calculate hierarchical depths for nodes
-        while (!nodeQ.empty()) {
-            auto [curr, depth] = nodeQ.front(); nodeQ.pop();
-            nodeDepths[curr] = depth;
-            for (const auto& t : curr->outboundConnections) {
-                if (nodeVisited.find(t->target.get()) == nodeVisited.end()) {
-                    nodeVisited.insert(t->target.get());
-                    nodeQ.push({ t->target.get(), depth + 1 });
+        while (!nodeQueue.empty())
+        {
+            auto [currentNode, currentDepth] = nodeQueue.front();
+            nodeQueue.pop();
+            nodeDepths[currentNode] = currentDepth;
+
+            for (const auto& transition : currentNode->outboundConnections)
+            {
+                if (queuedNodes.find(transition->target.get()) == queuedNodes.end())
+                {
+                    queuedNodes.insert(transition->target.get());
+                    nodeQueue.push({ transition->target.get(), currentDepth + 1 });
                 }
             }
         }
 
-        // Rebuild UI Nodes based on depth
-        for (const auto& node : flatNodes)
+        for (EditorAnimationNode& node : stateNodes_[state.animState.get()])
         {
-            EditorAnimationNode en;
-            en.id = nextId_++;
-            en.name = node->animationName.empty() ? "Node" : node->animationName;
-            en.animNode = node;
-            en.size = ImVec2(160, 50);
-
-            int nd = nodeDepths[node.get()];
-            int nr = nodeRowCounters[nd]++;
-            en.pos = ImVec2(50.0f + nd * 250.0f, 50.0f + nr * 150.0f);
-
-            nodeToEditorId[node.get()] = en.id;
-            stateNodes_[state.get()].push_back(en);
+            const int nodeDepth = nodeDepths[node.animNode.get()];
+            const int nodeRow = nodeRowCounters[nodeDepth]++;
+            node.pos = ImVec2(50.0f + nodeDepth * 250.0f, 50.0f + nodeRow * 150.0f);
         }
     }
+}
 
-    // ==========================================
-    // 3. RECONSTRUCT LINKS
-    // ==========================================
-    for (const auto& state : activeGraph_->GetStates())
+void AnimationGraphPanel::SaveEditorReflection(const std::string& assetPath)
+{
+    const std::string reflectionPath = EditorAssetPathUtils::ToEditorReflectionPath(assetPath);
+    if (!EditorAssetPathUtils::EnsureDirectoryForFile(reflectionPath))
     {
-        // State Links
-        for (const auto& trans : state->outboundConnections)
+        return;
+    }
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLElement* root = doc.NewElement("GameAsset");
+    root->SetAttribute("FileType", kAnimationGraphEditorReflectionFileType);
+    doc.InsertFirstChild(root);
+
+    tinyxml2::XMLElement* canvasElement = doc.NewElement("Canvas");
+    canvasElement->SetAttribute("Scale", scale_);
+    canvasElement->SetAttribute("ScrollX", scrolling_.x);
+    canvasElement->SetAttribute("ScrollY", scrolling_.y);
+    root->InsertEndChild(canvasElement);
+
+    tinyxml2::XMLElement* statesElement = doc.NewElement("States");
+    for (size_t stateIndex = 0; stateIndex < editorStates_.size(); ++stateIndex)
+    {
+        const EditorAnimationState& state = editorStates_[stateIndex];
+        tinyxml2::XMLElement* stateElement = doc.NewElement("State");
+        stateElement->SetAttribute("Index", static_cast<int>(stateIndex));
+        stateElement->SetAttribute("PosX", state.pos.x);
+        stateElement->SetAttribute("PosY", state.pos.y);
+        statesElement->InsertEndChild(stateElement);
+
+        tinyxml2::XMLElement* nodesElement = doc.NewElement("Nodes");
+        const auto& stateNodes = stateNodes_[state.animState.get()];
+        for (size_t nodeIndex = 0; nodeIndex < stateNodes.size(); ++nodeIndex)
         {
-            EditorAnimationStateLink el;
-            el.id = nextId_++;
-            el.startId = stateToEditorId[state.get()];
-            el.endId = stateToEditorId[trans->target.get()];
-            el.transition = trans;
-            stateLinks_.push_back(el);
+            const EditorAnimationNode& node = stateNodes[nodeIndex];
+            tinyxml2::XMLElement* nodeElement = doc.NewElement("Node");
+            nodeElement->SetAttribute("Index", static_cast<int>(nodeIndex));
+            nodeElement->SetAttribute("PosX", node.pos.x);
+            nodeElement->SetAttribute("PosY", node.pos.y);
+            nodesElement->InsertEndChild(nodeElement);
+        }
+        stateElement->InsertEndChild(nodesElement);
+    }
+    root->InsertEndChild(statesElement);
+
+    doc.SaveFile(reflectionPath.c_str());
+}
+
+bool AnimationGraphPanel::LoadEditorReflection(const std::string& assetPath)
+{
+    const std::string reflectionPath = EditorAssetPathUtils::ToEditorReflectionPath(assetPath);
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile(reflectionPath.c_str()) != tinyxml2::XML_SUCCESS)
+    {
+        return false;
+    }
+
+    tinyxml2::XMLElement* root = doc.FirstChildElement("GameAsset");
+    const char* fileType = root ? root->Attribute("FileType") : nullptr;
+    if (!root || !fileType || std::string(fileType) != kAnimationGraphEditorReflectionFileType)
+    {
+        return false;
+    }
+
+    tinyxml2::XMLElement* canvasElement = root->FirstChildElement("Canvas");
+    if (canvasElement)
+    {
+        scale_ = canvasElement->FloatAttribute("Scale", 1.0f);
+        scrolling_.x = canvasElement->FloatAttribute("ScrollX", 0.0f);
+        scrolling_.y = canvasElement->FloatAttribute("ScrollY", 0.0f);
+    }
+
+    tinyxml2::XMLElement* statesElement = root->FirstChildElement("States");
+    for (tinyxml2::XMLElement* stateElement = statesElement ? statesElement->FirstChildElement("State") : nullptr;
+        stateElement != nullptr;
+        stateElement = stateElement->NextSiblingElement("State"))
+    {
+        const int stateIndex = stateElement->IntAttribute("Index", -1);
+        if (stateIndex < 0 || stateIndex >= static_cast<int>(editorStates_.size()))
+        {
+            continue;
         }
 
-        // Node Links
-        std::unordered_set<const AnimationNode*> visitedNodesForFlat;
-        std::vector<std::shared_ptr<AnimationNode>> flatNodes;
-        CollectNodes(state->GetEntryNode(), visitedNodesForFlat, flatNodes);
+        editorStates_[stateIndex].pos.x = stateElement->FloatAttribute("PosX", editorStates_[stateIndex].pos.x);
+        editorStates_[stateIndex].pos.y = stateElement->FloatAttribute("PosY", editorStates_[stateIndex].pos.y);
 
-        for (const auto& node : flatNodes)
+        tinyxml2::XMLElement* nodesElement = stateElement->FirstChildElement("Nodes");
+        auto& stateNodes = stateNodes_[editorStates_[stateIndex].animState.get()];
+        for (tinyxml2::XMLElement* nodeElement = nodesElement ? nodesElement->FirstChildElement("Node") : nullptr;
+            nodeElement != nullptr;
+            nodeElement = nodeElement->NextSiblingElement("Node"))
         {
-            for (const auto& trans : node->outboundConnections)
+            const int nodeIndex = nodeElement->IntAttribute("Index", -1);
+            if (nodeIndex < 0 || nodeIndex >= static_cast<int>(stateNodes.size()))
             {
-                EditorAnimationNodeLink el;
-                el.id = nextId_++;
-                el.startId = nodeToEditorId[node.get()];
-                el.endId = nodeToEditorId[trans->target.get()];
-                el.transition = trans;
-                stateNodeLinks_[state.get()].push_back(el);
+                continue;
             }
+
+            stateNodes[nodeIndex].pos.x = nodeElement->FloatAttribute("PosX", stateNodes[nodeIndex].pos.x);
+            stateNodes[nodeIndex].pos.y = nodeElement->FloatAttribute("PosY", stateNodes[nodeIndex].pos.y);
         }
     }
+
+    return true;
 }
 
 void AnimationGraphPanel::DrawPropertiesPanel()
@@ -631,7 +854,7 @@ void AnimationGraphPanel::DrawNodeCanvas()
             // ONLY compile this block if the element is an EditorAnimationState
             if constexpr (std::is_same_v<ElementType, EditorAnimationState>)
             {
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+                if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left))
                 {
                     currentViewMode_ = EditorAnimationViewMode::InsideState;
                     viewingState_ = element.animState;

@@ -5,6 +5,30 @@
 #include "UI/EditorContext.h"
 #include "UI/EditorWidgets.h"
 
+namespace
+{
+	const char* GetAssetTypeLabel(EditorAssetType assetType)
+	{
+		switch (assetType)
+		{
+		case EditorAssetType::Material: return "Material";
+		case EditorAssetType::MaterialFunction: return "Material Function";
+		case EditorAssetType::Texture: return "Texture";
+		case EditorAssetType::StaticMesh: return "Static Mesh";
+		case EditorAssetType::SkeletalMesh: return "Skeletal Mesh";
+		case EditorAssetType::AnimationGraph: return "Animation Graph";
+		case EditorAssetType::Audio: return "Audio";
+		case EditorAssetType::Scene: return "Scene";
+		case EditorAssetType::HeaderFile: return "Header";
+		case EditorAssetType::SourceFile: return "Source";
+		case EditorAssetType::Unknown: return "Unknown";
+		case EditorAssetType::None:
+		default:
+			return "All";
+		}
+	}
+}
+
 AssetSelectorPanel::AssetSelectorPanel(EditorHUD* hud) : 
 	IEditorPanel("Asset Selector", hud)
 {
@@ -22,8 +46,12 @@ void AssetSelectorPanel::Draw()
 	ImGui::Begin(title_.c_str(), &isOpen_, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize);
 	std::string selectedAssetPathFromGrid;
 	bool isAFileSelected = false;
+	const EditorAssetType filter = EditorContext::Get()->assetSelectorFilter;
 
-	EditorWidgets::DrawFileGrid(EditorContext::Get()->rootFolder, selectedAssetPathFromGrid, isAFileSelected);
+	ImGui::Text("Filter: %s", GetAssetTypeLabel(filter));
+	ImGui::Separator();
+
+	EditorWidgets::DrawFileGrid(EditorContext::Get()->rootFolder, selectedAssetPathFromGrid, isAFileSelected, filter);
 	
 	if (isAFileSelected)
 	{

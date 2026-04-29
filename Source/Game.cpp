@@ -15,6 +15,7 @@
 #include "Goknar/Managers/WindowManager.h"
 
 #include "Objects/FreeCameraObject.h"
+#include "UI/EditorContext.h"
 #include "UI/EditorHUD.h"
 
 #include "Physics/RigidBody.h"
@@ -58,7 +59,7 @@ Game::Game() : Application()
 			}
 			else
 			{
-				GOKNAR_CORE_WARN("Unknown MainRenderType: {}. Falling back to Deferred.", mainRenderTypeStr);
+				GOKNAR_CORE_WARN("Unknown MainRenderType: %f. Falling back to Deferred.", mainRenderTypeStr);
 				mainRenderType = RenderPassType::Deferred;
 			}
 
@@ -69,6 +70,7 @@ Game::Game() : Application()
 			ContentDir = contentDir;
 
 			std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
+			EditorContext::Get()->sceneSavePath = mainScenePath;
 			mainScene_->ReadSceneData(mainScenePath);
 
 			editorHUD_ = new EditorHUD();
@@ -83,7 +85,7 @@ Game::Game() : Application()
 
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();
-	GOKNAR_CORE_WARN("Scene is read in {} seconds.", elapsedTime);
+	GOKNAR_CORE_WARN("Scene is read in %f seconds.", elapsedTime);
 
 	lastFrameTimePoint = currentTimePoint;
 
@@ -122,11 +124,12 @@ void Game::LoadProject(const std::string& projectPath)
 		ContentDir = projectPath + contentDir;
 
 		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
+		EditorContext::Get()->sceneSavePath = mainScenePath;
 		mainScene_->ReadSceneData(mainScenePath);
 	}
 	else
 	{
-		GOKNAR_CORE_ERROR("Failed to load {}. Falling back to defaults.", configPath);
+		GOKNAR_CORE_ERROR("Failed to load %s. Falling back to defaults.", configPath);
 	}
 }
 

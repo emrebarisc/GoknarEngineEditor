@@ -18,7 +18,9 @@
 #include "Goknar/Lights/DirectionalLight.h"
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
+#include "Goknar/Helpers/SceneParser.h"
 
+#include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorHUD.h"
 #include "UI/EditorWidgets.h"
 #include "UI/Panels/AssetSelectorPanel.h"
@@ -80,17 +82,13 @@ void DetailsPanel::SetupReflections()
 
 void DetailsPanel::OnAssetSelected(const std::string& path)
 {
-	ConfigManager configManager;
-	configManager.ReadFile("Config/GameConfig.ini");
-	std::string projectContentDir = configManager.GetString("Core", "ContentDir", "");
-
-	std::string normalizedPath = path.substr(projectContentDir.size());
+	std::string normalizedPath = EditorAssetPathUtils::ToContentRelativePath(path);
 
 	switch (assetSelectionComponentType_)
 	{
-	case EditorAssetType::None:
+	case DetailsAssetSelectionTarget::None:
 		break;
-	case EditorAssetType::StaticMeshComponent:
+	case DetailsAssetSelectionTarget::StaticMesh:
 	{
 		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
 		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(normalizedPath);
@@ -100,18 +98,25 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		}
 		break;
 	}
-	case EditorAssetType::SkeletalMeshComponent:
+	case DetailsAssetSelectionTarget::Material:
+	{
+		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
+		SceneParser::ApplyStaticMeshComponentMaterialPath(staticMeshComponent, normalizedPath);
 		break;
-	case EditorAssetType::Image:
+	}
+	case DetailsAssetSelectionTarget::SkeletalMesh:
 		break;
-	case EditorAssetType::Audio:
+	case DetailsAssetSelectionTarget::Image:
+		break;
+	case DetailsAssetSelectionTarget::Audio:
 		break;
 	default:
 		break;
 	}
 
 	assetSelectionComponent_ = nullptr;
-	assetSelectionComponentType_ = EditorAssetType::None;
+	assetSelectionComponentType_ = DetailsAssetSelectionTarget::None;
+	EditorContext::Get()->assetSelectorFilter = EditorAssetType::None;
 }
 
 void DetailsPanel::Draw()
@@ -647,9 +652,31 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	if (ImGui::Button(specialName.c_str()))
 	{
 		assetSelectionComponent_ = staticMeshComponent;
-		assetSelectionComponentType_ = EditorAssetType::StaticMeshComponent;
+		assetSelectionComponentType_ = DetailsAssetSelectionTarget::StaticMesh;
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::StaticMesh;
 
 		AssetSelectorPanel::OnAssetSelected = 
+			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+		hud_->ShowPanel<AssetSelectorPanel>();
+	}
+
+	ImGui::Text("Material: ");
+
+	ImGui::SameLine();
+	const std::string materialPath = SceneParser::GetStaticMeshComponentMaterialPath(staticMeshComponent);
+	ImGui::Text(materialPath.empty() ? "" : materialPath.c_str());
+
+	specialName = std::string("Select Asset##Material") + specialPostfix;
+
+	ImGui::SameLine();
+	if (ImGui::Button(specialName.c_str()))
+	{
+		assetSelectionComponent_ = staticMeshComponent;
+		assetSelectionComponentType_ = DetailsAssetSelectionTarget::Material;
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::Material;
+
+		AssetSelectorPanel::OnAssetSelected =
 			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
 
 		hud_->ShowPanel<AssetSelectorPanel>();

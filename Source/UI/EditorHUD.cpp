@@ -49,6 +49,7 @@
 #include "Panels/MeshViewerPanel.h"
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
+#include "Panels/ProjectSettingsPanel.h"
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
 #include "Panels/ShaderEditorPanel.h"
@@ -84,6 +85,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<MeshViewerPanel>();
 	AddPanel<ObjectCreationPanel>();
 	AddPanel<ObjectNameToCreatePanel>();
+	AddPanel<ProjectSettingsPanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
@@ -245,6 +247,8 @@ void EditorHUD::UpdateHUD()
 
 	ImGui::Render();
 	ImGui_RenderDrawData(ImGui::GetDrawData());
+
+	doubleClickController_.ClearFrameState();
 }
 
 void EditorHUD::DrawBackgroundWindow()
@@ -319,21 +323,21 @@ void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
 void EditorHUD::OnCursorMove(double xPosition, double yPosition)
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos.x = (float)xPosition;
-	io.MousePos.y = (float)yPosition;
+	io.AddMousePosEvent((float)xPosition, (float)yPosition);
+	doubleClickController_.OnCursorMove(ImVec2((float)xPosition, (float)yPosition));
 }
 
 void EditorHUD::OnScroll(double xOffset, double yOffset)
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseWheelH += (float)xOffset;
-	io.MouseWheel += (float)yOffset;
+	io.AddMouseWheelEvent((float)xOffset, (float)yOffset);
 }
 
 void EditorHUD::OnLeftClickPressed()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[ImGuiMouseButton_Left] = true;
+	io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
+	doubleClickController_.OnMouseButtonPressed(ImGuiMouseButton_Left, GetCursorPositionForUi());
 
 	if (context_->objectToCreateType != EditorSelectionType::None)
 	{
@@ -344,31 +348,33 @@ void EditorHUD::OnLeftClickPressed()
 void EditorHUD::OnLeftClickReleased()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[ImGuiMouseButton_Left] = false;
+	io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
 }
 
 void EditorHUD::OnRightClickPressed()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[ImGuiMouseButton_Right] = true;
+	io.AddMouseButtonEvent(ImGuiMouseButton_Right, true);
+	doubleClickController_.OnMouseButtonPressed(ImGuiMouseButton_Right, GetCursorPositionForUi());
 }
 
 void EditorHUD::OnRightClickReleased()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[ImGuiMouseButton_Right] = false;
+	io.AddMouseButtonEvent(ImGuiMouseButton_Right, false);
 }
 
 void EditorHUD::OnMiddleClickPressed()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[ImGuiMouseButton_Middle] = true;
+	io.AddMouseButtonEvent(ImGuiMouseButton_Middle, true);
+	doubleClickController_.OnMouseButtonPressed(ImGuiMouseButton_Middle, GetCursorPositionForUi());
 }
 
 void EditorHUD::OnMiddleClickReleased()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseDown[ImGuiMouseButton_Middle] = false;
+	io.AddMouseButtonEvent(ImGuiMouseButton_Middle, false);
 }
 
 void EditorHUD::OnCharPressed(unsigned int codePoint)
@@ -385,6 +391,26 @@ void EditorHUD::OnWindowSizeChanged(int width, int height)
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = EditorUtils::ToImVec2(context_->windowSize);
+}
+
+bool EditorHUD::WasMouseDoubleClicked(ImGuiMouseButton button) const
+{
+	return doubleClickController_.WasMouseDoubleClicked(button);
+}
+
+bool EditorHUD::WasLastItemDoubleClicked(ImGuiMouseButton button) const
+{
+	return WasMouseDoubleClicked(button) && ImGui::IsItemHovered();
+}
+
+ImVec2 EditorHUD::GetCursorPositionForUi() const
+{
+	double xPosition = 0.0;
+	double yPosition = 0.0;
+
+	engine->GetInputManager()->GetCursorPosition(xPosition, yPosition);
+
+	return ImVec2((float)xPosition, (float)yPosition);
 }
 
 void EditorHUD::OnPlaceObject()

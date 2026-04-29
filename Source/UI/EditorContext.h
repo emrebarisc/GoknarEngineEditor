@@ -27,10 +27,17 @@ enum class EditorSelectionType
 enum class EditorAssetType
 {
 	None = 0,
-	StaticMeshComponent,
-	SkeletalMeshComponent,
-	Image,
-	Audio
+	Material,
+	MaterialFunction,
+	Texture,
+	StaticMesh,
+	SkeletalMesh,
+	AnimationGraph,
+	Audio,
+	Scene,
+	HeaderFile,
+	SourceFile,
+	Unknown
 };
 
 struct Folder
@@ -60,6 +67,7 @@ public:
 	void Init();
 	void BuildFileTree();
 	void BuildSourceFileTree();
+	EditorAssetType GetAssetType(const std::string& path) const;
 
 	void SetSelection(void* obj, EditorSelectionType type)
 	{
@@ -106,6 +114,8 @@ public:
 
 	Folder* rootFolder{ nullptr };
 	std::unordered_map<std::string, Folder*> folderMap{};
+	std::unordered_map<std::string, EditorAssetType> assetTypeMap{};
+	EditorAssetType assetSelectorFilter{ EditorAssetType::None };
 
 	bool isPlacingObject = false;
 private:

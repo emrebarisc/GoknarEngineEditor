@@ -8,6 +8,36 @@
 #include "EditorUtils.h"
 #include "EditorContext.h"
 
+namespace
+{
+	bool FolderContainsFilteredAssets(const Folder* folder, EditorAssetType filter)
+	{
+		if (!folder || filter == EditorAssetType::None)
+		{
+			return true;
+		}
+
+		EditorContext* context = EditorContext::Get();
+		for (const std::string& file : folder->files)
+		{
+			if (context->GetAssetType(folder->path + file) == filter)
+			{
+				return true;
+			}
+		}
+
+		for (const Folder* subFolder : folder->subFolders)
+		{
+			if (FolderContainsFilteredAssets(subFolder, filter))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
 void EditorWidgets::DrawInputText(const std::string& name, std::string& value)
 {
 	char* valueChar = const_cast<char*>(value.c_str());
@@ -131,22 +161,32 @@ bool EditorWidgets::DrawWindowWithOneTextBoxOneButton(const std::string& windowT
 	return buttonClicked;
 }
 
-void EditorWidgets::DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected)
+void EditorWidgets::DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected, EditorAssetType filter)
 {
 	for (const Folder* subFolder : folder->subFolders)
 	{
+		if (!FolderContainsFilteredAssets(subFolder, filter))
+		{
+			continue;
+		}
+
 		if (ImGui::TreeNode(subFolder->name.c_str()))
 		{
-			DrawFileGrid(subFolder, selectedFileName, isAFileSelected);
+			DrawFileGrid(subFolder, selectedFileName, isAFileSelected, filter);
 			ImGui::TreePop();
 		}
 	}
 
 	ImGui::Columns(4, nullptr, false);
+	EditorContext* context = EditorContext::Get();
 	int fileCount = (int)folder->files.size();
 	for (int fileIndex = 0; fileIndex < fileCount; ++fileIndex)
 	{
 		std::string fileName = folder->files[fileIndex];
+		if (filter != EditorAssetType::None && context->GetAssetType(folder->path + fileName) != filter)
+		{
+			continue;
+		}
 
 		if (ImGui::Button(fileName.c_str(), { 150.f, 30.f }))
 		{

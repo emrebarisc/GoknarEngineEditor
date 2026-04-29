@@ -18,6 +18,16 @@ class CapsuleCollisionComponent;
 class MovingTriangleMeshCollisionComponent;
 class NonMovingTriangleMeshCollisionComponent;
 
+enum class DetailsAssetSelectionTarget
+{
+	None = 0,
+	StaticMesh,
+	Material,
+	SkeletalMesh,
+	Image,
+	Audio
+};
+
 class DetailsPanel : public IEditorPanel
 {
 public:
@@ -47,7 +57,7 @@ private:
 	void OnAssetSelected(const std::string& path);
 
 	void* assetSelectionComponent_;
-	EditorAssetType assetSelectionComponentType_;
+	DetailsAssetSelectionTarget assetSelectionComponentType_{ DetailsAssetSelectionTarget::None };
 
 	std::unordered_map<std::string, std::function<void(ObjectBase*)>> objectReflections_;
 	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsReflections_;
