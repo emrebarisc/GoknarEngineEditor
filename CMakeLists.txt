@@ -2,6 +2,22 @@ cmake_minimum_required(VERSION 3.20)
 
 set(APP_NAME GoknarEngineEditor)
 
+file(STRINGS "Config/Build.ini" ENGINE_LOCATION_LINE REGEX "^EngineLocation=")
+if(ENGINE_LOCATION_LINE)
+    string(REGEX REPLACE "^EngineLocation=(.*)$" "\\1" ENGINE_PATH "${ENGINE_LOCATION_LINE}")
+    string(STRIP "${ENGINE_PATH}" ENGINE_PATH)
+    file(TO_CMAKE_PATH "${ENGINE_PATH}" ENGINE_PATH)
+    if(NOT IS_ABSOLUTE "${ENGINE_PATH}")
+        get_filename_component(ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINE_PATH}" ABSOLUTE)
+    endif()
+else()
+    set(ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/GoknarEngine/Goknar")
+endif()
+
+get_filename_component(ENGINE_PATH "${ENGINE_PATH}" ABSOLUTE)
+set(ENGINE_CONTENT_SOURCE_DIR "${ENGINE_PATH}/EngineContent")
+set(GOKNAR_ENGINE_CONTENT_SOURCE_DIR "${ENGINE_CONTENT_SOURCE_DIR}" CACHE INTERNAL "Resolved engine content source directory")
+
 project(${APP_NAME})
 
 set(CMAKE_CXX_STANDARD 17)
@@ -40,8 +56,6 @@ foreach(SUBDIR ${SUBDIRS})
 endforeach()
 
 ######################################################################
-
-set(ENGINE_PATH ${CMAKE_BINARY_DIR}/../GoknarEngine/Goknar)
 
 # Setup the Executable or Library first so we can attach properties to it
 if(NOT ANDROID)

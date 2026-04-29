@@ -30,8 +30,8 @@ do
 done
 
 sync_directories() {
-    local dirs=("EditorContent" "Config")
-    local destinations=("Output/EditorContent" "Output/Config")
+    local dirs=("EditorContent" "Config" "EditorData")
+    local destinations=("Output/EditorContent" "Output/Config" "Output/EditorData")
 
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
         gameName="${projectName}.exe"
