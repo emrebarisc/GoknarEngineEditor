@@ -20,6 +20,7 @@ class RenderTarget;
 class MeshViewerCameraObject;
 class ObjectBase;
 class StaticMeshComponent;
+class Texture;
 
 using ShaderPinType = MaterialFunctionPinType;
 using ShaderValue = std::variant<float, Vector2, Vector3, Vector4, std::string>;
@@ -127,6 +128,11 @@ private:
     ShaderEditorSnapshot CaptureSnapshot() const;
     void RestoreSnapshot(const ShaderEditorSnapshot& snapshot);
     void RebuildActiveMaterialFromGraph();
+    void RefreshTextureBindingsFromNodes();
+    void MigrateLegacyTextureSampleNodes();
+    std::string GetTextureSamplerNameForPath(const std::string& texturePath) const;
+    Texture* GetTexturePreviewTexture(const std::string& texturePath) const;
+    void OnTextureAssetSelected(const std::string& path);
     bool BuildActiveMaterialFunction(MaterialFunction& outMaterialFunction);
     void SaveEditorReflection(const std::string& assetPath);
     bool LoadEditorReflection(const std::string& assetPath);
@@ -203,6 +209,7 @@ private:
     int draggingStartPinId_{ -1 };
     int selectedNodeId_{ -1 };
     int selectedLinkId_{ -1 };
+    int textureSelectionNodeId_{ -1 };
     int masterNodeId_{ -1 };
     int nextId_{ 1 };
 

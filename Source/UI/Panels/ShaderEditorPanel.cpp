@@ -29,8 +29,10 @@
 #include "Objects/MeshViewerCameraObject.h"
 #include "Controllers/MeshViewerCameraController.h"
 #include "UI/EditorAssetPathUtils.h"
+#include "UI/EditorContext.h"
 #include "UI/EditorUtils.h"
 #include "UI/EditorHUD.h"
+#include "UI/Panels/AssetSelectorPanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 
 constexpr unsigned int SHADER_EDITOR_RENDER_MASK = 0x20000000;
@@ -112,6 +114,11 @@ namespace
 		return IsMaterialVariableDeclarationCategory(category);
 	}
 
+	bool IsTextureSampleNode(const ShaderNode& node)
+	{
+		return node.typeCategory == "Texture" && node.name == "Texture Sample";
+	}
+
 	std::string SanitizeIdentifier(std::string value)
 	{
 		for (char& character : value)
@@ -133,6 +140,28 @@ namespace
 		}
 
 		return value;
+	}
+
+	std::string BuildTextureSamplerBaseName(const std::string& texturePath)
+	{
+		std::string baseName = std::filesystem::path(texturePath).stem().generic_string();
+		if (baseName.empty())
+		{
+			baseName = "textureSample";
+		}
+
+		return SanitizeIdentifier(baseName);
+	}
+
+	bool LooksLikeTextureAssetPath(const std::string& value)
+	{
+		if (value.empty())
+		{
+			return false;
+		}
+
+		const std::filesystem::path assetPath(value);
+		return assetPath.has_extension() || value.find('/') != std::string::npos || value.find('\\') != std::string::npos;
 	}
 
 	float GetNodeBodyHeightFromPins(size_t inputPinCount, size_t outputPinCount)
@@ -780,6 +809,7 @@ void ShaderEditorPanel::ResetInteractionState()
 	isDraggingLink_ = false;
 	autoConnectStartPinId_ = -1;
 	draggingStartPinId_ = -1;
+	textureSelectionNodeId_ = -1;
 }
 
 void ShaderEditorPanel::SetAssetMode(ShaderEditorAssetMode assetMode)
@@ -868,6 +898,142 @@ void ShaderEditorPanel::RestoreSnapshot(const ShaderEditorSnapshot& snapshot)
 	selectedNodeIds_ = snapshot.selectedNodeIds;
 	selectedNodeId_ = snapshot.selectedNodeId;
 	selectedLinkId_ = snapshot.selectedLinkId;
+	MigrateLegacyTextureSampleNodes();
+	RefreshTextureBindingsFromNodes();
+}
+
+void ShaderEditorPanel::RefreshTextureBindingsFromNodes()
+{
+	std::vector<TextureInfo> refreshedTextures;
+	std::unordered_set<std::string> usedSamplerNames;
+
+	for (ShaderNode& node : nodes_)
+	{
+		if (!IsTextureSampleNode(node))
+		{
+			continue;
+		}
+
+		node.size.x = std::max(node.size.x, 220.0f);
+		node.size.y = std::max(node.size.y, 170.0f);
+
+		if (node.stringData.empty())
+		{
+			continue;
+		}
+
+		node.stringData = EditorAssetPathUtils::ToContentRelativePath(node.stringData);
+		if (!LooksLikeTextureAssetPath(node.stringData))
+		{
+			continue;
+		}
+
+		const std::string texturePath = node.stringData;
+		const bool alreadyTracked =
+			std::any_of(
+				refreshedTextures.begin(),
+				refreshedTextures.end(),
+				[&texturePath](const TextureInfo& textureInfo)
+				{
+					return textureInfo.path == texturePath;
+				});
+		if (alreadyTracked)
+		{
+			continue;
+		}
+
+		const std::string baseSamplerName = BuildTextureSamplerBaseName(texturePath);
+		std::string samplerName = baseSamplerName;
+		for (int suffix = 2; usedSamplerNames.find(samplerName) != usedSamplerNames.end(); ++suffix)
+		{
+			samplerName = baseSamplerName + "_" + std::to_string(suffix);
+		}
+
+		usedSamplerNames.insert(samplerName);
+		refreshedTextures.push_back({ samplerName, texturePath });
+	}
+
+	textures_ = std::move(refreshedTextures);
+}
+
+void ShaderEditorPanel::MigrateLegacyTextureSampleNodes()
+{
+	std::unordered_map<std::string, std::string> texturePathBySamplerName;
+	for (const TextureInfo& textureInfo : textures_)
+	{
+		if (!textureInfo.name.empty() && !textureInfo.path.empty())
+		{
+			texturePathBySamplerName[textureInfo.name] = textureInfo.path;
+		}
+	}
+
+	for (ShaderNode& node : nodes_)
+	{
+		if (!IsTextureSampleNode(node))
+		{
+			continue;
+		}
+
+		const auto samplerPathIterator = texturePathBySamplerName.find(node.stringData);
+		if (samplerPathIterator != texturePathBySamplerName.end())
+		{
+			node.stringData = samplerPathIterator->second;
+		}
+
+		node.size.x = std::max(node.size.x, 220.0f);
+		node.size.y = std::max(node.size.y, 170.0f);
+	}
+}
+
+std::string ShaderEditorPanel::GetTextureSamplerNameForPath(const std::string& texturePath) const
+{
+	const std::string normalizedTexturePath = EditorAssetPathUtils::ToContentRelativePath(texturePath);
+	for (const TextureInfo& textureInfo : textures_)
+	{
+		if (textureInfo.path == normalizedTexturePath)
+		{
+			return textureInfo.name;
+		}
+	}
+
+	return "";
+}
+
+Texture* ShaderEditorPanel::GetTexturePreviewTexture(const std::string& texturePath) const
+{
+	if (!LooksLikeTextureAssetPath(texturePath))
+	{
+		return nullptr;
+	}
+
+	Image* image = engine->GetResourceManager()->GetContent<Image>(EditorAssetPathUtils::ToContentRelativePath(texturePath));
+	if (!image)
+	{
+		return nullptr;
+	}
+
+	if (!image->GetGeneratedTexture())
+	{
+		image->PreInit();
+		image->Init();
+		image->PostInit();
+	}
+
+	return image->GetGeneratedTexture();
+}
+
+void ShaderEditorPanel::OnTextureAssetSelected(const std::string& path)
+{
+	ShaderNode* node = FindNode(textureSelectionNodeId_);
+	if (!node || !IsTextureSampleNode(*node))
+	{
+		textureSelectionNodeId_ = -1;
+		return;
+	}
+
+	node->stringData = EditorAssetPathUtils::ToContentRelativePath(path);
+	textureSelectionNodeId_ = -1;
+	RefreshTextureBindingsFromNodes();
 }
 
 void ShaderEditorPanel::CaptureSnapshotForNavigation()
@@ -980,11 +1146,14 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		if (texChild->Attribute("path") && texChild->Attribute("name"))
 		{
 			std::string tPath = texChild->Attribute("path");
-			std::string tName = texChild->Attribute("name");
-			textures_.push_back({ tName, tPath });
+
+			Texture* relativeTexture = engine->GetResourceManager()->GetContent<Texture>(tPath);
+			GOKNAR_ASSERT(relativeTexture);
+
+			textures_.push_back({ relativeTexture->GetName(), tPath});
 
 			ShaderNode texNode = SpawnNode("Texture", "Texture Sample", nodePos);
-			texNode.stringData = tName;
+			texNode.stringData = tPath;
 			nodes_.push_back(texNode);
 			nodePos.y += 100;
 		}
@@ -1096,6 +1265,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		SaveEditorReflection(path);
 	}
 
+	RefreshTextureBindingsFromNodes();
 	RebuildActiveMaterialFromGraph();
 }
 
@@ -1120,6 +1290,8 @@ void ShaderEditorPanel::OnMaterialFunctionOpened(const std::string& path)
 		ApplyHierarchicalLayout();
 		SaveEditorReflection(path);
 	}
+
+	RefreshTextureBindingsFromNodes();
 }
 
 void ShaderEditorPanel::OnMaterialSaved(const std::string& path)
@@ -1194,6 +1366,7 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 	}
 
 	SynchronizeMaterialVariableAccessorNodes();
+	RefreshTextureBindingsFromNodes();
 
 	if (activeMaterial_)
 	{
@@ -1232,7 +1405,13 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 		Image* image = engine->GetResourceManager()->GetContent<Image>(tex.path);
 		if (image)
 		{
-			image->SetName(tex.name);
+			if (!image->GetGeneratedTexture())
+			{
+				image->PreInit();
+				image->Init();
+				image->PostInit();
+			}
+
 			activeMaterial_->AddTextureImage(image);
 		}
 		else
@@ -1606,6 +1785,8 @@ bool ShaderEditorPanel::LoadEditorReflection(const std::string& assetPath)
 
 	nodes_.insert(nodes_.end(), migratedAccessorNodes.begin(), migratedAccessorNodes.end());
 	SynchronizeMaterialVariableAccessorNodes();
+	MigrateLegacyTextureSampleNodes();
+	RefreshTextureBindingsFromNodes();
 	return FindNode(masterNodeId_) != nullptr;
 }
 
@@ -1769,39 +1950,7 @@ void ShaderEditorPanel::DrawMaterialProperties()
 
 	ImGui::Separator();
 	ImGui::Text("Textures");
-	if (ImGui::Button("Add Texture"))
-	{
-		textures_.push_back({ "diffuseTexture", "Textures/T_Default.png" });
-	}
-
-	for (size_t i = 0; i < textures_.size(); ++i)
-	{
-		ImGui::PushID((int)i);
-
-		char nameBuf[256];
-		strncpy(nameBuf, textures_[i].name.c_str(), sizeof(nameBuf));
-		nameBuf[sizeof(nameBuf) - 1] = 0;
-		if (ImGui::InputText("Sampler Name", nameBuf, sizeof(nameBuf)))
-		{
-			textures_[i].name = nameBuf;
-		}
-
-		char pathBuf[256];
-		strncpy(pathBuf, textures_[i].path.c_str(), sizeof(pathBuf));
-		pathBuf[sizeof(pathBuf) - 1] = 0;
-		if (ImGui::InputText("Path", pathBuf, sizeof(pathBuf)))
-		{
-			textures_[i].path = pathBuf;
-		}
-
-		if (ImGui::Button("Remove"))
-		{
-			textures_.erase(textures_.begin() + i);
-			--i;
-		}
-		ImGui::Separator();
-		ImGui::PopID();
-	}
+	ImGui::TextDisabled("Texture Sample nodes own texture selection and deduplicate bindings by path.");
 
 	ImGui::Separator();
 	ImGui::Text("Material Variables");
@@ -2075,6 +2224,34 @@ void ShaderEditorPanel::DrawNodeCanvas()
 		ImGui::SetWindowFontScale(scale_);
 		ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "%s", node.name.c_str());
 		ImGui::SetWindowFontScale(1.0f);
+
+		if (IsTextureSampleNode(node))
+		{
+			const ImVec2 previewMin(rect_min.x + 12.0f * scale_, rect_min.y + 44.0f * scale_);
+			const ImVec2 previewMax(rect_max.x - 12.0f * scale_, rect_min.y + 116.0f * scale_);
+			draw_list->AddRectFilled(previewMin, previewMax, IM_COL32(0, 0, 0, 255), 4.0f * scale_);
+
+			if (Texture* previewTexture = GetTexturePreviewTexture(node.stringData))
+			{
+				draw_list->AddImage(
+					(ImTextureID)(intptr_t)previewTexture->GetRendererTextureId(),
+					previewMin,
+					previewMax,
+					ImVec2(0.0f, 1.0f),
+					ImVec2(1.0f, 0.0f));
+			}
+
+			draw_list->AddRect(previewMin, previewMax, IM_COL32(120, 120, 120, 255), 4.0f * scale_);
+
+			const std::string previewLabel =
+				node.stringData.empty() ?
+				"No Texture Selected" :
+				std::filesystem::path(node.stringData).filename().generic_string();
+			ImGui::SetCursorScreenPos(ImVec2(rect_min.x + 12.0f * scale_, rect_min.y + 124.0f * scale_));
+			ImGui::SetWindowFontScale(scale_);
+			ImGui::TextWrapped("%s", previewLabel.c_str());
+			ImGui::SetWindowFontScale(1.0f);
+		}
 
 		ImGui::SetCursorScreenPos(rect_min);
 		ImGui::SetNextItemAllowOverlap();
@@ -2757,12 +2934,27 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 			{
 				ImGui::Separator();
 				ImGui::Text("Texture Settings");
-				char buf[256];
-				strncpy(buf, node->stringData.c_str(), sizeof(buf));
-				buf[sizeof(buf) - 1] = 0;
-				if (ImGui::InputText("Sampler Name", buf, sizeof(buf)))
+
+				const std::string texturePath = EditorAssetPathUtils::ToContentRelativePath(node->stringData);
+				ImGui::TextWrapped("%s", texturePath.empty() ? "No texture selected." : texturePath.c_str());
+
+				if (ImGui::Button("Select Texture"))
 				{
-					node->stringData = buf;
+					textureSelectionNodeId_ = node->id;
+					EditorContext::Get()->assetSelectorFilter = EditorAssetType::Texture;
+					AssetSelectorPanel::OnAssetSelected =
+						Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnTextureAssetSelected>(this);
+					editorHUD_->ShowPanel<AssetSelectorPanel>();
+				}
+
+				if (!texturePath.empty())
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("Clear Texture"))
+					{
+						node->stringData.clear();
+						RefreshTextureBindingsFromNodes();
+					}
 				}
 			}
 
@@ -3413,10 +3605,10 @@ ShaderNode ShaderEditorPanel::SpawnNode(const std::string& category, const std::
 	else if (category == "Texture")
 	{
 		if (name == "Texture Sample") {
-			node.stringData = "diffuseTexture";
+			node.stringData.clear();
 			node.inputs.push_back({ nextId_++, node.id, "UV", ShaderPinType::Vector2, ShaderPinKind::Input, Vector2(0.f) });
 			node.outputs.push_back({ nextId_++, node.id, "Color", ShaderPinType::Vector4, ShaderPinKind::Output });
-			node.size = ImVec2(200, 80);
+			node.size = ImVec2(220, 170);
 		}
 	}
 	else if (category == "Custom")
@@ -3737,6 +3929,7 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 	}
 
 	SynchronizeMaterialVariableAccessorNodes();
+	RefreshTextureBindingsFromNodes();
 
 	outMaterialData->baseColor.calculation = "";
 	outMaterialData->baseColor.result = "";
@@ -4112,8 +4305,15 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 				auto [uvValue, uvType] = GetPinValueAndType(node->inputs[0]);
 				(void)uvType;
 				resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector4;
-				const std::string samplerName = node->stringData.empty() ? "diffuseTexture" : node->stringData;
-				glslBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + uvValue + ");\n";
+				const std::string samplerName = GetTextureSamplerNameForPath(node->stringData);
+				if (samplerName.empty())
+				{
+					glslBody += "\tvec4 " + outVar + " = vec4(0.0f, 0.0f, 0.0f, 1.0f);\n";
+				}
+				else
+				{
+					glslBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + uvValue + ");\n";
+				}
 			}
 			else if ((node->typeCategory == "MaterialVariableArray" || node->typeCategory == "MaterialVariableArrayGet") && node->outputs.size() >= 2 && !node->inputs.empty())
 			{
@@ -4459,6 +4659,8 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 	{
 		return false;
 	}
+
+	RefreshTextureBindingsFromNodes();
 
 	ShaderNode* masterNode = FindNode(masterNodeId_);
 	if (!masterNode || masterNode->inputs.empty())
@@ -4819,8 +5021,15 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 			auto [uvValue, uvType] = GetPinValueAndType(node->inputs[0]);
 			(void)uvType;
 			resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector4;
-			const std::string samplerName = node->stringData.empty() ? "diffuseTexture" : node->stringData;
-			functionBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + uvValue + ");\n";
+			const std::string samplerName = GetTextureSamplerNameForPath(node->stringData);
+			if (samplerName.empty())
+			{
+				functionBody += "\tvec4 " + outVar + " = vec4(0.0f, 0.0f, 0.0f, 1.0f);\n";
+			}
+			else
+			{
+				functionBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + uvValue + ");\n";
+			}
 		}
 		else if (node->typeCategory == "Constants")
 		{
