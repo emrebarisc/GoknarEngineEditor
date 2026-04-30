@@ -316,7 +316,10 @@ void AnimationGraphPanel::CollectNodes(const std::shared_ptr<AnimationNode>& nod
     if (!node || visited.count(node.get())) return;
     visited.insert(node.get());
     outNodes.push_back(node);
-    for (const auto& transition : node->outboundConnections) CollectNodes(transition->target, visited, outNodes);
+    for (const auto& transition : node->outboundConnections)
+    {
+        CollectNodes(transition->target.lock(), visited, outNodes);
+    }
 }
 
 void AnimationGraphPanel::SaveGraphToXML(const std::string& filepath)
@@ -380,7 +383,9 @@ void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
 
         std::unordered_set<const AnimationNode*> visitedNodes;
         std::vector<std::shared_ptr<AnimationNode>> flatNodes;
-        CollectNodes(state->GetEntryNode(), visitedNodes, flatNodes);
+
+        std::weak_ptr<AnimationNode> entryNodeWeakPtr = state->GetEntryNode();
+        CollectNodes(entryNodeWeakPtr.lock(), visitedNodes, flatNodes);
 
         for (const auto& node : flatNodes)
         {
@@ -402,7 +407,7 @@ void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
             EditorAnimationStateLink link;
             link.id = nextId_++;
             link.startId = stateToEditorId[state.get()];
-            link.endId = stateToEditorId[transition->target.get()];
+            link.endId = stateToEditorId[transition->target.lock().get()];
             link.transition = transition;
             stateLinks_.push_back(link);
         }
@@ -417,7 +422,7 @@ void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
                 EditorAnimationNodeLink link;
                 link.id = nextId_++;
                 link.startId = nodeToEditorId[node.get()];
-                link.endId = nodeToEditorId[transition->target.get()];
+                link.endId = nodeToEditorId[transition->target.lock().get()];
                 link.transition = transition;
                 stateNodeLinks_[state.get()].push_back(link);
             }
@@ -455,10 +460,10 @@ void AnimationGraphPanel::AutoLayoutEditorGraph()
 
         for (const auto& transition : currentState->outboundConnections)
         {
-            if (visitedStates.find(transition->target.get()) == visitedStates.end())
+            if (visitedStates.find(transition->target.lock().get()) == visitedStates.end())
             {
-                visitedStates.insert(transition->target.get());
-                stateQueue.push({ transition->target.get(), depth + 1 });
+                visitedStates.insert(transition->target.lock().get());
+                stateQueue.push({ transition->target.lock().get(), depth + 1 });
             }
         }
     }
@@ -501,10 +506,10 @@ void AnimationGraphPanel::AutoLayoutEditorGraph()
 
             for (const auto& transition : currentNode->outboundConnections)
             {
-                if (queuedNodes.find(transition->target.get()) == queuedNodes.end())
+                if (queuedNodes.find(transition->target.lock().get()) == queuedNodes.end())
                 {
-                    queuedNodes.insert(transition->target.get());
-                    nodeQueue.push({ transition->target.get(), currentDepth + 1 });
+                    queuedNodes.insert(transition->target.lock().get());
+                    nodeQueue.push({ transition->target.lock().get(), currentDepth + 1 });
                 }
             }
         }
