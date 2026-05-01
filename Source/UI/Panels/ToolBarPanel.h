@@ -7,6 +7,11 @@
 class ToolBarPanel : public IEditorPanel
 {
 public:
+	static constexpr float GetToolbarHeight()
+	{
+		return 64.0f;
+	}
+
 	ToolBarPanel(EditorHUD* hud) : 
 		IEditorPanel("Tool Bar", hud)
 	{

@@ -205,9 +205,10 @@ void EditorHUD::BeginGame()
 
 	WindowManager* windowManager = engine->GetWindowManager();
 	windowManager->AddWindowSizeCallback(onWindowSizeChangedDelegate_);
+	const Vector2i windowSize = windowManager->GetWindowSize();
+	OnWindowSizeChanged(windowSize.x, windowSize.y);
 
 	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = EditorUtils::ToImVec2(windowManager->GetWindowSize());
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 	io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -219,6 +220,11 @@ void EditorHUD::BeginGame()
 	ImVec4* colors = style->Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.f);
 	colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.f);
+
+	double cursorX = 0.0;
+	double cursorY = 0.0;
+	engine->GetInputManager()->GetCursorPosition(cursorX, cursorY);
+	OnCursorMove(cursorX, cursorY);
 
 	// For counting draw calls
 	engine->GetCameraManager()->SetActiveCamera(EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera());
@@ -236,6 +242,19 @@ void EditorHUD::UpdateHUD()
 
 	WindowManager* windowManager = engine->GetWindowManager();
 	context_->windowSize = windowManager->GetWindowSize();
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = EditorUtils::ToImVec2(context_->windowSize);
+	const Vector2i framebufferSize = windowManager->GetFramebufferSize();
+	if (0 < context_->windowSize.x && 0 < context_->windowSize.y)
+	{
+		io.DisplayFramebufferScale = ImVec2(
+			(float)framebufferSize.x / (float)context_->windowSize.x,
+			(float)framebufferSize.y / (float)context_->windowSize.y);
+	}
+	else
+	{
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+	}
 
 	ImGui_NewFrame();
 	ImGui::NewFrame();
@@ -252,27 +271,28 @@ void EditorHUD::UpdateHUD()
 }
 
 void EditorHUD::DrawBackgroundWindow()
-{static bool p_open = true;
+{
+	static bool p_open = true;
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	const float menuBarHeight = ImGui::GetFrameHeight();
+	const float topBarHeight = menuBarHeight + ToolBarPanel::GetToolbarHeight();
 
-	float toolbarHeight = 36.0f;
-	ImVec2 workPos = viewport->WorkPos;
-	workPos.y += toolbarHeight;
-	
-	ImVec2 workSize = viewport->WorkSize;
-	workSize.y -= toolbarHeight;
+	ImVec2 dockspacePos = viewport->Pos;
+	dockspacePos.y += topBarHeight;
 
-	ImGui::SetNextWindowPos(workPos);
-	ImGui::SetNextWindowSize(workSize);
+	ImVec2 dockspaceSize = viewport->Size;
+	dockspaceSize.y -= topBarHeight;
+
+	ImGui::SetNextWindowPos(dockspacePos);
+	ImGui::SetNextWindowSize(dockspaceSize);
 	ImGui::SetNextWindowViewport(viewport->ID);
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar;
-	window_flags |= ImGuiWindowFlags_NoTitleBar;
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar;
 	window_flags |= ImGuiWindowFlags_NoCollapse;
 	window_flags |= ImGuiWindowFlags_NoResize;
 	window_flags |= ImGuiWindowFlags_NoMove;
@@ -391,6 +411,15 @@ void EditorHUD::OnWindowSizeChanged(int width, int height)
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = EditorUtils::ToImVec2(context_->windowSize);
+	const Vector2i framebufferSize = engine->GetWindowManager()->GetFramebufferSize();
+	if (0 < width && 0 < height)
+	{
+		io.DisplayFramebufferScale = ImVec2((float)framebufferSize.x / (float)width, (float)framebufferSize.y / (float)height);
+	}
+	else
+	{
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+	}
 }
 
 bool EditorHUD::WasMouseDoubleClicked(ImGuiMouseButton button) const

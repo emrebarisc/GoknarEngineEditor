@@ -101,7 +101,18 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 	case DetailsAssetSelectionTarget::Material:
 	{
 		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
-		SceneParser::ApplyStaticMeshComponentMaterialPath(staticMeshComponent, normalizedPath);
+		std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
+
+		StaticMeshInstance* meshInstance = staticMeshComponent ? staticMeshComponent->GetMeshInstance() : nullptr;
+		StaticMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+		const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
+
+		if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
+		{
+			materialPaths.resize(subMeshCount);
+			materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
+			SceneParser::ApplyStaticMeshComponentMaterialPaths(staticMeshComponent, materialPaths);
+		}
 		break;
 	}
 	case DetailsAssetSelectionTarget::SkeletalMesh:
@@ -116,6 +127,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 
 	assetSelectionComponent_ = nullptr;
 	assetSelectionComponentType_ = DetailsAssetSelectionTarget::None;
+	assetSelectionSubMeshIndex_ = -1;
 	EditorContext::Get()->assetSelectorFilter = EditorAssetType::None;
 }
 
@@ -661,31 +673,52 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 		hud_->ShowPanel<AssetSelectorPanel>();
 	}
 
-	ImGui::Text("Material: ");
+	ImGui::Text("Default Materials:");
 
-	ImGui::SameLine();
-	const std::string materialPath = SceneParser::GetStaticMeshComponentMaterialPath(staticMeshComponent);
-	ImGui::Text(materialPath.empty() ? "" : materialPath.c_str());
-
-	specialName = std::string("Select Asset##Material") + specialPostfix;
-
-	ImGui::SameLine();
-	if (ImGui::Button(specialName.c_str()))
+	StaticMeshInstance* staticMeshInstance = staticMeshComponent->GetMeshInstance();
+	const std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
+	const size_t subMeshCount = staticMesh ? staticMesh->GetSubMeshes().size() : 0;
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
 	{
-		assetSelectionComponent_ = staticMeshComponent;
-		assetSelectionComponentType_ = DetailsAssetSelectionTarget::Material;
-		EditorContext::Get()->assetSelectorFilter = EditorAssetType::Material;
+		ImGui::PushID(static_cast<int>(subMeshIndex));
 
-		AssetSelectorPanel::OnAssetSelected =
-			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+		const std::string& subMeshName = staticMesh->GetSubMeshes()[subMeshIndex]->GetName();
+		if (subMeshName.empty())
+		{
+			ImGui::Text("Sub Mesh %d", static_cast<int>(subMeshIndex));
+		}
+		else
+		{
+			ImGui::Text("Sub Mesh %d: %s", static_cast<int>(subMeshIndex), subMeshName.c_str());
+		}
 
-		hud_->ShowPanel<AssetSelectorPanel>();
+		const char* materialPath = subMeshIndex < materialPaths.size() && !materialPaths[subMeshIndex].empty() ? materialPaths[subMeshIndex].c_str() : "";
+		ImGui::TextWrapped("%s", materialPath);
+
+		if (ImGui::Button("Select Asset"))
+		{
+			assetSelectionComponent_ = staticMeshComponent;
+			assetSelectionComponentType_ = DetailsAssetSelectionTarget::Material;
+			assetSelectionSubMeshIndex_ = static_cast<int>(subMeshIndex);
+			EditorContext::Get()->assetSelectorFilter = EditorAssetType::Material;
+
+			AssetSelectorPanel::OnAssetSelected =
+				Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+			hud_->ShowPanel<AssetSelectorPanel>();
+		}
+
+		ImGui::PopID();
+
+		if (subMeshIndex + 1 < subMeshCount)
+		{
+			ImGui::Separator();
+		}
 	}
 
 	ImGui::Text("Render mask: ");
 
 	ImGui::SameLine();
-	StaticMeshInstance* staticMeshInstance = staticMeshComponent->GetMeshInstance();
 
 	ImGui::PushItemWidth(100.f);
 
@@ -745,7 +778,7 @@ void DetailsPanel::DrawMovingTriangleMeshCollisionComponentDetails(MovingTriangl
 	ImGui::Text("Mesh: ");
 
 	ImGui::SameLine();
-	const MeshUnit* mesh = movingTriangleMeshCollisionComponent->GetMesh();
+	const StaticMesh* mesh = movingTriangleMeshCollisionComponent->GetMesh();
 	ImGui::Text(mesh ? mesh->GetPath().substr(ContentDir.size()).c_str() : "");
 }
 
@@ -755,7 +788,7 @@ void DetailsPanel::DrawNonMovingTriangleMeshCollisionComponentDetails(NonMovingT
 	ImGui::Text("Mesh: ");
 
 	ImGui::SameLine();
-	const MeshUnit* mesh = nonMovingTriangleMeshCollisionComponent->GetMesh();
+	const StaticMesh* mesh = nonMovingTriangleMeshCollisionComponent->GetMesh();
 	ImGui::Text(mesh ? mesh->GetPath().substr(ContentDir.size()).c_str() : "");
 
 }

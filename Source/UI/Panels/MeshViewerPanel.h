@@ -1,31 +1,31 @@
 #pragma once
 
-#include "EditorPanel.h"
-#include "Goknar/Math/GoknarMath.h"
+#include "MeshAssetViewerPanelBase.h"
 
-class RenderTarget;
-class MeshViewerCameraObject;
-class ObjectBase;
 class StaticMeshComponent;
 class StaticMesh;
+class MaterialInstance;
 
-class MeshViewerPanel : public IEditorPanel
+class MeshViewerPanel : public MeshAssetViewerPanelBase
 {
 public:
 	MeshViewerPanel(EditorHUD* hud);
 	virtual ~MeshViewerPanel();
 
-	virtual void Init() override;
-	virtual void Draw() override;
-
 	void SetTargetStaticMesh(StaticMesh* staticMesh);
 
 private:
-	RenderTarget* renderTarget_{ nullptr };
-	MeshViewerCameraObject* cameraObject_{ nullptr };
-	ObjectBase* viewedObject_{ nullptr };
-	
-	StaticMeshComponent* staticMeshComponent_{ nullptr };
+	virtual bool HasCurrentMesh() const override;
+	virtual std::string GetCurrentMeshPath() const override;
+	virtual const Box* GetCurrentMeshBounds() const override;
+	virtual size_t GetSubMeshCount() const override;
+	virtual std::string GetSubMeshName(size_t subMeshIndex) const override;
+	virtual bool RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath) override;
+	virtual MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const override;
+	virtual void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
+	virtual const char* GetNoMeshSelectedText() const override;
 
-	Vector2 size_;
+	StaticMesh* GetCurrentStaticMesh() const;
+
+	StaticMeshComponent* staticMeshComponent_{ nullptr };
 };

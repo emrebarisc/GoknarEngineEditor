@@ -17,7 +17,6 @@
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Managers/CameraManager.h"
 #include "Goknar/Managers/ResourceManager.h"
-#include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Renderer/RenderTarget.h"
@@ -93,12 +92,11 @@ namespace
 		}
 
 		const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(assetPath);
-		MeshUnit* mesh = engine->GetResourceManager()->GetContent<MeshUnit>(contentRelativePath);
-		if (dynamic_cast<SkeletalMesh*>(mesh))
+		if (engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
 		{
 			return EditorAssetType::SkeletalMesh;
 		}
-		if (dynamic_cast<StaticMesh*>(mesh))
+		if (engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
 		{
 			return EditorAssetType::StaticMesh;
 		}

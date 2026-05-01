@@ -12,10 +12,11 @@
 void ToolBarPanel::Draw()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	float toolbarHeight = 64.0f;
+	const float menuBarHeight = ImGui::GetFrameHeight();
+	const float toolbarHeight = GetToolbarHeight();
 
-	ImGui::SetNextWindowPos(viewport->WorkPos);
-	ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, toolbarHeight));
+	ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + menuBarHeight));
+	ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, toolbarHeight));
 	ImGui::SetNextWindowViewport(viewport->ID);
 
 	ImGuiWindowFlags window_flags = 0
@@ -53,7 +54,7 @@ void ToolBarPanel::Draw()
 			float iconSize = 32.0f;
 			float paddingBetween = 16.0f;
 
-			ImGui::SetCursorPosX((viewport->WorkSize.x - iconSize - paddingBetween) * 0.5f);
+			ImGui::SetCursorPosX((viewport->Size.x - iconSize - paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##CompileButton", atlasID, ImVec2(iconSize, iconSize), compileUv0, compileUv1))
 			{
 				std::string command = "cd " + ProjectDir.substr(0, ProjectDir.size() - 1) + " && Build.sh debug";
@@ -72,7 +73,7 @@ void ToolBarPanel::Draw()
 
 			ImGui::SameLine();
 
-			ImGui::SetCursorPosX((viewport->WorkSize.x + iconSize + paddingBetween) * 0.5f);
+			ImGui::SetCursorPosX((viewport->Size.x + iconSize + paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##PlayButton", atlasID, ImVec2(iconSize, iconSize), playUv0, playUv1))
 			{
 				ConfigManager editorConfig;
@@ -82,13 +83,17 @@ void ToolBarPanel::Draw()
 					currentProjectName = editorConfig.GetString("Editor", "CurrentProject", "");
 				}
 
-				std::string command;
+				std::string command = "cd " + ProjectDir + " && Build.sh nobuild &&";
 #if GOKNAR_PLATFORM_WINDOWS
-				command = "cd " + ProjectDir + "Build_Debug/Output/ && " + currentProjectName + ".exe";
+				command += "cd Build_Debug/Output/ && " + currentProjectName + ".exe";
 #else
-				command = "cd " + ProjectDir + "Build_Debug/Output/ && ./" + currentProjectName;
+				command = "cd Build_Debug/Output/ && ./" + currentProjectName;
 #endif
-				system(command.c_str());
+				asyncCompileResult = std::async(std::launch::async,
+					[command]()
+					{
+						std::system(command.c_str());
+					});
 			}
 
 			if (ImGui::IsItemHovered())

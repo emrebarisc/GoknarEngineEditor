@@ -486,32 +486,23 @@ void FileBrowserPanel::DrawGrid()
 				}
 				else if (resourceType == ResourceType::Model)
 				{
-					int idx = 0;
-					while (MeshUnit* mesh = engine->GetResourceManager()->GetResourceContainer()->GetMesh(idx++))
+					const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
+					if (SkeletalMesh* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
 					{
-						if (mesh->GetPath().find(file) != std::string::npos)
+						SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
+						if (viewer)
 						{
-							if (SkeletalMesh* skeletalMesh = dynamic_cast<SkeletalMesh*>(mesh))
-							{
-								SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
-								if (viewer)
-								{
-									viewer->SetTargetSkeletalMesh(skeletalMesh);
-									viewer->SetIsOpen(true);
-								}
-							}
-							else
-							{
-								StaticMesh* staticMesh = dynamic_cast<StaticMesh*>(mesh);
-
-								MeshViewerPanel* viewer = (MeshViewerPanel*)hud_->GetPanel<MeshViewerPanel>();
-								if (viewer)
-								{
-									viewer->SetTargetStaticMesh(staticMesh);
-									viewer->SetIsOpen(true);
-								}
-							}
-							break;
+							viewer->SetTargetSkeletalMesh(skeletalMesh);
+							viewer->SetIsOpen(true);
+						}
+					}
+					else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
+					{
+						MeshViewerPanel* viewer = (MeshViewerPanel*)hud_->GetPanel<MeshViewerPanel>();
+						if (viewer)
+						{
+							viewer->SetTargetStaticMesh(staticMesh);
+							viewer->SetIsOpen(true);
 						}
 					}
 				}

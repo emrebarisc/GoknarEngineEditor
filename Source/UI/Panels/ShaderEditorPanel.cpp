@@ -35,6 +35,8 @@
 #include "UI/Panels/AssetSelectorPanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 
+#include "imgui_internal.h"
+
 constexpr unsigned int SHADER_EDITOR_RENDER_MASK = 0x20000000;
 
 namespace
@@ -69,6 +71,35 @@ namespace
 		default:
 			return 0.0f;
 		}
+	}
+
+	void SelectAllOnEditorManagedDoubleClick(EditorHUD* hud)
+	{
+		if (hud == nullptr ||
+			!hud->WasLastItemDoubleClicked(ImGuiMouseButton_Left) ||
+			!ImGui::IsItemActiveAsInputText())
+		{
+			return;
+		}
+
+		if (ImGuiInputTextState* inputTextState = ImGui::GetInputTextState(ImGui::GetItemID()))
+		{
+			inputTextState->SelectAll();
+		}
+	}
+
+	bool InputTextWithEditorDoubleClick(EditorHUD* hud, const char* label, char* buffer, size_t bufferSize, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None)
+	{
+		const bool valueChanged = ImGui::InputText(label, buffer, bufferSize, flags);
+		SelectAllOnEditorManagedDoubleClick(hud);
+		return valueChanged;
+	}
+
+	bool InputTextMultilineWithEditorDoubleClick(EditorHUD* hud, const char* label, char* buffer, size_t bufferSize, const ImVec2& size, ImGuiInputTextFlags flags = ImGuiInputTextFlags_None)
+	{
+		const bool valueChanged = ImGui::InputTextMultiline(label, buffer, bufferSize, size, flags);
+		SelectAllOnEditorManagedDoubleClick(hud);
+		return valueChanged;
 	}
 
 	bool IsMaterialValueType(ShaderPinType type)
@@ -774,6 +805,8 @@ ShaderEditorPanel::ShaderEditorPanel(EditorHUD* hud)
 		staticMeshComponent_->SetMesh(previewMesh);
 		staticMeshComponent_->SetIsActive(true);
 	}
+
+	isOpen_ = false;
 }
 
 ShaderEditorPanel::~ShaderEditorPanel()
@@ -1085,8 +1118,6 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		GOKNAR_INFO("ShaderEditorPanel: Selected file is not a Material XML file.");
 		return;
 	}
-
-	GOKNAR_INFO("ShaderEditorPanel: Successfully loaded Material XML.");
 
 	currentAssetPath_ = EditorAssetPathUtils::ToContentRelativePath(path);
 	activeMaterial_ = SceneParser::GetOrCreateSharedMaterial(currentAssetPath_);
@@ -1431,7 +1462,7 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 
 	if (staticMeshComponent_->GetMeshInstance())
 	{
-		staticMeshComponent_->GetMeshInstance()->SetMaterial(MaterialInstance::Create(activeMaterial_));
+		staticMeshComponent_->GetMeshInstance()->SetMaterial(0, MaterialInstance::Create(activeMaterial_));
 	}
 }
 
@@ -1980,7 +2011,7 @@ void ShaderEditorPanel::DrawMaterialProperties()
 		char nameBuffer[256];
 		strncpy(nameBuffer, node.name.c_str(), sizeof(nameBuffer));
 		nameBuffer[sizeof(nameBuffer) - 1] = 0;
-		if (ImGui::InputText(node.typeCategory == "MaterialVariableArray" ? "Array Name" : "Variable Name", nameBuffer, sizeof(nameBuffer)))
+		if (InputTextWithEditorDoubleClick(hud_, node.typeCategory == "MaterialVariableArray" ? "Array Name" : "Variable Name", nameBuffer, sizeof(nameBuffer)))
 		{
 			node.name = SanitizeIdentifier(nameBuffer);
 			RenameMaterialVariableAccessorReferences(previousName, node.name);
@@ -2966,7 +2997,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 				char buf[8192];
 				strncpy(buf, node->stringData.c_str(), sizeof(buf));
 				buf[sizeof(buf) - 1] = 0;
-				if (ImGui::InputTextMultiline("##CustomGLSL", buf, sizeof(buf), ImVec2(-1.0f, 300.0f)))
+				if (InputTextMultilineWithEditorDoubleClick(hud_, "##CustomGLSL", buf, sizeof(buf), ImVec2(-1.0f, 300.0f)))
 				{
 					node->stringData = buf;
 				}
@@ -2981,7 +3012,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 				char nameBuffer[256];
 				strncpy(nameBuffer, node->name.c_str(), sizeof(nameBuffer));
 				nameBuffer[sizeof(nameBuffer) - 1] = 0;
-				if (ImGui::InputText("Variable Name", nameBuffer, sizeof(nameBuffer)))
+				if (InputTextWithEditorDoubleClick(hud_, "Variable Name", nameBuffer, sizeof(nameBuffer)))
 				{
 					node->name = SanitizeIdentifier(nameBuffer);
 					RenameMaterialVariableAccessorReferences(previousName, node->name);
@@ -3018,7 +3049,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 				char nameBuffer[256];
 				strncpy(nameBuffer, node->name.c_str(), sizeof(nameBuffer));
 				nameBuffer[sizeof(nameBuffer) - 1] = 0;
-				if (ImGui::InputText("Array Name", nameBuffer, sizeof(nameBuffer)))
+				if (InputTextWithEditorDoubleClick(hud_, "Array Name", nameBuffer, sizeof(nameBuffer)))
 				{
 					node->name = SanitizeIdentifier(nameBuffer);
 					RenameMaterialVariableAccessorReferences(previousName, node->name);
@@ -3092,7 +3123,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 				char pathBuffer[512];
 				strncpy(pathBuffer, node->stringData.c_str(), sizeof(pathBuffer));
 				pathBuffer[sizeof(pathBuffer) - 1] = 0;
-				if (ImGui::InputText("Asset Path", pathBuffer, sizeof(pathBuffer)))
+				if (InputTextWithEditorDoubleClick(hud_, "Asset Path", pathBuffer, sizeof(pathBuffer)))
 				{
 					node->stringData = pathBuffer;
 				}
@@ -3162,7 +3193,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 				char nameBuffer[256];
 				strncpy(nameBuffer, node->name.c_str(), sizeof(nameBuffer));
 				nameBuffer[sizeof(nameBuffer) - 1] = 0;
-				if (ImGui::InputText("Input Name", nameBuffer, sizeof(nameBuffer)))
+				if (InputTextWithEditorDoubleClick(hud_, "Input Name", nameBuffer, sizeof(nameBuffer)))
 				{
 					node->name = nameBuffer;
 					if (!node->outputs.empty())
@@ -3207,7 +3238,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 					char outputNameBuffer[256];
 					strncpy(outputNameBuffer, outputPin.name.c_str(), sizeof(outputNameBuffer));
 					outputNameBuffer[sizeof(outputNameBuffer) - 1] = 0;
-					if (ImGui::InputText("Output Name", outputNameBuffer, sizeof(outputNameBuffer)))
+					if (InputTextWithEditorDoubleClick(hud_, "Output Name", outputNameBuffer, sizeof(outputNameBuffer)))
 					{
 						outputPin.name = outputNameBuffer;
 					}

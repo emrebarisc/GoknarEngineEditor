@@ -84,6 +84,8 @@ AnimationGraphPanel::AnimationGraphPanel(EditorHUD* hud)
     : IEditorPanel("Animation Graph Editor", hud)
 {
     activeGraph_ = std::make_shared<AnimationGraph>();
+
+    isOpen_ = false;
 }
 
 AnimationGraphPanel::~AnimationGraphPanel()

@@ -1,105 +1,116 @@
 #include "MeshViewerPanel.h"
 
-#include "imgui.h"
-
-#include "Goknar/Camera.h"
-#include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
-#include "Goknar/Components/SkeletalMeshComponent.h"
-#include "Goknar/ObjectBase.h"
-#include "Goknar/Renderer/RenderTarget.h"
-#include "Goknar/Renderer/Texture.h"
-
-#include "Objects/MeshViewerCameraObject.h"
-#include "Controllers/MeshViewerCameraController.h"
-#include "UI/EditorUtils.h"
+#include "Goknar/Materials/Material.h"
+#include "Goknar/Materials/MaterialInstance.h"
+#include "Goknar/Materials/MaterialSerializer.h"
+#include "Goknar/Model/StaticMesh.h"
 
 constexpr unsigned int MESH_VIEWER_RENDER_MASK = 0x80000000;
 
 MeshViewerPanel::MeshViewerPanel(EditorHUD* hud) : 
-	IEditorPanel("Mesh Viewer", hud),
-	size_(1024, 1024)
+	MeshAssetViewerPanelBase("Mesh Viewer", hud, "__Editor__MeshViewerCamera", "__Editor__MeshViewerTarget", MESH_VIEWER_RENDER_MASK, "MeshViewerViewportArea", "MeshViewerPropertiesArea")
 {
-	cameraObject_ = new MeshViewerCameraObject();
-	cameraObject_->SetName("__Editor__MeshViewerCamera");
-	cameraObject_->GetCameraComponent()->GetCamera()->SetCameraType(CameraType::RenderTarget);
-	cameraObject_->GetCameraComponent()->GetCamera()->SetRenderMask(MESH_VIEWER_RENDER_MASK);
-	cameraObject_->SetWorldPosition({ 0.f, 0.f, 1000.f });
-
-	renderTarget_ = new RenderTarget();
-	renderTarget_->SetCamera(cameraObject_->GetCameraComponent()->GetCamera());
-	renderTarget_->SetFrameSize(size_);
-	renderTarget_->SetRerenderShadowMaps(false);
-
-	viewedObject_ = new ObjectBase();
-	viewedObject_->SetName("__Editor__MeshViewerTarget");
-	viewedObject_->SetWorldPosition(Vector3::ZeroVector);
-
 	staticMeshComponent_ = viewedObject_->AddSubComponent<StaticMeshComponent>();
 	staticMeshComponent_->GetMeshInstance()->SetRenderMask(MESH_VIEWER_RENDER_MASK);
-
-	isOpen_ = false;
 }
 
-MeshViewerPanel::~MeshViewerPanel()
-{
-	delete renderTarget_;
-	cameraObject_->Destroy();
-	viewedObject_->Destroy();
-}
-
-void MeshViewerPanel::Init()
-{
-	renderTarget_->Init();
-}
-
-void MeshViewerPanel::Draw()
-{
-	if (!ImGui::Begin(title_.c_str(), &isOpen_, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-	{
-		ImGui::End();
-		cameraObject_->GetController()->SetIsActive(false);
-		return;
-	}
-
-	ImVec2 newViewportSize = ImGui::GetContentRegionAvail();
-
-	if (newViewportSize.x <= 0.0f || newViewportSize.y <= 0.0f)
-	{
-		ImGui::End();
-		return;
-	}
-
-	if (size_.x != newViewportSize.x || size_.y != newViewportSize.y)
-	{
-		size_ = EditorUtils::ToVector2(newViewportSize);
-		renderTarget_->SetFrameSize({ newViewportSize.x, newViewportSize.y });
-	}
-
-	Texture* renderTargetTexture = renderTarget_->GetTexture();
-	ImGui::Image(
-		(ImTextureID)(intptr_t)renderTargetTexture->GetRendererTextureId(),
-		EditorUtils::ToImVec2(size_),
-		ImVec2{ 0.f, 1.f },
-		ImVec2{ 1.f, 0.f }
-	);
-
-	bool isHovered = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
-	cameraObject_->GetController()->SetIsActive(isHovered);
-
-	EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
-
-	ImGui::End();
-}
+MeshViewerPanel::~MeshViewerPanel() = default;
 
 void MeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
 {
 	staticMeshComponent_->SetMesh(staticMesh);
-	staticMeshComponent_->SetIsActive(true);
-	staticMeshComponent_->GetMeshInstance()->GetMaterial()->SetEmmisiveColor({ 0.2f });
-	
-	if (staticMesh)
+	staticMeshComponent_->SetIsActive(staticMesh != nullptr);
+	OnTargetMeshChanged();
+}
+
+bool MeshViewerPanel::HasCurrentMesh() const
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	return staticMesh && !staticMesh->GetSubMeshes().empty();
+}
+
+std::string MeshViewerPanel::GetCurrentMeshPath() const
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	return staticMesh ? staticMesh->GetPath() : "";
+}
+
+const Box* MeshViewerPanel::GetCurrentMeshBounds() const
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	return staticMesh ? &staticMesh->GetAABB() : nullptr;
+}
+
+size_t MeshViewerPanel::GetSubMeshCount() const
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	return staticMesh ? staticMesh->GetSubMeshes().size() : 0;
+}
+
+std::string MeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	if (!staticMesh || subMeshIndex >= staticMesh->GetSubMeshes().size())
 	{
-		cameraObject_->GetController()->ResetViewWithBoundingBox(viewedObject_, staticMesh->GetAABB());
+		return "";
 	}
+
+	return staticMesh->GetSubMeshes()[subMeshIndex]->GetName();
+}
+
+bool MeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	if (!staticMesh || subMeshIndex >= staticMesh->GetSubMeshes().size())
+	{
+		return false;
+	}
+
+	auto* subMesh = staticMesh->GetSubMeshes()[subMeshIndex];
+	Material* material = subMesh->GetMaterial();
+	if (!material)
+	{
+		return false;
+	}
+
+	material->ResetForRebuild();
+	MaterialSerializer::Deserialize(materialPath, material);
+	material->Build(subMesh);
+
+	if (subMesh->GetIsInitialized())
+	{
+		material->PreInit();
+		material->Init();
+		material->PostInit();
+	}
+
+	return true;
+}
+
+MaterialInstance* MeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
+{
+	StaticMesh* staticMesh = GetCurrentStaticMesh();
+	if (!staticMesh || subMeshIndex >= staticMesh->GetSubMeshes().size())
+	{
+		return nullptr;
+	}
+
+	Material* material = staticMesh->GetSubMeshes()[subMeshIndex]->GetMaterial();
+	return material ? MaterialInstance::Create(material) : nullptr;
+}
+
+void MeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
+{
+	staticMeshComponent_->GetMeshInstance()->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
+}
+
+const char* MeshViewerPanel::GetNoMeshSelectedText() const
+{
+	return "No mesh selected.";
+}
+
+StaticMesh* MeshViewerPanel::GetCurrentStaticMesh() const
+{
+	return staticMeshComponent_ ? staticMeshComponent_->GetMeshInstance()->GetMesh() : nullptr;
 }

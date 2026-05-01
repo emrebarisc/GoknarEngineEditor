@@ -58,6 +58,7 @@ private:
 
 	void* assetSelectionComponent_;
 	DetailsAssetSelectionTarget assetSelectionComponentType_{ DetailsAssetSelectionTarget::None };
+	int assetSelectionSubMeshIndex_{ -1 };
 
 	std::unordered_map<std::string, std::function<void(ObjectBase*)>> objectReflections_;
 	std::unordered_map<std::string, std::function<void(PhysicsObject*)>> physicsReflections_;
