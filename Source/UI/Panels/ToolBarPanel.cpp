@@ -83,7 +83,7 @@ void ToolBarPanel::Draw()
 					currentProjectName = editorConfig.GetString("Editor", "CurrentProject", "");
 				}
 
-				std::string command = "cd " + ProjectDir + " && Build.sh nobuild &&";
+				std::string command = "cd " + ProjectDir + " && Build.sh onlySync &&";
 #if GOKNAR_PLATFORM_WINDOWS
 				command += "cd Build_Debug/Output/ && " + currentProjectName + ".exe";
 #else
