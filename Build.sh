@@ -7,7 +7,8 @@ runAfterBuild=false
 isUnix=true
 onlySyncFiles=false
 
-projectName="GoknarEngineEditor"
+projectName=$(grep "^ProjectName=" Config/Build.ini | cut -d'=' -f2 | tr -d '\r' | tr -d ' ')
+
 directoryName=""
 
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
@@ -33,8 +34,8 @@ do
 done
 
 sync_directories() {
-    local dirs=("EditorContent" "Config" "EditorData")
-    local destinations=("Output/EditorContent" "Output/Config" "Output/EditorData")
+    local dirs=("EditorContent" "EditorData" "Config")
+    local destinations=("Output/EditorContent" "Output/EditorData" "Output/Config")
 
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
         gameName="${projectName}.exe"
@@ -56,7 +57,6 @@ sync_directories() {
     done
 }
 
-# Function to inject the default startup project for Visual Studio (Only runs on Windows)
 set_startup_project() {
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
         if ! grep -q "VS_STARTUP_PROJECT" "../CMakeLists.txt"; then
@@ -76,7 +76,7 @@ else
 fi
 
 # Clean up binaries based on the exact gameName for the current OS
-rm -f "$directoryName/$configName/$gameName"
+rm -f "$directoryName/Output/$gameName"
 rm -f "$directoryName/$gameName"
 
 if [ "$cleanBuild" = true ]; then
@@ -109,15 +109,19 @@ if [ "$onlySyncFiles" = false ]; then
     fi
 
     if [ "$runAfterBuild" = true ]; then
-        # Check standard MSVC subfolder first, then fallback to root build folder (Linux/Make)
-        if [ -f "./$configName/$gameName" ]; then
-            echo "Running $gameName from $configName folder..."
-            "./$configName/$gameName"
+        # Prefer the Output folder since CMake routes all runtime binaries there.
+        if [ -f "./Output/$gameName" ]; then
+            echo "Running $gameName from Output folder..."
+            (
+                cd "./Output" || exit 1
+                "./$gameName"
+            )
         elif [ -f "./$gameName" ]; then
             echo "Running $gameName from root build folder..."
             "./$gameName"
         else
             echo "Error: Could not find the executable for $gameName."
+            echo "Expected one of: ./$gameName, or ./Output/$gameName."
             echo "Build may have failed."
         fi
     fi

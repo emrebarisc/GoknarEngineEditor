@@ -3,9 +3,14 @@ cmake_minimum_required(VERSION 3.20)
 set(APP_NAME GoknarEngineEditor)
 
 file(STRINGS "Config/Build.ini" ENGINE_LOCATION_LINE REGEX "^EngineLocation=")
+set(ENGINE_PATH "")
+
 if(ENGINE_LOCATION_LINE)
     string(REGEX REPLACE "^EngineLocation=(.*)$" "\\1" ENGINE_PATH "${ENGINE_LOCATION_LINE}")
     string(STRIP "${ENGINE_PATH}" ENGINE_PATH)
+endif()
+
+if(ENGINE_PATH)
     file(TO_CMAKE_PATH "${ENGINE_PATH}" ENGINE_PATH)
     if(NOT IS_ABSOLUTE "${ENGINE_PATH}")
         get_filename_component(ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINE_PATH}" ABSOLUTE)

@@ -5,20 +5,38 @@ file(STRINGS "Config/Build.ini" PROJECT_NAME_LINE REGEX "^ProjectName=")
 if(PROJECT_NAME_LINE)
     string(REGEX REPLACE "^ProjectName=(.*)$" "\\1" APP_NAME "${PROJECT_NAME_LINE}")
     string(STRIP "${APP_NAME}" APP_NAME)
-else()
-    set(APP_NAME "ExampleProject")
 endif()
 
 file(STRINGS "Config/Build.ini" ENGINE_LOCATION_LINE REGEX "^EngineLocation=")
+set(ENGINE_PATH "")
+
 if(ENGINE_LOCATION_LINE)
     string(REGEX REPLACE "^EngineLocation=(.*)$" "\\1" ENGINE_PATH "${ENGINE_LOCATION_LINE}")
     string(STRIP "${ENGINE_PATH}" ENGINE_PATH)
+endif()
+
+if(ENGINE_PATH)
     file(TO_CMAKE_PATH "${ENGINE_PATH}" ENGINE_PATH)
     if(NOT IS_ABSOLUTE "${ENGINE_PATH}")
         get_filename_component(ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINE_PATH}" ABSOLUTE)
     endif()
 else()
-    get_filename_component(ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../Goknar" ABSOLUTE)
+    set(ENGINE_PATH_CANDIDATES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../Goknar"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../GoknarEngine/Goknar"
+    )
+
+    foreach(ENGINE_PATH_CANDIDATE ${ENGINE_PATH_CANDIDATES})
+        get_filename_component(RESOLVED_ENGINE_PATH "${ENGINE_PATH_CANDIDATE}" ABSOLUTE)
+        if(EXISTS "${RESOLVED_ENGINE_PATH}/CMakeLists.txt")
+            set(ENGINE_PATH "${RESOLVED_ENGINE_PATH}")
+            break()
+        endif()
+    endforeach()
+
+    if(NOT ENGINE_PATH)
+        message(FATAL_ERROR "EngineLocation is not set in Config/Build.ini and no fallback engine path could be found. Set EngineLocation to your Goknar engine directory.")
+    endif()
 endif()
 
 get_filename_component(ENGINE_PATH "${ENGINE_PATH}" ABSOLUTE)

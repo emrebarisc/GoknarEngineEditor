@@ -5,10 +5,11 @@ cleanBuild=false
 build=true
 runAfterBuild=false
 isUnix=true
+onlySyncFiles=false
 
 projectName=$(grep "^ProjectName=" Config/Build.ini | cut -d'=' -f2 | tr -d '\r' | tr -d ' ')
 if [ -z "$projectName" ]; then
-    projectName="ExampleProject"
+    projectName="GoknarEngineProject"
 fi
 
 directoryName=""
@@ -30,6 +31,8 @@ do
         runAfterBuild=true
     elif [[ "$argument" == "clean" ]]; then
         cleanBuild=true
+    elif [[ "$argument" == "onlySync" ]]; then
+        onlySyncFiles=true
     fi
 done
 
@@ -57,7 +60,6 @@ sync_directories() {
     done
 }
 
-# Function to inject the default startup project for Visual Studio (Only runs on Windows)
 set_startup_project() {
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
         if ! grep -q "VS_STARTUP_PROJECT" "../CMakeLists.txt"; then
@@ -77,7 +79,7 @@ else
 fi
 
 # Clean up binaries based on the exact gameName for the current OS
-rm -f "$directoryName/$configName/$gameName"
+rm -f "$directoryName/Output/$gameName"
 rm -f "$directoryName/$gameName"
 
 if [ "$cleanBuild" = true ]; then
@@ -88,36 +90,42 @@ mkdir -p "$directoryName" && cd "$directoryName"
 sync_directories
 echo "Files are synced."
 
-set_startup_project
+if [ "$onlySyncFiles" = false ]; then
+    set_startup_project
 
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-    # pwd -W forces Git Bash/MinGW to return a C:/ style Windows path
-    BUILD_PATH=$(pwd -W)
-    SOURCE_PATH=$(cd .. && pwd -W)
-else
-    # Standard Unix paths for Linux/macOS
-    BUILD_PATH="$PWD"
-    SOURCE_PATH=$(cd .. && pwd)
-fi
-
-cmake -S "$SOURCE_PATH" -B "$BUILD_PATH" -DCMAKE_BUILD_TYPE=$configName
-
-if [ "$build" = true ]; then
-    cmake --build "$BUILD_PATH" --config $configName --parallel 8
-    echo ""
-    read -p "Compilation finished. Press [Enter] to continue..."
-fi
-
-if [ "$runAfterBuild" = true ]; then
-    # Check standard MSVC subfolder first, then fallback to root build folder (Linux/Make)
-    if [ -f "./$configName/$gameName" ]; then
-        echo "Running $gameName from $configName folder..."
-        "./$configName/$gameName"
-    elif [ -f "./$gameName" ]; then
-        echo "Running $gameName from root build folder..."
-        "./$gameName"
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+        # pwd -W forces Git Bash/MinGW to return a C:/ style Windows path
+        BUILD_PATH=$(pwd -W)
+        SOURCE_PATH=$(cd .. && pwd -W)
     else
-        echo "Error: Could not find the executable for $gameName."
-        echo "Build may have failed."
+        # Standard Unix paths for Linux/macOS
+        BUILD_PATH="$PWD"
+        SOURCE_PATH=$(cd .. && pwd)
+    fi
+
+    cmake -S "$SOURCE_PATH" -B "$BUILD_PATH" -DCMAKE_BUILD_TYPE=$configName
+
+    if [ "$build" = true ]; then
+        cmake --build "$BUILD_PATH" --config $configName --parallel 8
+        echo ""
+        read -p "Compilation finished. Press [Enter] to continue..."
+    fi
+
+    if [ "$runAfterBuild" = true ]; then
+        # Prefer the Output folder since CMake routes all runtime binaries there.
+        if [ -f "./Output/$gameName" ]; then
+            echo "Running $gameName from Output folder..."
+            (
+                cd "./Output" || exit 1
+                "./$gameName"
+            )
+        elif [ -f "./$gameName" ]; then
+            echo "Running $gameName from root build folder..."
+            "./$gameName"
+        else
+            echo "Error: Could not find the executable for $gameName."
+            echo "Expected one of: ./$gameName, or ./Output/$gameName."
+            echo "Build may have failed."
+        fi
     fi
 fi
