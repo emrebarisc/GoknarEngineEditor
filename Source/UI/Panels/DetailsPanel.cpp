@@ -966,11 +966,12 @@ void DetailsPanel::DrawSpotLightDetails()
 {
 	SpotLight* light = EditorContext::Get()->GetSelectionAs<SpotLight>();
 
+	static Vector3 lightDirection = light->GetDirection();
+	static Vector3 lightColor = light->GetColor();
+	static float lightFalloffAngle = light->GetFalloffAngle();
+	static float lightCoverageAngle = light->GetCoverageAngle();
+
 	Vector3 lightPosition = light->GetPosition();
-	Vector3 lightDirection = light->GetDirection();
-	Vector3 lightColor = light->GetColor();
-	float lightFalloffAngle = light->GetFalloffAngle();
-	float lightCoverageAngle = light->GetCoverageAngle();
 	float lightIntensity = light->GetIntensity();
 	float lightShadowIntensity = light->GetShadowIntensity();
 	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
@@ -985,7 +986,7 @@ void DetailsPanel::DrawSpotLightDetails()
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
 	EditorWidgets::DrawInputVector3("##Direction", lightDirection);
-	light->SetDirection(lightDirection);
+	light->SetDirection(lightDirection.GetNormalized());
 
 	ImGui::Text("FalloffAngle: ");
 	ImGui::SameLine();
