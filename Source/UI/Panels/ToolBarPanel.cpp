@@ -9,6 +9,30 @@
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Renderer/Texture.h"
 
+namespace
+{
+	std::string TrimTrailingDirectorySeparator(const std::string& path)
+	{
+		if (path.empty())
+		{
+			return path;
+		}
+
+		std::size_t trimmedLength = path.size();
+		while (trimmedLength > 1 && (path[trimmedLength - 1] == '/' || path[trimmedLength - 1] == '\\'))
+		{
+			--trimmedLength;
+		}
+
+		return path.substr(0, trimmedLength);
+	}
+
+	std::string QuoteForShell(const std::string& path)
+	{
+		return "\"" + path + "\"";
+	}
+}
+
 void ToolBarPanel::Draw()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -53,11 +77,17 @@ void ToolBarPanel::Draw()
 
 			float iconSize = 32.0f;
 			float paddingBetween = 16.0f;
+			const std::string normalizedProjectDir = TrimTrailingDirectorySeparator(ProjectDir);
 
 			ImGui::SetCursorPosX((viewport->Size.x - iconSize - paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##CompileButton", atlasID, ImVec2(iconSize, iconSize), compileUv0, compileUv1))
 			{
-				std::string command = "cd " + ProjectDir.substr(0, ProjectDir.size() - 1) + " && Build.sh debug";
+				std::string command;
+#if GOKNAR_PLATFORM_WINDOWS
+				command = "pushd " + QuoteForShell(normalizedProjectDir) + " && Build.sh debug";
+#else
+				command = "cd " + QuoteForShell(normalizedProjectDir) + " && ./Build.sh debug";
+#endif
 
 				asyncCompileResult = std::async(std::launch::async,
 					[command]()
@@ -83,13 +113,17 @@ void ToolBarPanel::Draw()
 					currentProjectName = editorConfig.GetString("Editor", "CurrentProject", "");
 				}
 
-				std::string command = "cd " + ProjectDir;
+				std::string command;
 #if GOKNAR_PLATFORM_WINDOWS
-				command += " && Build.sh onlySync && ";
-				command += "Build_Debug\\Output\\" + currentProjectName + ".exe";
+				command = "pushd " + QuoteForShell(normalizedProjectDir);
+				command += " && Build.sh onlySync";
+				command += " && pushd \"Build_Debug\\Output\"";
+				command += " && " + QuoteForShell(currentProjectName + ".exe");
 #else
-				command += " && ./Build.sh onlySync && ";
-				command += "./Build_Debug/Output/" + currentProjectName;
+				command = "cd " + QuoteForShell(normalizedProjectDir);
+				command += " && ./Build.sh onlySync";
+				command += " && cd \"Build_Debug/Output\"";
+				command += " && ./" + currentProjectName;
 #endif
 				asyncCompileResult = std::async(std::launch::async,
 					[command]()
