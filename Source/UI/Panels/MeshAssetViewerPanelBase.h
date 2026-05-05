@@ -44,7 +44,7 @@ public:
 		cameraObject_->SetName(cameraObjectName);
 		cameraObject_->GetCameraComponent()->GetCamera()->SetCameraType(CameraType::RenderTarget);
 		cameraObject_->GetCameraComponent()->GetCamera()->SetRenderMask(renderMask_);
-		cameraObject_->SetWorldPosition({ 0.f, 0.f, 1000.f });
+		cameraObject_->SetWorldPosition({ 0.f, 0.f, 0.f });
 
 		renderTarget_ = new RenderTarget();
 		renderTarget_->SetCamera(cameraObject_->GetCameraComponent()->GetCamera());
