@@ -83,11 +83,13 @@ void ToolBarPanel::Draw()
 					currentProjectName = editorConfig.GetString("Editor", "CurrentProject", "");
 				}
 
-				std::string command = "cd " + ProjectDir + " && Build.sh onlySync &&";
+				std::string command = "cd " + ProjectDir;
 #if GOKNAR_PLATFORM_WINDOWS
-				command += "cd Build_Debug/Output/ && " + currentProjectName + ".exe";
+				command += " && Build.sh onlySync && ";
+				command += "Build_Debug\\Output\\" + currentProjectName + ".exe";
 #else
-				command = "cd Build_Debug/Output/ && ./" + currentProjectName;
+				command += " && ./Build.sh onlySync && ";
+				command += "./Build_Debug/Output/" + currentProjectName;
 #endif
 				asyncCompileResult = std::async(std::launch::async,
 					[command]()
