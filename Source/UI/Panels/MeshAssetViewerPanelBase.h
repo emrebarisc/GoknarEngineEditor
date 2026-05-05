@@ -260,7 +260,7 @@ private:
 			MaterialInstance* previewMaterialInstance = CreatePreviewMaterialInstance(subMeshIndex);
 			if (previewMaterialInstance)
 			{
-				previewMaterialInstance->SetEmmisiveColor({ 0.2f });
+				previewMaterialInstance->SetEmisiveColor({ 1.f });
 			}
 
 			SetPreviewMaterial(subMeshIndex, previewMaterialInstance);

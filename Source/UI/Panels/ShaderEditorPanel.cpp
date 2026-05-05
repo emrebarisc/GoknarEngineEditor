@@ -3964,8 +3964,8 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 
 	outMaterialData->baseColor.calculation = "";
 	outMaterialData->baseColor.result = "";
-	outMaterialData->emmisiveColor.calculation = "";
-	outMaterialData->emmisiveColor.result = "";
+	outMaterialData->emisiveColor.calculation = "";
+	outMaterialData->emisiveColor.result = "";
 	outMaterialData->fragmentNormal.calculation = "";
 	outMaterialData->fragmentNormal.result = "";
 	outMaterialData->vertexPositionOffset.calculation = "";
@@ -4665,7 +4665,7 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 			return { "node_" + std::to_string(sourceNode->id) + "_out_" + std::to_string(outputPin->id), actualType };
 		}
 
-		return GetDefaultValueString(pin);
+		return { "", ShaderPinType::None };
 	};
 
 	for (const ShaderPin& masterInput : master->inputs)
@@ -4678,7 +4678,7 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 
 		const std::string formattedResult = FormatMasterOutput(finalValue, finalType, masterInput.type);
 		if (masterInput.name == "Base Color") outMaterialData->baseColor.result = formattedResult + ";";
-		else if (masterInput.name == "Emissive") outMaterialData->emmisiveColor.result = formattedResult + ";";
+		else if (masterInput.name == "Emissive") outMaterialData->emisiveColor.result = formattedResult + ";";
 		else if (masterInput.name == "Normal") outMaterialData->fragmentNormal.result = formattedResult + ";";
 		else if (masterInput.name == "World Position Offset") outMaterialData->vertexPositionOffset.result = formattedResult + ";";
 	}

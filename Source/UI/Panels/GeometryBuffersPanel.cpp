@@ -28,7 +28,7 @@ void GeometryBuffersPanel::Draw()
 
 	ImGui::SetCursorPos(imagePosition);
 	Texture* diffuseTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
-	Texture* emmisiveColorTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->emmisiveColorTexture;
+	Texture* emmisiveColorTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->emisiveColorTexture;
 	Texture* specularTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->specularTexture;
 	Texture* worldPositionTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
 	Texture* worldNormalTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->worldNormalTexture;
