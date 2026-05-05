@@ -240,7 +240,19 @@ void FileBrowserPanel::Draw()
 
 				if (srcPath != destPath && !std::filesystem::exists(destPath))
 				{
+					// 1. Rename primary content
 					std::filesystem::rename(srcPath, destPath);
+
+					// 2. Rename editor reflection file/folder
+					std::string srcReflection = EditorAssetPathUtils::ToEditorReflectionPath(srcPath.generic_string());
+					std::string destReflection = EditorAssetPathUtils::ToEditorReflectionPath(destPath.generic_string());
+
+					if (std::filesystem::exists(srcReflection))
+					{
+						EditorAssetPathUtils::EnsureDirectoryForFile(destReflection);
+						std::filesystem::rename(srcReflection, destReflection);
+					}
+
 					needsRefresh_ = true; // Defer refresh
 				}
 			}
@@ -590,7 +602,17 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 			try {
 				std::string cleanPath = itemPath;
 				if (!cleanPath.empty() && cleanPath.back() == '/') cleanPath.pop_back();
+
+				// 1. Delete primary content
 				std::filesystem::remove_all(cleanPath);
+
+				// 2. Delete editor reflection file/folder
+				std::string reflectionPath = EditorAssetPathUtils::ToEditorReflectionPath(cleanPath);
+				if (std::filesystem::exists(reflectionPath))
+				{
+					std::filesystem::remove_all(reflectionPath);
+				}
+
 				needsRefresh_ = true;
 			}
 			catch (...) {}
@@ -691,7 +713,19 @@ void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::
 
 		if (srcPath != destPath && !std::filesystem::exists(destPath))
 		{
+			// 1. Move primary content
 			std::filesystem::rename(srcPath, destPath);
+
+			// 2. Move editor reflection file/folder
+			std::string srcReflection = EditorAssetPathUtils::ToEditorReflectionPath(srcPath.generic_string());
+			std::string destReflection = EditorAssetPathUtils::ToEditorReflectionPath(destPath.generic_string());
+
+			if (std::filesystem::exists(srcReflection))
+			{
+				EditorAssetPathUtils::EnsureDirectoryForFile(destReflection);
+				std::filesystem::rename(srcReflection, destReflection);
+			}
+
 			needsRefresh_ = true;
 		}
 	}
@@ -725,7 +759,13 @@ void FileBrowserPanel::FinalizeFolderCreation()
 			const std::filesystem::path newFolderPath = std::filesystem::path(pendingCreationDirectory_) / creationNameBuffer_;
 			if (!std::filesystem::exists(newFolderPath))
 			{
+				// 1. Create content directory
 				std::filesystem::create_directories(newFolderPath);
+
+				// 2. Create editor reflection directory
+				std::string reflectionDir = EditorAssetPathUtils::ToEditorReflectionPath(newFolderPath.generic_string());
+				std::filesystem::create_directories(reflectionDir);
+
 				needsRefresh_ = true;
 			}
 		}
@@ -749,6 +789,10 @@ void FileBrowserPanel::FinalizeAssetCreation()
 			if (!std::filesystem::exists(newAssetPath))
 			{
 				std::filesystem::create_directories(newAssetPath.parent_path());
+
+				// Ensure editor reflection directory exists for this new asset
+				std::string reflectionPath = EditorAssetPathUtils::ToEditorReflectionPath(newAssetPath.generic_string());
+				EditorAssetPathUtils::EnsureDirectoryForFile(reflectionPath);
 
 				bool isSaved = false;
 				if (pendingAssetCreationType_ == PendingAssetCreationType::Material)
