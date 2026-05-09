@@ -6,8 +6,8 @@
 #include "imgui.h"
 #include "tinyxml2.h"
 
-#include "Objects/FreeCameraObject.h"
-#include "Controllers/FreeCameraController.h"
+#include "Objects/EditorFreeCameraObject.h"
+#include "Controllers/EditorFreeCameraController.h"
 #include "UI/EditorAssetPathUtils.h"
 
 #include "Goknar/Camera.h"
@@ -217,7 +217,7 @@ EditorContext::EditorContext()
 {
 	imguiContext_ = ImGui::CreateContext();
 
-	viewportCameraObject = new FreeCameraObject();
+	viewportCameraObject = new EditorFreeCameraObject();
 	viewportCameraObject->SetName("__Editor__ViewportCamera");
 	viewportCameraObject->GetController()->SetName("__Editor__FreeCameraController");
 
@@ -230,16 +230,23 @@ EditorContext::EditorContext()
 
 EditorContext::~EditorContext()
 {
+	viewportCameraObject = nullptr;
+
 	delete viewportRenderTarget;
+	viewportRenderTarget = nullptr;
 
 	ImGui::DestroyContext(imguiContext_);
+	imguiContext_ = nullptr;
 
 	for (auto folder : folderMap)
 	{
 		delete folder.second;
 	}
+	folderMap.clear();
+	assetTypeMap.clear();
 
 	delete rootFolder;
+	rootFolder = nullptr;
 }
 
 void EditorContext::Init()

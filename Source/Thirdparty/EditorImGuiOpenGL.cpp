@@ -12,7 +12,7 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
-//  2019-03-15: OpenGL: Added a dummy GL call + comments in ImGui_Init() to detect uninitialized GL function loaders early.
+//  2019-03-15: OpenGL: Added a dummy GL call + comments in EditorImGui_Init() to detect uninitialized GL function loaders early.
 //  2019-03-03: OpenGL: Fix support for ES 2.0 (WebGL 1.0).
 //  2019-02-20: OpenGL: Fix for OSX not supporting OpenGL 4.5, we don't try to read GL_CLIP_ORIGIN even if defined by the headers/loader.
 //  2019-02-11: OpenGL: Projecting clipping rectangles correctly using draw_data->FramebufferScale to allow multi-viewports for retina display.
@@ -27,7 +27,7 @@
 //  2018-06-08: OpenGL: Use draw_data->DisplayPos and draw_data->DisplaySize to setup projection matrix and clipping rectangle.
 //  2018-05-25: OpenGL: Removed unnecessary backup/restore of GL_ELEMENT_ARRAY_BUFFER_BINDING since this is part of the VAO state.
 //  2018-05-14: OpenGL: Making the call to glBindSampler() optional so 3.2 context won't fail if the function is a NULL pointer.
-//  2018-03-06: OpenGL: Added const char* glsl_version parameter to ImGui_Init() so user can override the GLSL version e.g. "#version 150".
+//  2018-03-06: OpenGL: Added const char* glsl_version parameter to EditorImGui_Init() so user can override the GLSL version e.g. "#version 150".
 //  2018-02-23: OpenGL: Create the VAO in the render function so the setup can more easily be used with multiple shared GL context.
 //  2018-02-16: Misc: Obsoleted the io.RenderDrawListsFn callback and exposed ImGui_ImplSdlGL3_RenderDrawData() in the .h file so you can call it yourself.
 //  2018-01-07: OpenGL: Changed GLSL shader version from 330 to 150.
@@ -63,7 +63,7 @@
 #endif
 
 #include "imgui.h"
-#include "ImGuiOpenGL.h"
+#include "EditorImGuiOpenGL.h"
 #include <stdio.h>
 #if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
 #include <stddef.h>     // intptr_t
@@ -115,7 +115,7 @@ static int          g_AttribLocationPosition = 0, g_AttribLocationUV = 0, g_Attr
 static unsigned int g_VboHandle = 0, g_ElementsHandle = 0;
 
 // Functions
-bool    ImGui_Init(const char* glsl_version)
+bool    EditorImGui_Init(const char* glsl_version)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_opengl3";
@@ -144,21 +144,21 @@ bool    ImGui_Init(const char* glsl_version)
     return true;
 }
 
-void    ImGui_Shutdown()
+void    EditorImGui_Shutdown()
 {
-    ImGui_DestroyDeviceObjects();
+    EditorImGui_DestroyDeviceObjects();
 }
 
-void    ImGui_NewFrame()
+void    EditorImGui_NewFrame()
 {
     if (!g_FontTexture)
-        ImGui_CreateDeviceObjects();
+        EditorImGui_CreateDeviceObjects();
 }
 
 // OpenGL3 Render function.
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
 // Note that this implementation is little overcomplicated because we are saving/setting up/restoring every OpenGL state explicitly, in order to be able to run within any OpenGL engine that doesn't do so.
-void    ImGui_RenderDrawData(ImDrawData* draw_data)
+void    EditorImGui_RenderDrawData(ImDrawData* draw_data)
 {
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
     int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
@@ -324,7 +324,7 @@ void    ImGui_RenderDrawData(ImDrawData* draw_data)
     glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
 }
 
-bool ImGui_CreateFontsTexture()
+bool EditorImGui_CreateFontsTexture()
 {
     // Build textures_ atlas
     ImGuiIO& io = ImGui::GetIO();
@@ -353,7 +353,7 @@ bool ImGui_CreateFontsTexture()
     return true;
 }
 
-void ImGui_DestroyFontsTexture()
+void EditorImGui_DestroyFontsTexture()
 {
     if (g_FontTexture)
     {
@@ -371,7 +371,7 @@ static bool CheckShader(GLuint handle, const char* desc)
     glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
     glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &log_length);
     if ((GLboolean)status == GL_FALSE)
-        fprintf(stderr, "ERROR: ImGui_CreateDeviceObjects: failed to compile %s!\n", desc);
+        fprintf(stderr, "ERROR: EditorImGui_CreateDeviceObjects: failed to compile %s!\n", desc);
     if (log_length > 0)
     {
         ImVector<char> buf;
@@ -389,7 +389,7 @@ static bool CheckProgram(GLuint handle, const char* desc)
     glGetProgramiv(handle, GL_LINK_STATUS, &status);
     glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &log_length);
     if ((GLboolean)status == GL_FALSE)
-        fprintf(stderr, "ERROR: ImGui_CreateDeviceObjects: failed to link %s! (with GLSL '%s')\n", desc, g_GlslVersionString);
+        fprintf(stderr, "ERROR: EditorImGui_CreateDeviceObjects: failed to link %s! (with GLSL '%s')\n", desc, g_GlslVersionString);
     if (log_length > 0)
     {
         ImVector<char> buf;
@@ -400,7 +400,7 @@ static bool CheckProgram(GLuint handle, const char* desc)
     return (GLboolean)status == GL_TRUE;
 }
 
-bool    ImGui_CreateDeviceObjects()
+bool    EditorImGui_CreateDeviceObjects()
 {
     // Backup GL state
     GLint last_texture, last_array_buffer;
@@ -568,7 +568,7 @@ bool    ImGui_CreateDeviceObjects()
     glGenBuffers(1, &g_VboHandle);
     glGenBuffers(1, &g_ElementsHandle);
 
-    ImGui_CreateFontsTexture();
+    EditorImGui_CreateFontsTexture();
 
     // Restore modified GL state
     glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -580,7 +580,7 @@ bool    ImGui_CreateDeviceObjects()
     return true;
 }
 
-void    ImGui_DestroyDeviceObjects()
+void    EditorImGui_DestroyDeviceObjects()
 {
     if (g_VboHandle) glDeleteBuffers(1, &g_VboHandle);
     if (g_ElementsHandle) glDeleteBuffers(1, &g_ElementsHandle);
@@ -597,10 +597,10 @@ void    ImGui_DestroyDeviceObjects()
     if (g_ShaderHandle) glDeleteProgram(g_ShaderHandle);
     g_ShaderHandle = 0;
 
-    ImGui_DestroyFontsTexture();
+    EditorImGui_DestroyFontsTexture();
 }
 
-ImGuiKey ImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode)
+ImGuiKey EditorImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode)
 {
     IM_UNUSED(scancode);
     switch (keycode)

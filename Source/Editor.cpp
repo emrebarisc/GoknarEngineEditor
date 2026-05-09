@@ -1,11 +1,13 @@
 #include "pch.h"
 
-#include "Game.h"
+#include "Editor.h"
 
 #include <chrono>
 
-#include <Goknar.h>
-#include <Core.h>
+#include "Goknar/Core.h"
+#include "Goknar/Engine.h"
+#include "Goknar/Application.h"
+#include "Goknar/Log.h"
 
 #include "Goknar/Scene.h"
 #include "Goknar/Helpers/AssetParser.h"
@@ -14,17 +16,15 @@
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/WindowManager.h"
 
-#include "Objects/FreeCameraObject.h"
+#include "Objects/EditorFreeCameraObject.h"
 #include "UI/EditorContext.h"
 #include "UI/EditorHUD.h"
 
 #include "Physics/RigidBody.h"
+#include "Goknar/Objects/ReflectionProbeObject.h"
 
-Game::Game() : Application()
+Editor::Editor() : Application()
 {
-	REGISTER_CLASS(ObjectBase);
-	REGISTER_CLASS(RigidBody);
-	
 	engine->SetApplication(this);
 
 	RenderPassType mainRenderType = RenderPassType::Deferred;
@@ -73,7 +73,6 @@ Game::Game() : Application()
 			EditorContext::Get()->sceneSavePath = mainScenePath;
 			mainScene_->ReadSceneData(mainScenePath);
 
-			editorHUD_ = new EditorHUD();
 		}
 		else
 		{
@@ -83,25 +82,27 @@ Game::Game() : Application()
 
 	AssetParser::ParseAssets("AssetContainer");
 
+#ifdef GOKNAR_ENABLE_LOGGING
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();
 	GOKNAR_CORE_WARN("Scene is read in %f seconds.", elapsedTime);
 
 	lastFrameTimePoint = currentTimePoint;
+#endif
 
 	editorHUD_ = new EditorHUD();
 	editorHUD_->SetName("__Editor__HUD");
 }
 
-Game::~Game()
+Editor::~Editor()
 {
 }
 
-void Game::Run()
+void Editor::Run()
 {
 }
 
-void Game::LoadProject(const std::string& projectPath)
+void Editor::LoadProject(const std::string& projectPath)
 {
 	ConfigManager config;
 	std::string configPath = projectPath + "Config/GameConfig.ini";
@@ -135,5 +136,5 @@ void Game::LoadProject(const std::string& projectPath)
 
 Application *CreateApplication()
 {
-	return new Game();
+	return new Editor();
 }

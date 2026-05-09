@@ -4,6 +4,8 @@
 
 #include "Goknar/Engine.h"
 #include "Goknar/ObjectBase.h"
+#include "Goknar/Objects/ReflectionProbeObject.h"
+#include "Goknar/Components/ParticleSystemComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/ResourceManager.h"
@@ -24,6 +26,7 @@
 #include "UI/EditorHUD.h"
 #include "UI/EditorWidgets.h"
 #include "UI/Panels/AssetSelectorPanel.h"
+#include "UI/Panels/ParticleSystemPanel.h"
 
 template <class T>
 void AddCollisionComponent(PhysicsObject* physicsObject)
@@ -51,6 +54,18 @@ void DetailsPanel::SetupReflections()
 		[](ObjectBase* objectBase)
 		{
 			objectBase->AddSubComponent<StaticMeshComponent>();
+		};
+
+	objectReflections_["BillboardParticleSystemComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<BillboardParticleSystemComponent>();
+		};
+
+	objectReflections_["StaticMeshParticleSystemComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<StaticMeshParticleSystemComponent>();
 		};
 
 	physicsReflections_["BoxCollisionComponent"] =
@@ -226,6 +241,13 @@ void DetailsPanel::DrawObjectDetails()
 	object->SetWorldScaling(selectedObjectWorldScaling);
 
 	ImGui::Separator();
+	ReflectionProbeObject* reflectionProbeObject = dynamic_cast<ReflectionProbeObject*>(object);
+	if (reflectionProbeObject)
+	{
+		DrawReflectionProbeObjectDetails(reflectionProbeObject);
+		ImGui::Separator();
+	}
+
 	RigidBody* rigidBody = dynamic_cast<RigidBody*>(object);
 	if (rigidBody)
 	{
@@ -533,6 +555,22 @@ void DetailsPanel::DrawObjectDetails()
 	ImGui::PopItemWidth();
 }
 
+void DetailsPanel::DrawReflectionProbeObjectDetails(ReflectionProbeObject* reflectionProbeObject)
+{
+	if (!reflectionProbeObject)
+	{
+		return;
+	}
+
+	Vector3 probeSize = reflectionProbeObject->GetSize();
+	const std::string sizeFieldName = "##ReflectionProbeSize_" + std::to_string(reflectionProbeObject->GetGUID());
+
+	ImGui::Text("Probe Size: ");
+	ImGui::SameLine();
+	EditorWidgets::DrawInputVector3(sizeFieldName, probeSize);
+	reflectionProbeObject->SetSize(probeSize);
+}
+
 void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 {
 	if (!component)
@@ -540,6 +578,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 		return;
 	}
 
+	ParticleSystemComponent* particleSystemComponent{ nullptr };
 	StaticMeshComponent* staticMeshComponent{ nullptr };
 	BoxCollisionComponent* boxCollisionComponent{ nullptr };
 	SphereCollisionComponent* sphereCollisionComponent{ nullptr };
@@ -549,6 +588,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	std::string componentTypeString;
 
+	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
 	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
@@ -556,7 +596,13 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
 	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
 
-	if (staticMeshComponent)
+	if (particleSystemComponent)
+	{
+		componentTypeString = dynamic_cast<StaticMeshParticleSystemComponent*>(component) ?
+			"StaticMeshParticleSystemComponent" :
+			"BillboardParticleSystemComponent";
+	}
+	else if (staticMeshComponent)
 	{
 		componentTypeString = "StaticMeshComponent";
 	}
@@ -615,6 +661,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	EditorWidgets::DrawInputVector3(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
 
+	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
 	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
@@ -622,7 +669,11 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
 	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
 
-	if (staticMeshComponent)
+	if (particleSystemComponent)
+	{
+		DrawParticleSystemComponentDetails(particleSystemComponent);
+	}
+	else if (staticMeshComponent)
 	{
 		DrawStaticMeshComponentDetails(staticMeshComponent);
 	}
@@ -732,6 +783,52 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	ImGui::PopItemWidth();
 }
 
+void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* particleSystemComponent)
+{
+	const std::string specialPostfix = "##" + std::to_string(particleSystemComponent->GetGUID());
+	const GPUParticleSpawnDesc& spawnDesc = particleSystemComponent->GetSpawnDesc();
+	const BillboardParticleSystemComponent* billboardParticleSystemComponent = dynamic_cast<const BillboardParticleSystemComponent*>(particleSystemComponent);
+	const StaticMeshParticleSystemComponent* staticMeshParticleSystemComponent = dynamic_cast<const StaticMeshParticleSystemComponent*>(particleSystemComponent);
+
+	ImGui::Text("Render Mode: %s", staticMeshParticleSystemComponent ? "Static Mesh" : "Billboard");
+	if (staticMeshParticleSystemComponent)
+	{
+		ImGui::Text("Static Mesh: ");
+		ImGui::SameLine();
+		ImGui::TextWrapped("%s", staticMeshParticleSystemComponent->GetStaticMeshPath().empty() ? "" : staticMeshParticleSystemComponent->GetStaticMeshPath().c_str());
+	}
+	else if (billboardParticleSystemComponent)
+	{
+		ImGui::Text("Billboard Material: ");
+		ImGui::SameLine();
+		ImGui::TextWrapped("%s", billboardParticleSystemComponent->GetBillboardMaterialPath().empty() ? "" : billboardParticleSystemComponent->GetBillboardMaterialPath().c_str());
+		ImGui::Text("Billboard Texture: ");
+		ImGui::SameLine();
+		ImGui::TextWrapped("%s", billboardParticleSystemComponent->GetBillboardTexturePath().empty() ? "" : billboardParticleSystemComponent->GetBillboardTexturePath().c_str());
+	}
+
+	float particleSize = particleSystemComponent->GetParticleSize();
+	ImGui::Text("Particle Size: ");
+	ImGui::SameLine();
+	EditorWidgets::DrawInputFloat("##ParticleSystemParticleSize" + specialPostfix, particleSize);
+	particleSystemComponent->SetParticleSize(particleSize);
+
+	ImGui::Text("Looping: %s", spawnDesc.looping ? "Yes" : "No");
+	ImGui::Text("Spawn Interval: %.3f", spawnDesc.spawnInterval);
+	ImGui::Text("Preview Burst Count: %u", particleSystemComponent->GetPreviewParticleCount());
+
+	if (ImGui::Button(("Open Particle System Panel" + specialPostfix).c_str()))
+	{
+		hud_->ShowPanel<ParticleSystemPanel>();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button(("Regenerate Preview" + specialPostfix).c_str()))
+	{
+		particleSystemComponent->RegeneratePreviewParticles();
+	}
+}
+
 void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent*)
 {
 }
@@ -821,12 +918,16 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 {
 	static const char* objectBaseComponents[]{
 		"",
-		"StaticMeshComponent"
+		"StaticMeshComponent",
+		"BillboardParticleSystemComponent",
+		"StaticMeshParticleSystemComponent"
 	};
 
 	static const char* physicsObjectComponents[]{
 		"",
 		"StaticMeshComponent",
+		"BillboardParticleSystemComponent",
+		"StaticMeshParticleSystemComponent",
 		"BoxCollisionComponent",
 		"CapsuleCollisionComponent",
 		"SphereCollisionComponent",

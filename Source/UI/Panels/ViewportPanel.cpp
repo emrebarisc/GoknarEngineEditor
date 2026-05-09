@@ -9,8 +9,8 @@
 #include "UI/EditorHUD.h"
 #include "UI/EditorUtils.h"
 
-#include "Controllers/FreeCameraController.h"
-#include "Objects/FreeCameraObject.h"
+#include "Controllers/EditorFreeCameraController.h"
+#include "Objects/EditorFreeCameraObject.h"
 
 
 ViewportPanel::ViewportPanel(EditorHUD* hud) : 

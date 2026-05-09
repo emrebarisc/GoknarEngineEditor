@@ -34,15 +34,15 @@
 #define IMGUI_IMPL_OPENGL_LOADER_GL3W
 #endif
 
-IMGUI_IMPL_API bool     ImGui_Init(const char* glsl_version = NULL);
-IMGUI_IMPL_API void     ImGui_Shutdown();
-IMGUI_IMPL_API void     ImGui_NewFrame();
-IMGUI_IMPL_API void     ImGui_RenderDrawData(ImDrawData* draw_data);
+IMGUI_IMPL_API bool     EditorImGui_Init(const char* glsl_version = NULL);
+IMGUI_IMPL_API void     EditorImGui_Shutdown();
+IMGUI_IMPL_API void     EditorImGui_NewFrame();
+IMGUI_IMPL_API void     EditorImGui_RenderDrawData(ImDrawData* draw_data);
 
 // Called by PreInit/NewFrame/Shutdown
-IMGUI_IMPL_API bool     ImGui_CreateFontsTexture();
-IMGUI_IMPL_API void     ImGui_DestroyFontsTexture();
-IMGUI_IMPL_API bool     ImGui_CreateDeviceObjects();
-IMGUI_IMPL_API void     ImGui_DestroyDeviceObjects();
+IMGUI_IMPL_API bool     EditorImGui_CreateFontsTexture();
+IMGUI_IMPL_API void     EditorImGui_DestroyFontsTexture();
+IMGUI_IMPL_API bool     EditorImGui_CreateDeviceObjects();
+IMGUI_IMPL_API void     EditorImGui_DestroyDeviceObjects();
 
-ImGuiKey ImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode);
+ImGuiKey EditorImGui_ImplGlfw_KeyToImGuiKey(int keycode, int scancode);

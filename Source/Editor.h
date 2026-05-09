@@ -2,14 +2,14 @@
 
 class EditorHUD;
 
-class FreeCameraObject;
+class EditorFreeCameraObject;
 
-class GOKNAR_API Game : public Application
+class GOKNAR_API Editor : public Application
 {
 public:
-	Game();
+	Editor();
 
-	~Game();
+	~Editor();
 
 	void Run() override;
 

@@ -11,7 +11,7 @@
 
 struct ImGuiContext;
 
-class FreeCameraObject;
+class EditorFreeCameraObject;
 class ObjectBase;
 class RenderTarget;
 
@@ -62,6 +62,12 @@ public:
 		return instance_;
 	}
 
+	static void Destroy()
+	{
+		delete instance_;
+		instance_ = nullptr;
+	}
+
 	~EditorContext();
 
 	void Init();
@@ -104,7 +110,7 @@ public:
 
 	void* selectedObject = nullptr;
 
-	FreeCameraObject* viewportCameraObject{ nullptr };
+	EditorFreeCameraObject* viewportCameraObject{ nullptr };
 	RenderTarget* viewportRenderTarget{ nullptr };
 
 	ImGuiContext* imguiContext_{ nullptr };

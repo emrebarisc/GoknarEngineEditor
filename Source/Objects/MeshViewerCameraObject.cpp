@@ -11,6 +11,12 @@ MeshViewerCameraObject::MeshViewerCameraObject() : ObjectBase()
 	controller_ = new MeshViewerCameraController(this);
 }
 
+MeshViewerCameraObject::~MeshViewerCameraObject()
+{
+	controller_->Destroy();
+	controller_ = nullptr;
+}
+
 void MeshViewerCameraObject::BeginGame()
 {
 	ObjectBase::BeginGame();

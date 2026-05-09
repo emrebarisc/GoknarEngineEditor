@@ -5,7 +5,7 @@
 #include "Goknar/Engine.h"
 #include "Goknar/Renderer/Renderer.h"
 
-#include "Objects/FreeCameraObject.h"
+#include "Objects/EditorFreeCameraObject.h"
 #include "UI/EditorContext.h"
 
 DebugPanel::DebugPanel(EditorHUD* hud) : 

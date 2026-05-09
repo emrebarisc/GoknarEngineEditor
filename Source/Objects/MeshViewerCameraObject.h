@@ -9,6 +9,7 @@ class MeshViewerCameraObject : public ObjectBase
 {
 public:
 	MeshViewerCameraObject();
+	~MeshViewerCameraObject() override;
 
 	MeshViewerCameraController* GetController() const { return controller_; }
 	CameraComponent* GetCameraComponent() const { return cameraComponent_; }

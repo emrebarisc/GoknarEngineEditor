@@ -11,7 +11,7 @@
 #include "UI/Panels/ShaderEditorPanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 
-#include "Game.h"
+#include "Editor.h"
 
 #include "Goknar/Application.h"
 #include "Goknar/Engine.h"
@@ -83,6 +83,11 @@ namespace
 		}
 
 		return normalizedPath;
+	}
+
+	std::string QuoteCommandArgument(const std::string& value)
+	{
+		return "\"" + value + "\"";
 	}
 
 	std::string GetProjectNameFromPath(const std::string& directoryPath)
@@ -357,6 +362,7 @@ void MenuBarPanel::OnNewProjectSelected(const std::string& directoryPath, const 
 	}
 	catch (const std::exception& e)
 	{
+		(void)e;
 		GOKNAR_CORE_ERROR("Failed to create new project: %s", e.what());
 	}
 }
@@ -409,6 +415,29 @@ void MenuBarPanel::SaveProject()
 	AssetParser::SaveAssets("AssetContainer");
 }
 
+void MenuBarPanel::OnBuildDirectorySelected(const std::string& directoryPath)
+{
+	SaveProject();
+
+	std::string projectRootPath = ProjectDir.empty() ? std::filesystem::current_path().string() : ProjectDir;
+	projectRootPath = EnsureTrailingSlash(projectRootPath);
+
+	const std::string normalizedProjectRootPath = projectRootPath.substr(0, projectRootPath.size() - 1);
+	const std::string normalizedOutputPath = EnsureTrailingSlash(directoryPath);
+
+	std::string command;
+#if GOKNAR_PLATFORM_WINDOWS
+	command = "cd /d " + QuoteCommandArgument(normalizedProjectRootPath) + " && Build.sh publish " + QuoteCommandArgument("publishDir=" + normalizedOutputPath);
+#else
+	command = "cd " + QuoteCommandArgument(normalizedProjectRootPath) + " && ./Build.sh publish " + QuoteCommandArgument("publishDir=" + normalizedOutputPath);
+#endif
+
+	asyncBuildResult_ = std::async(std::launch::async, [command]()
+		{
+			std::system(command.c_str());
+		});
+}
+
 void MenuBarPanel::Draw()
 {
 	if (ImGui::BeginMainMenuBar())
@@ -446,6 +475,17 @@ void MenuBarPanel::Draw()
 			if (ImGui::MenuItem("Save Scene"))
 			{
 				SaveSceneToCurrentPath();
+			}
+
+			if (ImGui::MenuItem("Build the game"))
+			{
+				if (SystemFileBrowserPanel* fileBrowser = hud_->GetPanel<SystemFileBrowserPanel>())
+				{
+					fileBrowser->SetCurrentPath(ProjectDir.empty() ? std::filesystem::current_path().string() : ProjectDir);
+					fileBrowser->OpenDirectorySelector(
+						Delegate<void(const std::string&)>::Create<MenuBarPanel, &MenuBarPanel::OnBuildDirectorySelected>(this)
+					);
+				}
 			}
 
 			if (ImGui::MenuItem("Exit"))

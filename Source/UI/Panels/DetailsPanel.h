@@ -9,8 +9,10 @@
 
 class ObjectBase;
 class PhysicsObject;
+class ReflectionProbeObject;
 
 class Component;
+class ParticleSystemComponent;
 class StaticMeshComponent;
 class BoxCollisionComponent;
 class SphereCollisionComponent;
@@ -38,11 +40,13 @@ private:
 	void DrawTransform();
 	void DrawObjectDetails();
 	void DrawPhysicsDetails();
+	void DrawReflectionProbeObjectDetails(ReflectionProbeObject* reflectionProbeObject);
 	void DrawDirectionalLightDetails();
 	void DrawPointLightDetails();
 	void DrawSpotLightDetails();
 
 	void DrawComponentDetails(ObjectBase* owner, Component* component);
+	void DrawParticleSystemComponentDetails(ParticleSystemComponent* component);
 	void DrawStaticMeshComponentDetails(StaticMeshComponent* component);
 	void DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCollisionComponent);
 	void DrawSphereCollisionComponentDetails(SphereCollisionComponent* sphereCollisionComponent);

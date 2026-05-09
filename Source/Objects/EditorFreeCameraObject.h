@@ -4,14 +4,14 @@
 #include "Goknar/ObjectBase.h"
 
 class CameraComponent;
-class FreeCameraController;
+class EditorFreeCameraController;
 
-class GOKNAR_API FreeCameraObject : public ObjectBase
+class GOKNAR_API EditorFreeCameraObject : public ObjectBase
 {
 public:
-	FreeCameraObject();
+	EditorFreeCameraObject();
 
-	FreeCameraController* GetController() const 
+	EditorFreeCameraController* GetController() const 
 	{
 		return freeCameraController_;
 	}
@@ -25,7 +25,7 @@ protected:
 	virtual void BeginGame() override;
 	virtual void Tick(float deltaTime) override;
 
-	FreeCameraController* freeCameraController_{ nullptr };
+	EditorFreeCameraController* freeCameraController_{ nullptr };
 	CameraComponent* cameraComponent_{ nullptr };
 private:
 };

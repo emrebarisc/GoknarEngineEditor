@@ -26,7 +26,9 @@ void MaterialInitializer::DefaultSceneAssets()
     Material* material = new Material();
     material->SetBaseColor(Vector3{ 0.f });
     material->SetEmmisiveColor(Vector3{ 0.f });
-    material->SetSpecularReflectance(Vector3{ 1.f });
+    material->SetAmbientOcclusion(1.f);
+    material->SetMetallic(0.f);
+    material->SetRoughness(0.5f);
     material->AddTextureImage(placeholderImage);
 
     MaterialInitializationData* materialInitializationData = material->GetInitializationData();
@@ -78,8 +80,9 @@ void MaterialInitializer::DefaultSceneAssets()
     Material* blockMaterial = new Material();
     blockMaterial->SetBaseColor(Vector3{ 0.8f, 0.35f, 0.05f });
     blockMaterial->SetEmmisiveColor(Vector3{ 0.f });
-    blockMaterial->SetSpecularReflectance(Vector3{ 2.f });
-    blockMaterial->SetPhongExponent(2.f);
+    blockMaterial->SetAmbientOcclusion(1.f);
+    blockMaterial->SetMetallic(0.f);
+    blockMaterial->SetRoughness(0.5f);
     StaticMesh* blockMesh = resourceManager->GetContent<StaticMesh>("Meshes/DefaultScene/SM_Block.fbx");
     blockMesh->SetMaterial(blockMaterial);
 }
@@ -89,7 +92,9 @@ void MaterialInitializer::DefaultCharacter()
     Material* material = new Material();
     material->SetBaseColor(Vector3{ 0.f });
     material->SetEmmisiveColor(Vector3{ 0.f });
-    material->SetSpecularReflectance(Vector3{ 1.f });
+    material->SetAmbientOcclusion(1.f);
+    material->SetMetallic(0.f);
+    material->SetRoughness(0.5f);
 
     ResourceManager* resourceManager = engine->GetResourceManager();
 
@@ -109,7 +114,9 @@ void MaterialInitializer::Matilda()
     Material* matildaMaterial = new Material();
     matildaMaterial->SetBaseColor(Vector3::ZeroVector);
     matildaMaterial->SetEmmisiveColor(Vector3{ 0.f });
-    matildaMaterial->SetSpecularReflectance(Vector3{ 0.f });
+    matildaMaterial->SetAmbientOcclusion(1.f);
+    matildaMaterial->SetMetallic(0.f);
+    matildaMaterial->SetRoughness(0.5f);
     matildaMaterial->AddTextureImage(matildaTexture);
 
     StaticMesh* matildaMesh = resourceManager->GetContent<StaticMesh>("Meshes/SM_Matilda.fbx");

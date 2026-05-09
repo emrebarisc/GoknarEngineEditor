@@ -421,6 +421,8 @@ void ProjectSettingsPanel::EnsureBuildConfigExists(const std::string& projectRoo
 	{
 		buildConfig << "EngineLocation=" << NormalizePath(engineLocation) << "\n";
 	}
+
+	buildConfig << "Publish=false\n";
 }
 
 ProjectSettingsPanel::ConfigDocument ProjectSettingsPanel::LoadConfigDocument(const std::string& filePath, const std::string& defaultSectionName)

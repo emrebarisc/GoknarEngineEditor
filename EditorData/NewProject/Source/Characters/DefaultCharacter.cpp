@@ -42,9 +42,10 @@ DefaultCharacter::DefaultCharacter() :
 	controller_ = new DefaultCharacterController(this);
 
 	skeletalMesh_ = engine->GetResourceManager()->GetContent<SkeletalMesh>("Meshes/SK_DefaultCharacter.fbx");
-	skeletalMesh_->GetMaterial()->SetSpecularReflectance( Vector3{1.f} );
 	skeletalMesh_->GetMaterial()->SetBaseColor( Vector3{1.f} );
-	skeletalMesh_->GetMaterial()->SetAmbientReflectance( Vector3{1.f} );
+	skeletalMesh_->GetMaterial()->SetAmbientOcclusion(1.f);
+	skeletalMesh_->GetMaterial()->SetMetallic(0.f);
+	skeletalMesh_->GetMaterial()->SetRoughness(0.5f);
 
 	skeletalMeshComponent_->SetMesh(skeletalMesh_);
 	skeletalMeshComponent_->SetParent(GetRootComponent());

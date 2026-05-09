@@ -2,6 +2,8 @@
 
 #include "EditorPanel.h"
 
+#include <future>
+
 class MenuBarPanel : public IEditorPanel
 {
 public:
@@ -14,6 +16,7 @@ public:
 	virtual void Draw() override;
 
 private:
+	void OnBuildDirectorySelected(const std::string& directoryPath);
 	void OnProjectSelected(const std::string& directoryPath);
 	void OnNewProjectSelected(const std::string& directoryPath, const std::string& projectName);
 	void ContinueOpeningProject();
@@ -25,4 +28,5 @@ private:
 	std::string pendingProjectDirectoryPath_;
 	std::string pendingProjectName_;
 	bool shouldOpenEngineLocationPopup_{ false };
+	std::future<void> asyncBuildResult_{};
 };

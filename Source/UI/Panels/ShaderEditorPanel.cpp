@@ -866,10 +866,13 @@ void ShaderEditorPanel::ResetEditorGraph(const ImVec2& masterNodePos)
 
 	if (IsEditingMaterial())
 	{
-		masterNode.size = ImVec2(200, 150);
+		masterNode.size = ImVec2(220, GetNodeBodyHeightFromPins(7, 0));
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Base Color", ShaderPinType::Vector4, ShaderPinKind::Input, Vector4(1.f) });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Emissive", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f) });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Normal", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f, 0.f, 1.f) });
+		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Ambient Occlusion", ShaderPinType::Float, ShaderPinKind::Input, 1.0f });
+		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Metallic", ShaderPinType::Float, ShaderPinKind::Input, 0.0f });
+		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Roughness", ShaderPinType::Float, ShaderPinKind::Input, 0.5f });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "World Position Offset", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f) });
 	}
 	else
@@ -891,11 +894,12 @@ ShaderEditorPanel::ShaderEditorSnapshot ShaderEditorPanel::CaptureSnapshot() con
 	snapshot.links = links_;
 	snapshot.textures = textures_;
 	snapshot.selectedNodeIds = selectedNodeIds_;
-	snapshot.ambientReflectance = ambientReflectance_;
-	snapshot.specularReflectance = specularReflectance_;
+	snapshot.ambientOcclusion = ambientOcclusion_;
+	snapshot.metallic = metallic_;
+	snapshot.roughness = roughness_;
+	snapshot.usesReflectionProbe = usesReflectionProbe_;
 	snapshot.scrolling = scrolling_;
 	snapshot.translucency = translucency_;
-	snapshot.phongExponent = phongExponent_;
 	snapshot.scale = scale_;
 	snapshot.selectedNodeId = selectedNodeId_;
 	snapshot.selectedLinkId = selectedLinkId_;
@@ -916,11 +920,12 @@ void ShaderEditorPanel::RestoreSnapshot(const ShaderEditorSnapshot& snapshot)
 	links_ = snapshot.links;
 	textures_ = snapshot.textures;
 	selectedNodeIds_ = snapshot.selectedNodeIds;
-	ambientReflectance_ = snapshot.ambientReflectance;
-	specularReflectance_ = snapshot.specularReflectance;
+	ambientOcclusion_ = snapshot.ambientOcclusion;
+	metallic_ = snapshot.metallic;
+	roughness_ = snapshot.roughness;
+	usesReflectionProbe_ = snapshot.usesReflectionProbe;
 	scrolling_ = snapshot.scrolling;
 	translucency_ = snapshot.translucency;
-	phongExponent_ = snapshot.phongExponent;
 	scale_ = snapshot.scale;
 	selectedNodeId_ = snapshot.selectedNodeId;
 	selectedLinkId_ = snapshot.selectedLinkId;
@@ -1123,12 +1128,13 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	activeMaterial_ = SceneParser::GetOrCreateSharedMaterial(currentAssetPath_);
 
 	ResetEditorGraph(ImVec2(700.0f, 300.0f));
-	ambientReflectance_ = Vector3::ZeroVector;
-	specularReflectance_ = Vector3::ZeroVector;
+	ambientOcclusion_ = 1.0f;
+	metallic_ = 0.0f;
+	roughness_ = 0.5f;
 	blendModel_ = MaterialBlendModel::Opaque;
 	shadingModel_ = MaterialShadingModel::Default;
 	translucency_ = 0.0f;
-	phongExponent_ = 1.0f;
+	usesReflectionProbe_ = false;
 
 	auto GetText = [&](const char* name) -> std::string {
 		tinyxml2::XMLElement* el = root->FirstChildElement(name);
@@ -1146,42 +1152,54 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 
 	std::string transStr = GetText("Translucency");
 	if (!transStr.empty()) translucency_ = std::stof(transStr);
+	usesReflectionProbe_ = GetText("UsesReflectionProbe") == "1";
 
-	std::string phongStr = GetText("PhongExponent");
-	if (!phongStr.empty())
-	{
-		std::stringstream stream(phongStr);
-		float loadedPhongExponent = 1.f;
-		stream >> loadedPhongExponent;
-		if (!stream.fail() && std::isfinite(loadedPhongExponent) && loadedPhongExponent >= 1.f)
+	auto ParseFloat = [&](const char* name, float& value) {
+		std::string s = GetText(name);
+		if (!s.empty())
 		{
-			phongExponent_ = loadedPhongExponent;
+			std::stringstream ss(s);
+			ss >> value;
+		}
+		};
+	ParseFloat("AmbientOcclusionValue", ambientOcclusion_);
+	ParseFloat("MetallicValue", metallic_);
+	ParseFloat("RoughnessValue", roughness_);
+	if (GetText("RoughnessValue").empty())
+	{
+		std::string legacyPhongExponent = GetText("PhongExponent");
+		if (!legacyPhongExponent.empty())
+		{
+			std::stringstream stream(legacyPhongExponent);
+			float loadedPhongExponent = 1.f;
+			stream >> loadedPhongExponent;
+			if (!stream.fail() && std::isfinite(loadedPhongExponent) && 1.f <= loadedPhongExponent)
+			{
+				roughness_ = GoknarMath::Clamp(std::sqrt(2.f / (loadedPhongExponent + 2.f)), 0.f, 1.f);
+			}
 		}
 	}
 
-	auto ParseVec3 = [&](const char* name, Vector3& vec) {
-		std::string s = GetText(name);
-		if (!s.empty()) {
-			std::stringstream ss(s);
-			ss >> vec.x >> vec.y >> vec.z;
-		}
-		};
-	ParseVec3("AmbientReflectance", ambientReflectance_);
-	ParseVec3("SpecularReflectance", specularReflectance_);
-
 	ImVec2 nodePos(100, 100);
+
+	auto GetMasterInputPinId = [&](int inputIndex) -> int
+	{
+		ShaderNode* masterNode = FindNode(masterNodeId_);
+		if (!masterNode || inputIndex < 0 || static_cast<size_t>(inputIndex) >= masterNode->inputs.size())
+		{
+			return -1;
+		}
+
+		return masterNode->inputs[inputIndex].id;
+	};
 
 	tinyxml2::XMLElement* texChild = root->FirstChildElement("Texture");
 	while (texChild)
 	{
-		if (texChild->Attribute("path") && texChild->Attribute("name"))
+		const char* texturePathAttribute = texChild->Attribute("path");
+		if (texturePathAttribute)
 		{
-			std::string tPath = texChild->Attribute("path");
-
-			Texture* relativeTexture = engine->GetResourceManager()->GetContent<Texture>(tPath);
-			GOKNAR_ASSERT(relativeTexture);
-
-			textures_.push_back({ relativeTexture->GetName(), tPath});
+			const std::string tPath = EditorAssetPathUtils::ToContentRelativePath(texturePathAttribute);
 
 			ShaderNode texNode = SpawnNode("Texture", "Texture Sample", nodePos);
 			texNode.stringData = tPath;
@@ -1215,7 +1233,11 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 				cn.inputs[0].defaultValue = c.x; cn.inputs[1].defaultValue = c.y;
 				cn.inputs[2].defaultValue = c.z; cn.inputs[3].defaultValue = c.w;
 				nodes_.push_back(cn);
-				links_.push_back({ nextId_++, cn.outputs[0].id, nodes_[0].inputs[inputIndex].id });
+				const int masterInputPinId = GetMasterInputPinId(inputIndex);
+				if (masterInputPinId != -1 && !cn.outputs.empty())
+				{
+					links_.push_back({ nextId_++, cn.outputs[0].id, masterInputPinId });
+				}
 			}
 			else {
 				Vector3 c;
@@ -1224,7 +1246,11 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 				cn.inputs[0].defaultValue = c.x; cn.inputs[1].defaultValue = c.y;
 				cn.inputs[2].defaultValue = c.z;
 				nodes_.push_back(cn);
-				links_.push_back({ nextId_++, cn.outputs[0].id, nodes_[0].inputs[inputIndex].id });
+				const int masterInputPinId = GetMasterInputPinId(inputIndex);
+				if (masterInputPinId != -1 && !cn.outputs.empty())
+				{
+					links_.push_back({ nextId_++, cn.outputs[0].id, masterInputPinId });
+				}
 			}
 			nodePos.y += 150;
 		}
@@ -1234,18 +1260,54 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	ParseColorConstant("BaseColorValue", 0, true);
 	ParseColorConstant("EmmisiveColorValue", 1, false);
 
+	auto ParseFloatConstant = [&](const char* name, int inputIndex, const char* shaderFunctionTag)
+	{
+		if (HasCalculation(shaderFunctionTag))
+		{
+			return;
+		}
+
+		std::string s = GetText(name);
+		if (!s.empty())
+		{
+			std::stringstream ss(s);
+			float value = 0.f;
+			ss >> value;
+			ShaderNode constantNode = SpawnNode("Constants", "Float Constant", nodePos);
+			if (!constantNode.outputs.empty())
+			{
+				constantNode.outputs[0].defaultValue = value;
+			}
+			nodes_.push_back(constantNode);
+			const int masterInputPinId = GetMasterInputPinId(inputIndex);
+			if (masterInputPinId != -1 && !constantNode.outputs.empty())
+			{
+				links_.push_back({ nextId_++, constantNode.outputs[0].id, masterInputPinId });
+			}
+			nodePos.y += 130;
+		}
+	};
+
+	ParseFloatConstant("AmbientOcclusionValue", 3, "AmbientOcclusion");
+	ParseFloatConstant("MetallicValue", 4, "Metallic");
+	ParseFloatConstant("RoughnessValue", 5, "Roughness");
+
 	auto AddCustomGLSLNode = [&](const char* tag, int masterInputIndex) {
 		tinyxml2::XMLElement* el = root->FirstChildElement(tag);
 		if (el) {
 			std::string calcStr = el->FirstChildElement("Calculation") && el->FirstChildElement("Calculation")->GetText() ? el->FirstChildElement("Calculation")->GetText() : "";
 			std::string resStr = el->FirstChildElement("Result") && el->FirstChildElement("Result")->GetText() ? el->FirstChildElement("Result")->GetText() : "";
 
-			if (!calcStr.empty() || (!resStr.empty() && resStr.find("vec") != std::string::npos)) {
+			if (!calcStr.empty() || !resStr.empty()) {
 				ShaderNode customNode = SpawnNode("Custom", "Custom GLSL", nodePos);
 				nodePos.y += 150;
 				customNode.stringData = calcStr + "\nRETURN_RESULT:" + resStr;
 				nodes_.push_back(customNode);
-				links_.push_back({ nextId_++, customNode.outputs[0].id, nodes_[0].inputs[masterInputIndex].id });
+				const int masterInputPinId = GetMasterInputPinId(masterInputIndex);
+				if (masterInputPinId != -1 && !customNode.outputs.empty())
+				{
+					links_.push_back({ nextId_++, customNode.outputs[0].id, masterInputPinId });
+				}
 			}
 		}
 		};
@@ -1253,7 +1315,10 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	AddCustomGLSLNode("BaseColor", 0);
 	AddCustomGLSLNode("EmissiveColor", 1);
 	AddCustomGLSLNode("FragmentNormal", 2);
-	AddCustomGLSLNode("VertexPositionOffset", 3);
+	AddCustomGLSLNode("AmbientOcclusion", 3);
+	AddCustomGLSLNode("Metallic", 4);
+	AddCustomGLSLNode("Roughness", 5);
+	AddCustomGLSLNode("VertexPositionOffset", 6);
 
 	std::unordered_set<std::string> parsedMaterialNodeNames;
 	auto AddMaterialNodesFromShaderText = [&](const std::string& shaderText)
@@ -1294,6 +1359,29 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	{
 		ApplyHierarchicalLayout();
 		SaveEditorReflection(path);
+	}
+	else if (ShaderNode* masterNode = FindNode(masterNodeId_))
+	{
+		auto EnsureMasterInput = [&](const char* pinName, ShaderPinType pinType, const ShaderValue& defaultValue)
+		{
+			const auto existingPinIterator =
+				std::find_if(
+					masterNode->inputs.begin(),
+					masterNode->inputs.end(),
+					[pinName](const ShaderPin& pin)
+					{
+						return pin.name == pinName;
+					});
+			if (existingPinIterator == masterNode->inputs.end())
+			{
+				masterNode->inputs.push_back({ nextId_++, masterNode->id, pinName, pinType, ShaderPinKind::Input, defaultValue });
+			}
+		};
+
+		EnsureMasterInput("Ambient Occlusion", ShaderPinType::Float, 1.0f);
+		EnsureMasterInput("Metallic", ShaderPinType::Float, 0.0f);
+		EnsureMasterInput("Roughness", ShaderPinType::Float, 0.5f);
+		masterNode->size.y = GetNodeBodyHeightFromPins(masterNode->inputs.size(), masterNode->outputs.size());
 	}
 
 	RefreshTextureBindingsFromNodes();
@@ -1420,9 +1508,10 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 	activeMaterial_->SetBlendModel(blendModel_);
 	activeMaterial_->SetShadingModel(shadingModel_);
 	activeMaterial_->SetTranslucency(translucency_);
-	activeMaterial_->SetPhongExponent(phongExponent_);
-	activeMaterial_->SetAmbientReflectance(ambientReflectance_);
-	activeMaterial_->SetSpecularReflectance(specularReflectance_);
+	activeMaterial_->SetAmbientOcclusion(ambientOcclusion_);
+	activeMaterial_->SetMetallic(metallic_);
+	activeMaterial_->SetRoughness(roughness_);
+	activeMaterial_->SetUsesReflectionProbe(usesReflectionProbe_);
 
 	MaterialInitializationData* initData = activeMaterial_->GetInitializationData();
 	if (!initData)
@@ -1974,10 +2063,10 @@ void ShaderEditorPanel::DrawMaterialProperties()
 	}
 
 	ImGui::DragFloat("Translucency", &translucency_, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Phong Exponent", &phongExponent_, 1.0f, 1.0f, 128.0f);
-
-	ImGui::ColorEdit3("Ambient Reflectance", &ambientReflectance_.x);
-	ImGui::ColorEdit3("Specular Reflectance", &specularReflectance_.x);
+	ImGui::DragFloat("Ambient Occlusion", &ambientOcclusion_, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Metallic", &metallic_, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Roughness", &roughness_, 0.01f, 0.0f, 1.0f);
+	ImGui::Checkbox("Uses Reflection Probe", &usesReflectionProbe_);
 
 	ImGui::Separator();
 	ImGui::Text("Textures");
@@ -2657,7 +2746,7 @@ void ShaderEditorPanel::DrawNodeCanvas()
 		if (ImGui::BeginMenu("Math"))
 		{
 			if (ImGui::BeginMenu("Basic Math")) {
-				for (const char* func : { "Add", "Subtract", "Multiply", "Divide", "Modulo", "Abs", "Sign", "Min", "Max", "Fma" })
+				for (const char* func : { "Add", "Subtract", "Multiply", "Divide", "Pow", "Modulo", "Abs", "Sign", "Min", "Max", "Fma" })
 					if (ImGui::MenuItem(func)) nodes_.push_back(SpawnNode("Math", func, spawnPos));
 				ImGui::EndMenu();
 			}
@@ -3691,7 +3780,7 @@ ShaderNode ShaderEditorPanel::SpawnNode(const std::string& category, const std::
 			"Length", "Determinant", "IsNan", "IsInf"
 		};
 		static const std::unordered_set<std::string> func2Arg = {
-			"Add", "Subtract", "Multiply", "Divide", "Modulo",
+			"Add", "Subtract", "Multiply", "Divide", "Pow", "Modulo",
 			"Pow", "Min", "Max", "Step", "Reflect", "MatrixCompMult", "OuterProduct", "Atan", "Ldexp"
 		};
 		static const std::unordered_set<std::string> func2ArgFloatOut = {
@@ -3966,6 +4055,12 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 	outMaterialData->baseColor.result = "";
 	outMaterialData->emisiveColor.calculation = "";
 	outMaterialData->emisiveColor.result = "";
+	outMaterialData->ambientOcclusion.calculation = "";
+	outMaterialData->ambientOcclusion.result = "";
+	outMaterialData->metallic.calculation = "";
+	outMaterialData->metallic.result = "";
+	outMaterialData->roughness.calculation = "";
+	outMaterialData->roughness.result = "";
 	outMaterialData->fragmentNormal.calculation = "";
 	outMaterialData->fragmentNormal.result = "";
 	outMaterialData->vertexPositionOffset.calculation = "";
@@ -4063,6 +4158,7 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 		if (nodeName == "RoundEven") return "roundEven";
 		if (nodeName == "IsNan") return "isnan";
 		if (nodeName == "IsInf") return "isinf";
+		if (nodeName == "Pow") return "pow";
 
 		std::string glslName = nodeName;
 		glslName[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(glslName[0])));
@@ -4633,7 +4729,7 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 	std::string fragmentCalculation;
 	std::string fragmentFunctionDefinitions;
 	std::unordered_map<int, ShaderPinType> fragmentResolvedPinTypes;
-	CompileSubGraph({ "Base Color", "Emissive", "Normal" }, fragmentCalculation, fragmentFunctionDefinitions, fragmentResolvedPinTypes);
+	CompileSubGraph({ "Base Color", "Emissive", "Normal", "Ambient Occlusion", "Metallic", "Roughness" }, fragmentCalculation, fragmentFunctionDefinitions, fragmentResolvedPinTypes);
 	outMaterialData->baseColor.calculation = fragmentCalculation;
 	outMaterialData->fragmentShaderFunctions = fragmentFunctionDefinitions;
 	auto GetMasterPinValueAndType = [&](const ShaderPin& pin) -> std::pair<std::string, ShaderPinType>
@@ -4680,6 +4776,9 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 		if (masterInput.name == "Base Color") outMaterialData->baseColor.result = formattedResult + ";";
 		else if (masterInput.name == "Emissive") outMaterialData->emisiveColor.result = formattedResult + ";";
 		else if (masterInput.name == "Normal") outMaterialData->fragmentNormal.result = formattedResult + ";";
+		else if (masterInput.name == "Ambient Occlusion") outMaterialData->ambientOcclusion.result = formattedResult + ";";
+		else if (masterInput.name == "Metallic") outMaterialData->metallic.result = formattedResult + ";";
+		else if (masterInput.name == "Roughness") outMaterialData->roughness.result = formattedResult + ";";
 		else if (masterInput.name == "World Position Offset") outMaterialData->vertexPositionOffset.result = formattedResult + ";";
 	}
 }

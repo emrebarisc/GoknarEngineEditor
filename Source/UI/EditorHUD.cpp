@@ -31,9 +31,9 @@
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
 
-#include "Controllers/FreeCameraController.h"
-#include "Objects/FreeCameraObject.h"
-#include "Thirdparty/ImGuiOpenGL.h"
+#include "Controllers/EditorFreeCameraController.h"
+#include "Objects/EditorFreeCameraObject.h"
+#include "Thirdparty/EditorImGuiOpenGL.h"
 
 #include "EditorContext.h"
 #include "EditorUtils.h"
@@ -49,6 +49,7 @@
 #include "Panels/MeshViewerPanel.h"
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
+#include "Panels/ParticleSystemPanel.h"
 #include "Panels/ProjectSettingsPanel.h"
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
@@ -85,6 +86,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<MeshViewerPanel>();
 	AddPanel<ObjectCreationPanel>();
 	AddPanel<ObjectNameToCreatePanel>();
+	AddPanel<ParticleSystemPanel>();
 	AddPanel<ProjectSettingsPanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
@@ -146,11 +148,14 @@ EditorHUD::~EditorHUD()
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::F, INPUT_ACTION::G_PRESS, onFocusInputPressedDelegate_);
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::ESCAPE, INPUT_ACTION::G_PRESS, onCancelInputPressedDelegate_);
 
-	ImGui_DestroyFontsTexture();
-	ImGui_DestroyDeviceObjects();
-	ImGui_Shutdown();
+	engine->GetWindowManager()->RemoveWindowSizeCallback(onWindowSizeChangedDelegate_);
 
-	delete context_;
+	EditorImGui_DestroyFontsTexture();
+	EditorImGui_DestroyDeviceObjects();
+	EditorImGui_Shutdown();
+
+	EditorContext::Destroy();
+	context_ = nullptr;
 }
 
 void EditorHUD::PreInit()
@@ -214,7 +219,7 @@ void EditorHUD::BeginGame()
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	io.KeyRepeatRate = 0.25f;
 
-	ImGui_Init("#version 410 core");
+	EditorImGui_Init("#version 410 core");
 
 	ImGuiStyle* style = &ImGui::GetStyle();
 	ImVec4* colors = style->Colors;
@@ -256,7 +261,7 @@ void EditorHUD::UpdateHUD()
 		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 	}
 
-	ImGui_NewFrame();
+	EditorImGui_NewFrame();
 	ImGui::NewFrame();
 
 	ImGui::StyleColorsDark();
@@ -265,7 +270,7 @@ void EditorHUD::UpdateHUD()
 	DrawEditorHUD();
 
 	ImGui::Render();
-	ImGui_RenderDrawData(ImGui::GetDrawData());
+	EditorImGui_RenderDrawData(ImGui::GetDrawData());
 
 	doubleClickController_.ClearFrameState();
 }
@@ -331,7 +336,7 @@ void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	bool is_down = (action == GLFW_PRESS || action == GLFW_REPEAT);
-	ImGuiKey imgui_key = ImGui_ImplGlfw_KeyToImGuiKey(key, scanCode);
+	ImGuiKey imgui_key = EditorImGui_ImplGlfw_KeyToImGuiKey(key, scanCode);
 	io.AddKeyEvent(imgui_key, is_down);
 
 	io.AddKeyEvent(ImGuiMod_Ctrl, (mod & GLFW_MOD_CONTROL) != 0);

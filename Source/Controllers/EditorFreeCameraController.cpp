@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "FreeCameraController.h"
+#include "EditorFreeCameraController.h"
 
 #include "Goknar/Scene.h"
 
@@ -19,9 +19,9 @@
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 
-#include "Objects/FreeCameraObject.h"
+#include "Objects/EditorFreeCameraObject.h"
 
-FreeCameraController::FreeCameraController(FreeCameraObject* freeCameraObject) :
+EditorFreeCameraController::EditorFreeCameraController(EditorFreeCameraObject* freeCameraObject) :
 	freeCameraObject_(freeCameraObject),
 	isRotatingTheCamera_(false),
 	isMovingCameraIn2D_(false)
@@ -30,28 +30,28 @@ FreeCameraController::FreeCameraController(FreeCameraObject* freeCameraObject) :
 	previousCursorPositionForRotating_ = Vector2(0.f, 0.f);
 	previousCursorPositionFor2DMovement_ = Vector2(0.f, 0.f);
 
-	onMouseRightClickPressedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseRightClickPressed>(this);
-	onMouseRightClickReleasedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseRightClickReleased >(this);
-	onMouseMiddleClickPressedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseMiddleClickPressed>(this);
-	onMouseMiddleClickReleasedDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::OnMouseMiddleClickReleased>(this);
+	onMouseRightClickPressedDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::OnMouseRightClickPressed>(this);
+	onMouseRightClickReleasedDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::OnMouseRightClickReleased >(this);
+	onMouseMiddleClickPressedDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::OnMouseMiddleClickPressed>(this);
+	onMouseMiddleClickReleasedDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::OnMouseMiddleClickReleased>(this);
 
-	moveLeftDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::MoveLeftListener>(this);
-	moveRightDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::MoveRightListener>(this);
-	moveForwardDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::MoveForwardListener>(this);
-	moveBackwardDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::MoveBackwardListener>(this);
-	moveUpDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::MoveUpListener>(this);
-	moveDownDelegate_ = KeyboardDelegate::Create<FreeCameraController, &FreeCameraController::MoveDownListener>(this);
+	moveLeftDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveLeftListener>(this);
+	moveRightDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveRightListener>(this);
+	moveForwardDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveForwardListener>(this);
+	moveBackwardDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveBackwardListener>(this);
+	moveUpDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveUpListener>(this);
+	moveDownDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveDownListener>(this);
 
-	onScrollMoveDelegate_ = Delegate<void(double, double)>::Create<FreeCameraController, &FreeCameraController::ScrollListener>(this);
-	onCursorMoveDelegate_ = Delegate<void(double, double)>::Create<FreeCameraController, &FreeCameraController::CursorMovement>(this);
+	onScrollMoveDelegate_ = Delegate<void(double, double)>::Create<EditorFreeCameraController, &EditorFreeCameraController::ScrollListener>(this);
+	onCursorMoveDelegate_ = Delegate<void(double, double)>::Create<EditorFreeCameraController, &EditorFreeCameraController::CursorMovement>(this);
 }
 
-FreeCameraController::~FreeCameraController()
+EditorFreeCameraController::~EditorFreeCameraController()
 {
 	UnbindInputDelegates();
 }
 
-void FreeCameraController::BeginGame()
+void EditorFreeCameraController::BeginGame()
 {
 	if (GetIsActive())
 	{
@@ -59,11 +59,11 @@ void FreeCameraController::BeginGame()
 	}
 }
 
-void FreeCameraController::SetupInputDelegates()
+void EditorFreeCameraController::SetupInputDelegates()
 {
 }
 
-void FreeCameraController::SetIsActive(bool isActive)
+void EditorFreeCameraController::SetIsActive(bool isActive)
 {
 	if (GetIsActive() == isActive)
 	{
@@ -82,7 +82,7 @@ void FreeCameraController::SetIsActive(bool isActive)
 	}
 }
 
-void FreeCameraController::CursorMovement(double x, double y)
+void EditorFreeCameraController::CursorMovement(double x, double y)
 {
 	Vector2 currentCursorPosition((float)x, (float)y);
 
@@ -106,24 +106,24 @@ void FreeCameraController::CursorMovement(double x, double y)
 	}
 }
 
-void FreeCameraController::ScrollListener(double, double y)
+void EditorFreeCameraController::ScrollListener(double, double y)
 {
 	MoveForward((float)y * movementSpeed_);
 }
 
-void FreeCameraController::Yaw(float value)
+void EditorFreeCameraController::Yaw(float value)
 {
 	Vector3 newForwardVector = freeCameraObject_->GetWorldRotation().ToEulerRadians();
 	freeCameraObject_->SetWorldRotation(Quaternion::FromEulerRadians(newForwardVector + Vector3{ 0.f, 0.f, value }));
 }
 
-void FreeCameraController::Pitch(float value)
+void EditorFreeCameraController::Pitch(float value)
 {
 	Vector3 newForwardVector = freeCameraObject_->GetForwardVector().RotateVectorAroundAxis(freeCameraObject_->GetLeftVector(), value);
 	freeCameraObject_->SetWorldRotation(newForwardVector.GetRotationNormalized());
 }
 
-void FreeCameraController::OnMouseRightClickPressed()
+void EditorFreeCameraController::OnMouseRightClickPressed()
 {
 	double x, y;
 	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetMainWindow(), x, y);
@@ -131,7 +131,7 @@ void FreeCameraController::OnMouseRightClickPressed()
 	isRotatingTheCamera_ = true;
 }
 
-void FreeCameraController::OnMouseMiddleClickPressed()
+void EditorFreeCameraController::OnMouseMiddleClickPressed()
 {
 	double x, y;
 	engine->GetInputManager()->GetCursorPosition(engine->GetWindowManager()->GetMainWindow(), x, y);
@@ -139,28 +139,28 @@ void FreeCameraController::OnMouseMiddleClickPressed()
 	isMovingCameraIn2D_ = true;
 }
 
-void FreeCameraController::MoveForward(float multiplier/* = 1.f*/)
+void EditorFreeCameraController::MoveForward(float multiplier/* = 1.f*/)
 {
 	freeCameraObject_->SetWorldPosition(
 		freeCameraObject_->GetWorldPosition() +
 		freeCameraObject_->GetForwardVector() * 0.025f * multiplier);
 }
 
-void FreeCameraController::MoveLeft(float multiplier/* = 1.f*/)
+void EditorFreeCameraController::MoveLeft(float multiplier/* = 1.f*/)
 {
 	freeCameraObject_->SetWorldPosition(
 		freeCameraObject_->GetWorldPosition() +
 		freeCameraObject_->GetLeftVector() * 0.025f * multiplier);
 }
 
-void FreeCameraController::MoveUp(float multiplier/* = 1.f*/)
+void EditorFreeCameraController::MoveUp(float multiplier/* = 1.f*/)
 {
 	freeCameraObject_->SetWorldPosition(
 		freeCameraObject_->GetWorldPosition() +
 		freeCameraObject_->GetUpVector() * 0.025f * multiplier);
 }
 
-void FreeCameraController::BindInputDelegates()
+void EditorFreeCameraController::BindInputDelegates()
 {
 	InputManager* inputManager = engine->GetInputManager();
 
@@ -181,7 +181,7 @@ void FreeCameraController::BindInputDelegates()
 
 }
 
-void FreeCameraController::UnbindInputDelegates()
+void EditorFreeCameraController::UnbindInputDelegates()
 {
 	InputManager* inputManager = engine->GetInputManager();
 

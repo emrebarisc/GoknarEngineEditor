@@ -1,17 +1,17 @@
-#ifndef __FREECAMERACONTROLLER_H__
-#define __FREECAMERACONTROLLER_H__
+#ifndef __EDITORFREECAMERACONTROLLER_H__
+#define __EDITORFREECAMERACONTROLLER_H__
 
 #include "Goknar/Controller.h"
 #include "Goknar/Delegates/Delegate.h"
 #include "Goknar/Math/GoknarMath.h"
 
-class FreeCameraObject;
+class EditorFreeCameraObject;
 
-class FreeCameraController : public Controller
+class EditorFreeCameraController : public Controller
 {
 public:
-	FreeCameraController(FreeCameraObject* freeCameraObject);
-	~FreeCameraController();
+	EditorFreeCameraController(EditorFreeCameraObject* freeCameraObject);
+	~EditorFreeCameraController();
 
 	void BeginGame() override;
 	void SetupInputDelegates() override;
@@ -94,7 +94,7 @@ private:
 
 	float movementSpeed_;
 
-	FreeCameraObject* freeCameraObject_;
+	EditorFreeCameraObject* freeCameraObject_;
 	bool isRotatingTheCamera_;
 	bool isMovingCameraIn2D_;
 };

@@ -106,11 +106,12 @@ private:
         std::vector<ShaderLink> links{};
         std::vector<TextureInfo> textures{};
         std::unordered_set<int> selectedNodeIds{};
-        Vector3 ambientReflectance{ Vector3::ZeroVector };
-        Vector3 specularReflectance{ Vector3::ZeroVector };
+        float ambientOcclusion{ 1.f };
+        float metallic{ 0.f };
+        float roughness{ 0.5f };
+        bool usesReflectionProbe{ false };
         ImVec2 scrolling{ 0.0f, 0.0f };
         float translucency{ 0.f };
-        float phongExponent{ 1.f };
         float scale{ 1.f };
         int selectedNodeId{ -1 };
         int selectedLinkId{ -1 };
@@ -177,8 +178,10 @@ private:
     std::vector<ShaderLink> clipboardLinks_;
     std::vector<TextureInfo> textures_;
 
-    Vector3 ambientReflectance_{ Vector3::ZeroVector };
-    Vector3 specularReflectance_{ Vector3::ZeroVector };
+    float ambientOcclusion_{ 1.f };
+    float metallic_{ 0.f };
+    float roughness_{ 0.5f };
+    bool usesReflectionProbe_{ false };
 
     Vector2 previewSize_{ 300.f, 300.f };
 
@@ -202,7 +205,6 @@ private:
     std::vector<ShaderEditorSnapshot> navigationStack_{};
 
     float translucency_{ 0.f };
-    float phongExponent_{ 1.f };
     float scale_{ 1.0f };
 
     int autoConnectStartPinId_{ -1 };

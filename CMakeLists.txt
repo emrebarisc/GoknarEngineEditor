@@ -26,6 +26,7 @@ set(GOKNAR_ENGINE_CONTENT_SOURCE_DIR "${ENGINE_CONTENT_SOURCE_DIR}" CACHE INTERN
 project(${APP_NAME})
 
 set(CMAKE_CXX_STANDARD 17)
+option(GOKNAR_PUBLISHED_BUILD "Build the runtime to load packaged pak data." OFF)
 
 set(SOURCE_DIR_NAME "Source")
 
@@ -53,16 +54,12 @@ set(GAME_SOURCE)
 foreach(SUBDIR ${SUBDIRS})
     set(COMBINED_DIR ${GAME_SOURCE_DIR}${SUBDIR})
     
-    # Automatically detects new files without needing to touch CMakeLists.txt
     file(GLOB GROUP_FILES CONFIGURE_DEPENDS "${COMBINED_DIR}/*" )
     
     source_group(${SUBDIR} FILES ${GROUP_FILES})
     list(APPEND GAME_SOURCE ${GROUP_FILES})
 endforeach()
 
-######################################################################
-
-# Setup the Executable or Library first so we can attach properties to it
 if(NOT ANDROID)
     add_executable(${APP_NAME} ${GAME_SOURCE})
 else()
@@ -70,7 +67,6 @@ else()
     target_link_libraries(${APP_NAME} -Wl,--whole-archive cpp_android_spec -Wl,--no-whole-archive)
 endif()
 
-# Force the executable to be placed in an 'Output' folder for ALL configurations and OS types
 set_target_properties(${APP_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Output"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Output"
@@ -79,35 +75,16 @@ set_target_properties(${APP_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/Output"
 )
 
-# Set the Visual Studio Working Directory to match, so debugging via F5 works natively
 if(MSVC)
-    set_target_properties(${APP_NAME} PROPERTIES 
-        VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/Output"
-    )
-endif()
-
-# MSVC-Specific compiler flags for speed and strictness
-if(MSVC)
-    target_compile_options(${APP_NAME} PRIVATE
-        /MP           # Enables multi-processor compilation
-        /W4           # High warning level
-        /permissive-  # Enforces strict C++ standard conformance
-        /Zc:__cplusplus # Forces MSVC to report the correct C++ version to macros
-    )
-
-    target_compile_definitions(${APP_NAME} PRIVATE
-        NOMINMAX                  # Prevents Windows.h from hijacking std::min and std::max
-        WIN32_LEAN_AND_MEAN       # Excludes rarely-used Windows headers to speed up compilation
-        _CRT_SECURE_NO_WARNINGS   # Disables warnings for standard C functions
-    )
+    set_target_properties(${APP_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/Output")
+    target_compile_options(${APP_NAME} PRIVATE /MP /W4 /permissive- /Zc:__cplusplus)
+    target_compile_definitions(${APP_NAME} PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
 endif()
 
 if(WIN32 OR MSVC)
     target_compile_definitions(${APP_NAME} PRIVATE GOKNAR_PLATFORM_WINDOWS)
 elseif(UNIX AND NOT ANDROID)
     target_compile_definitions(${APP_NAME} PRIVATE GOKNAR_PLATFORM_UNIX)
-    
-    # Safely linking UNIX system libraries
     target_link_libraries(${APP_NAME} PRIVATE dl glfw glut GLU GL)
 endif()
 
@@ -115,21 +92,40 @@ add_subdirectory(${ENGINE_PATH} ./Goknar)
 
 add_subdirectory(Thirdparty/Imgui/)
 target_link_libraries(${APP_NAME} PUBLIC IMGUI)
-target_include_directories(${APP_NAME} PUBLIC 
-    Thirdparty/Imgui/Repo
-)
+target_include_directories(${APP_NAME} PUBLIC Thirdparty/Imgui/Repo)
 
 target_link_libraries(${APP_NAME} PUBLIC GOKNAR)
+
+if(CURRENT_PROJECT_PATH AND EXISTS "${CURRENT_PROJECT_PATH}/CMakeLists.txt")
+    message(STATUS "Including Current Project from: ${CURRENT_PROJECT_PATH}")
+    add_subdirectory("${CURRENT_PROJECT_PATH}" "${CMAKE_BINARY_DIR}/CurrentProject")
+endif()
 
 target_include_directories(${APP_NAME} PUBLIC 
     ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/${SOURCE_DIR_NAME}
+    ${CURRENT_PROJECT_PATH}         
+    ${CURRENT_PROJECT_PATH}/Source  
 )
 
-# Using target_compile_definitions instead of global add_compile_definitions is best practice
-target_compile_definitions(${APP_NAME} PUBLIC GOKNAR_BUILD_DLL GOKNAR_ENABLE_ASSERTS GLFW_INCLUDE_NONE)
+target_compile_definitions(${APP_NAME} PUBLIC
+    GOKNAR_EDITOR
+    GOKNAR_BUILD_DLL
+    GLFW_INCLUDE_NONE
+    "$<$<CONFIG:Debug>:GOKNAR_BUILD_DEBUG>"
+    "$<$<CONFIG:Debug>:GOKNAR_ENABLE_ASSERTS>"
+    "$<$<CONFIG:Debug>:GOKNAR_ENABLE_LOGGING>"
+    "$<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:GOKNAR_BUILD_RELEASE>"
+)
+if(GOKNAR_PUBLISHED_BUILD)
+    target_compile_definitions(${APP_NAME} PUBLIC GOKNAR_PUBLISHED_BUILD=1)
+endif()
 
 if(WIN32 OR MSVC)
-    # Force Visual Studio Startup Project using the variable
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${APP_NAME})
+    add_custom_command(TARGET ${APP_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:zlib>
+            $<TARGET_FILE_DIR:${APP_NAME}>
+    )
 endif()
