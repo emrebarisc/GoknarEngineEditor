@@ -498,6 +498,11 @@ void MenuBarPanel::Draw()
 
 		if (ImGui::BeginMenu("Edit"))
 		{
+			if (ImGui::MenuItem("Duplicate Object", "Ctrl+D", false, EditorContext::Get()->selectedObjectType == EditorSelectionType::Object))
+			{
+				hud_->CloneSelectedObject();
+			}
+
 			if (ImGui::MenuItem("Project Settings"))
 			{
 				hud_->ShowPanel<ProjectSettingsPanel>();

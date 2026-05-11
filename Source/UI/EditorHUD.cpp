@@ -343,6 +343,11 @@ void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
 	io.AddKeyEvent(ImGuiMod_Shift, (mod & GLFW_MOD_SHIFT) != 0);
 	io.AddKeyEvent(ImGuiMod_Alt, (mod & GLFW_MOD_ALT) != 0);
 	io.AddKeyEvent(ImGuiMod_Super, (mod & GLFW_MOD_SUPER) != 0);
+
+	if (action == GLFW_PRESS && key == (int)KEY_MAP::D && (mod & GLFW_MOD_CONTROL) != 0)
+	{
+		OnCloneInputPressed();
+	}
 }
 
 void EditorHUD::OnCursorMove(double xPosition, double yPosition)
@@ -550,6 +555,42 @@ void EditorHUD::OnDeleteInputPressed()
 
 	context_->selectedObjectType = EditorSelectionType::None;
 	context_->selectedObject = nullptr;
+}
+
+void EditorHUD::OnCloneInputPressed()
+{
+	ImGuiIO& io = ImGui::GetIO();
+
+	if (io.WantCaptureKeyboard)
+	{
+		return;
+	}
+
+	CloneSelectedObject();
+}
+
+ObjectBase* EditorHUD::CloneSelectedObject()
+{
+	if (context_->selectedObjectType != EditorSelectionType::Object || !context_->selectedObject)
+	{
+		return nullptr;
+	}
+
+	ObjectBase* selectedObject = static_cast<ObjectBase*>(context_->selectedObject);
+	ObjectBase* clonedObject = selectedObject->Clone();
+	if (!clonedObject)
+	{
+		return nullptr;
+	}
+
+	if (ObjectBase* parentObject = selectedObject->GetParent())
+	{
+		clonedObject->SetParent(parentObject, SnappingRule::KeepWorldAll, false);
+	}
+
+	context_->SetSelection(clonedObject, EditorSelectionType::Object);
+
+	return clonedObject;
 }
 
 void EditorHUD::OnFocusInputPressed()

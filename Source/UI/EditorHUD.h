@@ -84,6 +84,7 @@ public:
 
 	bool WasMouseDoubleClicked(ImGuiMouseButton button) const;
 	bool WasLastItemDoubleClicked(ImGuiMouseButton button) const;
+	ObjectBase* CloneSelectedObject();
 
 protected:
 
@@ -102,6 +103,7 @@ private:
 	void OnWindowSizeChanged(int width, int height);
 
 	void OnDeleteInputPressed();
+	void OnCloneInputPressed();
 	void OnFocusInputPressed();
 	void OnCancelInputPressed();
 

@@ -89,6 +89,7 @@ elseif(UNIX AND NOT ANDROID)
 endif()
 
 add_subdirectory(${ENGINE_PATH} ./Goknar)
+target_compile_definitions(GOKNAR PUBLIC GOKNAR_EDITOR)
 
 add_subdirectory(Thirdparty/Imgui/)
 target_link_libraries(${APP_NAME} PUBLIC IMGUI)
@@ -109,7 +110,6 @@ target_include_directories(${APP_NAME} PUBLIC
 )
 
 target_compile_definitions(${APP_NAME} PUBLIC
-    GOKNAR_EDITOR
     GOKNAR_BUILD_DLL
     GLFW_INCLUDE_NONE
     "$<$<CONFIG:Debug>:GOKNAR_BUILD_DEBUG>"
