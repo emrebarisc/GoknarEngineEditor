@@ -62,6 +62,7 @@ struct ShaderNode
     std::string stringData{ "" };
     bool isUniform{ true };
     std::vector<ShaderValue> arrayDefaultValues{};
+    bool useTextureAtlas{ true };
 };
 
 struct ShaderLink
@@ -96,6 +97,7 @@ private:
     struct TextureInfo {
         std::string name;
         std::string path;
+        bool useTextureAtlas{ true };
     };
 
     struct ShaderEditorSnapshot
@@ -132,7 +134,10 @@ private:
     void RefreshTextureBindingsFromNodes();
     void MigrateLegacyTextureSampleNodes();
     std::string GetTextureSamplerNameForPath(const std::string& texturePath) const;
-    Texture* GetTexturePreviewTexture(const std::string& texturePath) const;
+    std::string GetTextureSamplerNameForNode(const ShaderNode& textureNode) const;
+    const TextureInfo* GetTextureInfoForNode(const ShaderNode& textureNode) const;
+    std::string GetTextureSampleUVExpression(const ShaderNode& textureNode, const std::string& uvExpression, ShaderPinType uvType) const;
+    Texture* GetTexturePreviewTexture(const std::string& texturePath, bool allowStandaloneCreation) const;
     void OnTextureAssetSelected(const std::string& path);
     bool BuildActiveMaterialFunction(MaterialFunction& outMaterialFunction);
     void SaveEditorReflection(const std::string& assetPath);

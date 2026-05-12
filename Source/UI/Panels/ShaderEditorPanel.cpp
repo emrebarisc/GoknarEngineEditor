@@ -195,6 +195,51 @@ namespace
 		return assetPath.has_extension() || value.find('/') != std::string::npos || value.find('\\') != std::string::npos;
 	}
 
+	bool StringToBool(const std::string& value, bool defaultValue)
+	{
+		if (value == "1" || value == "true" || value == "True" || value == "TRUE" || value == "yes" || value == "Yes")
+		{
+			return true;
+		}
+
+		if (value == "0" || value == "false" || value == "False" || value == "FALSE" || value == "no" || value == "No")
+		{
+			return false;
+		}
+
+		return defaultValue;
+	}
+
+	bool ReadBoolAttributeOrElement(const tinyxml2::XMLElement* element, const char* name, bool defaultValue)
+	{
+		if (!element || !name)
+		{
+			return defaultValue;
+		}
+
+		if (const char* attributeValue = element->Attribute(name))
+		{
+			return StringToBool(attributeValue, defaultValue);
+		}
+
+		const tinyxml2::XMLElement* childElement = element->FirstChildElement(name);
+		if (childElement && childElement->GetText())
+		{
+			return StringToBool(childElement->GetText(), defaultValue);
+		}
+
+		return defaultValue;
+	}
+
+	bool ReadTextureAtlasUsage(const tinyxml2::XMLElement* element, bool defaultValue)
+	{
+		bool value = defaultValue;
+		value = ReadBoolAttributeOrElement(element, "UseTextureAtlas", value);
+		value = ReadBoolAttributeOrElement(element, "CanUseTextureAtlas", value);
+		value = ReadBoolAttributeOrElement(element, "TextureAtlas", value);
+		return value;
+	}
+
 	float GetNodeBodyHeightFromPins(size_t inputPinCount, size_t outputPinCount)
 	{
 		const size_t maxPinCount = std::max(inputPinCount, outputPinCount);
@@ -967,20 +1012,25 @@ void ShaderEditorPanel::RefreshTextureBindingsFromNodes()
 		}
 
 		const std::string texturePath = node.stringData;
+		const bool useTextureAtlas = node.useTextureAtlas;
 		const bool alreadyTracked =
 			std::any_of(
 				refreshedTextures.begin(),
 				refreshedTextures.end(),
-				[&texturePath](const TextureInfo& textureInfo)
+				[&texturePath, useTextureAtlas](const TextureInfo& textureInfo)
 				{
-					return textureInfo.path == texturePath;
+					return textureInfo.path == texturePath && textureInfo.useTextureAtlas == useTextureAtlas;
 				});
 		if (alreadyTracked)
 		{
 			continue;
 		}
 
-		const std::string baseSamplerName = BuildTextureSamplerBaseName(texturePath);
+		std::string baseSamplerName = BuildTextureSamplerBaseName(texturePath);
+		if (!useTextureAtlas)
+		{
+			baseSamplerName += "_Standalone";
+		}
 		std::string samplerName = baseSamplerName;
 		for (int suffix = 2; usedSamplerNames.find(samplerName) != usedSamplerNames.end(); ++suffix)
 		{
@@ -988,7 +1038,7 @@ void ShaderEditorPanel::RefreshTextureBindingsFromNodes()
 		}
 
 		usedSamplerNames.insert(samplerName);
-		refreshedTextures.push_back({ samplerName, texturePath });
+		refreshedTextures.push_back({ samplerName, texturePath, useTextureAtlas });
 	}
 
 	textures_ = std::move(refreshedTextures);
@@ -1037,7 +1087,50 @@ std::string ShaderEditorPanel::GetTextureSamplerNameForPath(const std::string& t
 	return "";
 }
 
-Texture* ShaderEditorPanel::GetTexturePreviewTexture(const std::string& texturePath) const
+const ShaderEditorPanel::TextureInfo* ShaderEditorPanel::GetTextureInfoForNode(const ShaderNode& textureNode) const
+{
+	const std::string normalizedTexturePath = EditorAssetPathUtils::ToContentRelativePath(textureNode.stringData);
+	for (const TextureInfo& textureInfo : textures_)
+	{
+		if (textureInfo.path == normalizedTexturePath && textureInfo.useTextureAtlas == textureNode.useTextureAtlas)
+		{
+			return &textureInfo;
+		}
+	}
+
+	return nullptr;
+}
+
+std::string ShaderEditorPanel::GetTextureSamplerNameForNode(const ShaderNode& textureNode) const
+{
+	const TextureInfo* textureInfo = GetTextureInfoForNode(textureNode);
+	return textureInfo ? textureInfo->name : "";
+}
+
+std::string ShaderEditorPanel::GetTextureSampleUVExpression(const ShaderNode& textureNode, const std::string& uvExpression, ShaderPinType uvType) const
+{
+	std::string normalizedUVExpression = uvExpression;
+	if (uvType == ShaderPinType::Float)
+	{
+		normalizedUVExpression = "vec2(" + uvExpression + ")";
+	}
+	else if (uvType == ShaderPinType::Vector3 || uvType == ShaderPinType::Vector4)
+	{
+		normalizedUVExpression = "(" + uvExpression + ").xy";
+	}
+
+	const TextureInfo* textureInfo = GetTextureInfoForNode(textureNode);
+	if (!textureInfo || !textureInfo->useTextureAtlas)
+	{
+		return normalizedUVExpression;
+	}
+
+	const std::string transformUniformName = textureInfo->name + "_UVTransform";
+	const std::string wrappedUV = "vec2(fract((" + normalizedUVExpression + ").x), fract((" + normalizedUVExpression + ").y))";
+	return "(" + wrappedUV + " * " + transformUniformName + ".xy + " + transformUniformName + ".zw)";
+}
+
+Texture* ShaderEditorPanel::GetTexturePreviewTexture(const std::string& texturePath, bool allowStandaloneCreation) const
 {
 	if (!LooksLikeTextureAssetPath(texturePath))
 	{
@@ -1052,6 +1145,11 @@ Texture* ShaderEditorPanel::GetTexturePreviewTexture(const std::string& textureP
 
 	if (!image->GetGeneratedTexture())
 	{
+		if (!allowStandaloneCreation)
+		{
+			return nullptr;
+		}
+
 		image->PreInit();
 		image->Init();
 		image->PostInit();
@@ -1193,6 +1291,8 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		return masterNode->inputs[inputIndex].id;
 	};
 
+	const bool materialDefaultUseTextureAtlas = ReadTextureAtlasUsage(root, true);
+
 	tinyxml2::XMLElement* texChild = root->FirstChildElement("Texture");
 	while (texChild)
 	{
@@ -1203,6 +1303,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 
 			ShaderNode texNode = SpawnNode("Texture", "Texture Sample", nodePos);
 			texNode.stringData = tPath;
+			texNode.useTextureAtlas = ReadTextureAtlasUsage(texChild, materialDefaultUseTextureAtlas);
 			nodes_.push_back(texNode);
 			nodePos.y += 100;
 		}
@@ -1525,19 +1626,23 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 		Image* image = engine->GetResourceManager()->GetContent<Image>(tex.path);
 		if (image)
 		{
-			if (!image->GetGeneratedTexture())
+			if (!tex.useTextureAtlas && !image->GetGeneratedTexture())
 			{
 				image->PreInit();
 				image->Init();
 				image->PostInit();
 			}
 
-			activeMaterial_->AddTextureImage(image);
+			activeMaterial_->AddTextureImage(image, tex.useTextureAtlas);
 		}
 		else
 		{
-			GOKNAR_INFO("ShaderEditorPanel: Texture '%s' not found at path '%s'. Injecting fallback uniform.", tex.name, tex.path);
+			GOKNAR_INFO("ShaderEditorPanel: Texture '%s' not found at path '%s'. Injecting fallback uniform.", tex.name.c_str(), tex.path.c_str());
 			missingTextureUniformDeclarations += "uniform sampler2D " + tex.name + ";\n";
+			if (tex.useTextureAtlas)
+			{
+				missingTextureUniformDeclarations += "uniform vec4 " + tex.name + "_UVTransform;\n";
+			}
 		}
 	}
 
@@ -1677,6 +1782,10 @@ void ShaderEditorPanel::SaveEditorReflection(const std::string& assetPath)
 		nodeElement->SetAttribute("SizeX", node.size.x);
 		nodeElement->SetAttribute("SizeY", node.size.y);
 		nodeElement->SetAttribute("IsUniform", node.isUniform ? 1 : 0);
+		if (IsTextureSampleNode(node))
+		{
+			nodeElement->SetAttribute("UseTextureAtlas", node.useTextureAtlas ? "true" : "false");
+		}
 
 		tinyxml2::XMLElement* stringDataElement = doc.NewElement("StringData");
 		tinyxml2::XMLText* stringDataText = doc.NewText(node.stringData.c_str());
@@ -1786,6 +1895,7 @@ bool ShaderEditorPanel::LoadEditorReflection(const std::string& assetPath)
 		node.pos = ImVec2(nodeElement->FloatAttribute("PosX"), nodeElement->FloatAttribute("PosY"));
 		node.size = ImVec2(nodeElement->FloatAttribute("SizeX"), nodeElement->FloatAttribute("SizeY"));
 		node.isUniform = nodeElement->BoolAttribute("IsUniform", true);
+		node.useTextureAtlas = nodeElement->BoolAttribute("UseTextureAtlas", true);
 
 		tinyxml2::XMLElement* stringDataElement = nodeElement->FirstChildElement("StringData");
 		node.stringData = stringDataElement && stringDataElement->GetText() ? stringDataElement->GetText() : "";
@@ -2351,14 +2461,22 @@ void ShaderEditorPanel::DrawNodeCanvas()
 			const ImVec2 previewMax(rect_max.x - 12.0f * scale_, rect_min.y + 116.0f * scale_);
 			draw_list->AddRectFilled(previewMin, previewMax, IM_COL32(0, 0, 0, 255), 4.0f * scale_);
 
-			if (Texture* previewTexture = GetTexturePreviewTexture(node.stringData))
+			if (Texture* previewTexture = GetTexturePreviewTexture(node.stringData, !node.useTextureAtlas))
 			{
+				const float u0 = previewTexture->GetAtlasUOffset();
+				const float v0 = previewTexture->GetAtlasVOffset();
+				const float u1 = u0 + previewTexture->GetAtlasUScale();
+				const float v1 = v0 + previewTexture->GetAtlasVScale();
+
+				const ImVec2 uv0(u0, v1);
+				const ImVec2 uv1(u1, v0);
+
 				draw_list->AddImage(
 					(ImTextureID)(intptr_t)previewTexture->GetRendererTextureId(),
 					previewMin,
 					previewMax,
-					ImVec2(0.0f, 1.0f),
-					ImVec2(1.0f, 0.0f));
+					uv0,
+					uv1);
 			}
 
 			draw_list->AddRect(previewMin, previewMax, IM_COL32(120, 120, 120, 255), 4.0f * scale_);
@@ -2746,7 +2864,7 @@ void ShaderEditorPanel::DrawNodeCanvas()
 		if (ImGui::BeginMenu("Math"))
 		{
 			if (ImGui::BeginMenu("Basic Math")) {
-				for (const char* func : { "Add", "Subtract", "Multiply", "Divide", "Pow", "Modulo", "Abs", "Sign", "Min", "Max", "Fma" })
+				for (const char* func : { "Add", "Subtract", "Multiply", "Divide", "Modulo", "Abs", "Sign", "Min", "Max", "Fma" })
 					if (ImGui::MenuItem(func)) nodes_.push_back(SpawnNode("Math", func, spawnPos));
 				ImGui::EndMenu();
 			}
@@ -3076,6 +3194,14 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 						RefreshTextureBindingsFromNodes();
 					}
 				}
+
+				bool useTextureAtlas = node->useTextureAtlas;
+				if (ImGui::Checkbox("Use Texture Atlas", &useTextureAtlas))
+				{
+					node->useTextureAtlas = useTextureAtlas;
+					RefreshTextureBindingsFromNodes();
+				}
+				ImGui::TextDisabled("Unconnected UV uses mesh UV. Atlased samples wrap local UV before atlas remap.");
 			}
 
 			if (node->typeCategory == "Custom")
@@ -3780,7 +3906,7 @@ ShaderNode ShaderEditorPanel::SpawnNode(const std::string& category, const std::
 			"Length", "Determinant", "IsNan", "IsInf"
 		};
 		static const std::unordered_set<std::string> func2Arg = {
-			"Add", "Subtract", "Multiply", "Divide", "Pow", "Modulo",
+			"Add", "Subtract", "Multiply", "Divide", "Modulo",
 			"Pow", "Min", "Max", "Step", "Reflect", "MatrixCompMult", "OuterProduct", "Atan", "Ldexp"
 		};
 		static const std::unordered_set<std::string> func2ArgFloatOut = {
@@ -4158,7 +4284,6 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 		if (nodeName == "RoundEven") return "roundEven";
 		if (nodeName == "IsNan") return "isnan";
 		if (nodeName == "IsInf") return "isinf";
-		if (nodeName == "Pow") return "pow";
 
 		std::string glslName = nodeName;
 		glslName[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(glslName[0])));
@@ -4327,6 +4452,14 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 			return GetDefaultValueString(pin);
 		};
 
+		auto IsInputPinConnected = [&](int pinId) -> bool
+		{
+			return std::any_of(links_.begin(), links_.end(), [pinId](const ShaderLink& link)
+			{
+				return link.endPinId == pinId;
+			});
+		};
+
 		if (executionOrder.empty())
 		{
 			outCalculation.clear();
@@ -4430,16 +4563,24 @@ void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMa
 			else if (node->typeCategory == "Texture" && node->name == "Texture Sample")
 			{
 				auto [uvValue, uvType] = GetPinValueAndType(node->inputs[0]);
-				(void)uvType;
+				if (!IsInputPinConnected(node->inputs[0].id))
+				{
+					uvValue = SHADER_VARIABLE_NAMES::TEXTURE::UV;
+					uvType = ShaderPinType::Vector2;
+				}
+
 				resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector4;
-				const std::string samplerName = GetTextureSamplerNameForPath(node->stringData);
+				const std::string samplerName = GetTextureSamplerNameForNode(*node);
 				if (samplerName.empty())
 				{
 					glslBody += "\tvec4 " + outVar + " = vec4(0.0f, 0.0f, 0.0f, 1.0f);\n";
 				}
 				else
 				{
-					glslBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + uvValue + ");\n";
+					const std::string sampleUV = GetTextureSampleUVExpression(*node, uvValue, uvType);
+					const TextureInfo* textureInfo = GetTextureInfoForNode(*node);
+
+					glslBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + sampleUV + ");\n";
 				}
 			}
 			else if ((node->typeCategory == "MaterialVariableArray" || node->typeCategory == "MaterialVariableArrayGet") && node->outputs.size() >= 2 && !node->inputs.empty())
@@ -5055,6 +5196,14 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 		return GetDefaultValueString(pin);
 	};
 
+	auto IsInputPinConnected = [&](int pinId) -> bool
+	{
+		return std::any_of(links_.begin(), links_.end(), [pinId](const ShaderLink& link)
+		{
+			return link.endPinId == pinId;
+		});
+	};
+
 	std::string nestedFunctionDefinitions;
 	std::string functionBody = "\t// --- Generated Material Function Calculations ---\n";
 
@@ -5149,16 +5298,22 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 		else if (node->typeCategory == "Texture" && node->name == "Texture Sample")
 		{
 			auto [uvValue, uvType] = GetPinValueAndType(node->inputs[0]);
-			(void)uvType;
+			if (!IsInputPinConnected(node->inputs[0].id))
+			{
+				uvValue = SHADER_VARIABLE_NAMES::TEXTURE::UV;
+				uvType = ShaderPinType::Vector2;
+			}
+
 			resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector4;
-			const std::string samplerName = GetTextureSamplerNameForPath(node->stringData);
+			const std::string samplerName = GetTextureSamplerNameForNode(*node);
 			if (samplerName.empty())
 			{
 				functionBody += "\tvec4 " + outVar + " = vec4(0.0f, 0.0f, 0.0f, 1.0f);\n";
 			}
 			else
 			{
-				functionBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + uvValue + ");\n";
+				const std::string sampleUV = GetTextureSampleUVExpression(*node, uvValue, uvType);
+				functionBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + sampleUV + ");\n";
 			}
 		}
 		else if (node->typeCategory == "Constants")
