@@ -1,11 +1,12 @@
 #pragma once
 
-#include "EditorPanel.h"
+#include "UI/Panels/EditorPanel.h"
 
 #include "Goknar/Math/GoknarMath.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialBase.h"
 #include "Goknar/Materials/MaterialFunction.h"
+#include "ShaderEditorTypes.h"
 
 #include "imgui.h"
 
@@ -21,56 +22,6 @@ class MeshViewerCameraObject;
 class ObjectBase;
 class StaticMeshComponent;
 class Texture;
-
-using ShaderPinType = MaterialFunctionPinType;
-using ShaderValue = std::variant<float, Vector2, Vector3, Vector4, std::string>;
-
-enum class ShaderEditorAssetMode
-{
-    Material = 0,
-    MaterialFunction
-};
-
-enum class ShaderPinKind
-{
-    Input,
-    Output
-};
-
-struct ShaderPin
-{
-    int id;
-    int nodeId;
-    std::string name;
-    ShaderPinType type;
-    ShaderPinKind kind;
-
-    ShaderValue defaultValue = 0.0f;
-};
-
-struct ShaderNode
-{
-    int id;
-    std::string name;
-    std::string typeCategory;
-    ImVec2 pos;
-    ImVec2 size;
-
-    std::vector<ShaderPin> inputs;
-    std::vector<ShaderPin> outputs;
-
-    std::string stringData{ "" };
-    bool isUniform{ true };
-    std::vector<ShaderValue> arrayDefaultValues{};
-    bool useTextureAtlas{ true };
-};
-
-struct ShaderLink
-{
-    int id;
-    int startPinId; // Always an Output pin
-    int endPinId;   // Always an Input pin
-};
 
 class EditorHUD;
 
@@ -94,11 +45,7 @@ public:
     bool HasCurrentAssetPath() const { return !currentAssetPath_.empty(); }
 
 private:
-    struct TextureInfo {
-        std::string name;
-        std::string path;
-        bool useTextureAtlas{ true };
-    };
+    using TextureInfo = ShaderEditorTextureInfo;
 
     struct ShaderEditorSnapshot
     {
