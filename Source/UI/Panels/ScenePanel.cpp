@@ -7,6 +7,7 @@
 #include "Goknar/Lights/DirectionalLight.h"
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
+#include "UI/EditorHUD.h"
 #include "imgui.h"
 
 void ScenePanel::Draw()
@@ -14,7 +15,19 @@ void ScenePanel::Draw()
     ImGui::Begin(title_.c_str(), &isOpen_);
 
     DrawSceneLights();
+    DrawSceneReferences();
     DrawSceneObjects();
+
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PAYLOAD"))
+        {
+            const std::string sourcePath = static_cast<const char*>(payload->Data);
+            hud_->InsertSceneReference(sourcePath, Vector3::ZeroVector);
+        }
+
+        ImGui::EndDragDropTarget();
+    }
 
     ImGui::End();
 }
@@ -31,7 +44,8 @@ void ScenePanel::DrawSceneLights()
         {
             DirectionalLight* directionalLight = directionalLights[i];
 
-            if (directionalLight->GetName().find("__Editor__") != std::string::npos)
+            if (directionalLight->GetName().find("__Editor__") != std::string::npos ||
+                currentScene->GetIsDirectionalLightFromReferencedScene(directionalLight))
             {
                 continue;
             }
@@ -48,7 +62,8 @@ void ScenePanel::DrawSceneLights()
         {
             PointLight* pointLight = pointLights[i];
 
-            if (pointLight->GetName().find("__Editor__") != std::string::npos)
+            if (pointLight->GetName().find("__Editor__") != std::string::npos ||
+                currentScene->GetIsPointLightFromReferencedScene(pointLight))
             {
                 continue;
             }
@@ -65,7 +80,8 @@ void ScenePanel::DrawSceneLights()
         {
             SpotLight* spotLight = spotLights[i];
 
-            if (spotLight->GetName().find("__Editor__") != std::string::npos)
+            if (spotLight->GetName().find("__Editor__") != std::string::npos ||
+                currentScene->GetIsSpotLightFromReferencedScene(spotLight))
             {
                 continue;
             }
@@ -81,14 +97,38 @@ void ScenePanel::DrawSceneLights()
     }
 }
 
+void ScenePanel::DrawSceneReferences()
+{
+    Scene* currentScene = engine->GetApplication()->GetMainScene();
+    if (!currentScene || currentScene->GetSceneReferences().empty())
+    {
+        return;
+    }
+
+    if (ImGui::TreeNode("Scenes"))
+    {
+        for (const SceneReference& sceneReference : currentScene->GetSceneReferences())
+        {
+            if (sceneReference.sceneRootObject)
+            {
+                DrawSceneObject(sceneReference.sceneRootObject);
+            }
+        }
+
+        ImGui::TreePop();
+    }
+}
+
 void ScenePanel::DrawSceneObjects()
 {
     if (ImGui::TreeNode("Objects"))
     {
-        const std::vector<ObjectBase*>& objects = engine->GetObjectsOfType<ObjectBase>();
+        Scene* currentScene = engine->GetApplication()->GetMainScene();
+        const std::vector<ObjectBase*>& objects = currentScene->GetObjects();
         for (ObjectBase* object : objects)
         {
-            if (object->GetName().find("__Editor__") != std::string::npos)
+            if (object->GetName().find("__Editor__") != std::string::npos ||
+                currentScene->GetIsObjectFromReferencedScene(object))
             {
                 continue;
             }

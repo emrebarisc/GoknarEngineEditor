@@ -53,11 +53,13 @@ void ParticleSystemPanel::Draw()
 		if (ImGui::Button("Add Billboard Particle System"))
 		{
 			selectedObject->AddSubComponent<BillboardParticleSystemComponent>();
+			EditorContext::Get()->MarkSceneDirty("Particle system component added");
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Add Static Mesh Particle System"))
 		{
 			selectedObject->AddSubComponent<StaticMeshParticleSystemComponent>();
+			EditorContext::Get()->MarkSceneDirty("Particle system component added");
 		}
 
 		ImGui::End();
@@ -88,9 +90,10 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	}
 
 	const std::string specialPostfix = "##ParticleSystem_" + std::to_string(particleSystemComponent->GetGUID());
+	bool didChangeScene = false;
 
 	bool isActive = particleSystemComponent->GetIsActive();
-	ImGui::Checkbox(("Active" + specialPostfix).c_str(), &isActive);
+	didChangeScene |= ImGui::Checkbox(("Active" + specialPostfix).c_str(), &isActive);
 	particleSystemComponent->SetIsActive(isActive);
 
 	BillboardParticleSystemComponent* billboardParticleSystemComponent = dynamic_cast<BillboardParticleSystemComponent*>(particleSystemComponent);
@@ -102,7 +105,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Max Particle Count:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
-	EditorWidgets::DrawInputInt("##MaxParticleCount" + specialPostfix, maxParticleCount);
+	didChangeScene |= EditorWidgets::DrawInputInt("##MaxParticleCount" + specialPostfix, maxParticleCount);
 	ImGui::PopItemWidth();
 	particleSystemComponent->SetMaxParticleCount(static_cast<std::uint32_t>((std::max)(1, maxParticleCount)));
 
@@ -110,7 +113,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Particle Size:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
-	EditorWidgets::DrawInputFloat("##ParticleSize" + specialPostfix, particleSize);
+	didChangeScene |= EditorWidgets::DrawInputFloat("##ParticleSize" + specialPostfix, particleSize);
 	ImGui::PopItemWidth();
 	particleSystemComponent->SetParticleSize(particleSize);
 
@@ -118,7 +121,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Gravity:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##Gravity" + specialPostfix, gravity);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##Gravity" + specialPostfix, gravity);
 	ImGui::PopItemWidth();
 	particleSystemComponent->SetGravity(gravity);
 
@@ -137,6 +140,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 		if (ImGui::Button(("Clear Static Mesh" + specialPostfix).c_str()))
 		{
 			staticMeshParticleSystemComponent->SetStaticMeshPath("");
+			didChangeScene = true;
 		}
 	}
 	else if (billboardParticleSystemComponent)
@@ -154,6 +158,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 		if (ImGui::Button(("Clear Billboard Material" + specialPostfix).c_str()))
 		{
 			billboardParticleSystemComponent->SetBillboardMaterialPath("");
+			didChangeScene = true;
 		}
 
 		ImGui::Text("Billboard Texture Fallback:");
@@ -167,6 +172,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 		if (ImGui::Button(("Clear Billboard Texture" + specialPostfix).c_str()))
 		{
 			billboardParticleSystemComponent->SetBillboardTexturePath("");
+			didChangeScene = true;
 		}
 	}
 
@@ -175,14 +181,14 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	GPUParticleSpawnDesc spawnDesc = particleSystemComponent->GetSpawnDesc();
 
 	bool looping = spawnDesc.looping;
-	ImGui::Checkbox(("Looping" + specialPostfix).c_str(), &looping);
+	didChangeScene |= ImGui::Checkbox(("Looping" + specialPostfix).c_str(), &looping);
 	spawnDesc.looping = looping;
 
 	float spawnInterval = spawnDesc.spawnInterval;
 	ImGui::Text("Spawn Interval:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
-	EditorWidgets::DrawInputFloat("##SpawnInterval" + specialPostfix, spawnInterval);
+	didChangeScene |= EditorWidgets::DrawInputFloat("##SpawnInterval" + specialPostfix, spawnInterval);
 	ImGui::PopItemWidth();
 	spawnDesc.spawnInterval = spawnInterval;
 
@@ -190,7 +196,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Spawn Count / Interval:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
-	EditorWidgets::DrawInputInt("##SpawnCountPerInterval" + specialPostfix, spawnCountPerInterval);
+	didChangeScene |= EditorWidgets::DrawInputInt("##SpawnCountPerInterval" + specialPostfix, spawnCountPerInterval);
 	ImGui::PopItemWidth();
 	spawnDesc.spawnCountPerInterval = static_cast<std::uint32_t>((std::max)(1, spawnCountPerInterval));
 
@@ -198,7 +204,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Spawn Box Extents:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##SpawnBoxExtents" + specialPostfix, spawnBoxExtents);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##SpawnBoxExtents" + specialPostfix, spawnBoxExtents);
 	ImGui::PopItemWidth();
 	spawnDesc.spawnBoxExtents = spawnBoxExtents;
 
@@ -206,7 +212,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Lifetime Range:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
-	ImGui::DragFloat2(("##LifetimeRange" + specialPostfix).c_str(), lifetimeRange, 0.01f);
+	didChangeScene |= ImGui::DragFloat2(("##LifetimeRange" + specialPostfix).c_str(), lifetimeRange, 0.01f);
 	ImGui::PopItemWidth();
 	spawnDesc.lifetime = GPUParticleValueRange<float>(lifetimeRange[0], lifetimeRange[1]);
 
@@ -214,7 +220,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Initial Velocity Min:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##InitialVelocityMin" + specialPostfix, initialVelocityMin);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##InitialVelocityMin" + specialPostfix, initialVelocityMin);
 	ImGui::PopItemWidth();
 	spawnDesc.initialVelocity.minValue = initialVelocityMin;
 
@@ -222,7 +228,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Initial Velocity Max:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##InitialVelocityMax" + specialPostfix, initialVelocityMax);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##InitialVelocityMax" + specialPostfix, initialVelocityMax);
 	ImGui::PopItemWidth();
 	spawnDesc.initialVelocity.maxValue = initialVelocityMax;
 
@@ -230,7 +236,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Initial Rotation Min:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##InitialRotationMin" + specialPostfix, initialRotationMin);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##InitialRotationMin" + specialPostfix, initialRotationMin);
 	ImGui::PopItemWidth();
 	spawnDesc.initialRotation.minValue = initialRotationMin;
 
@@ -238,7 +244,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Initial Rotation Max:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##InitialRotationMax" + specialPostfix, initialRotationMax);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##InitialRotationMax" + specialPostfix, initialRotationMax);
 	ImGui::PopItemWidth();
 	spawnDesc.initialRotation.maxValue = initialRotationMax;
 
@@ -246,7 +252,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Angular Velocity Min:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##AngularVelocityMin" + specialPostfix, angularVelocityMin);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##AngularVelocityMin" + specialPostfix, angularVelocityMin);
 	ImGui::PopItemWidth();
 	spawnDesc.angularVelocity.minValue = angularVelocityMin;
 
@@ -254,7 +260,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Angular Velocity Max:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##AngularVelocityMax" + specialPostfix, angularVelocityMax);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##AngularVelocityMax" + specialPostfix, angularVelocityMax);
 	ImGui::PopItemWidth();
 	spawnDesc.angularVelocity.maxValue = angularVelocityMax;
 
@@ -262,7 +268,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Acceleration Min:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##AccelerationMin" + specialPostfix, accelerationMin);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##AccelerationMin" + specialPostfix, accelerationMin);
 	ImGui::PopItemWidth();
 	spawnDesc.acceleration.minValue = accelerationMin;
 
@@ -270,7 +276,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Acceleration Max:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_VECTOR_COMPONENT_WIDTH);
-	EditorWidgets::DrawInputVector3("##AccelerationMax" + specialPostfix, accelerationMax);
+	didChangeScene |= EditorWidgets::DrawInputVector3("##AccelerationMax" + specialPostfix, accelerationMax);
 	ImGui::PopItemWidth();
 	spawnDesc.acceleration.maxValue = accelerationMax;
 
@@ -278,7 +284,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Velocity Limit:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
-	EditorWidgets::DrawInputFloat("##VelocityLimit" + specialPostfix, velocityLimit);
+	didChangeScene |= EditorWidgets::DrawInputFloat("##VelocityLimit" + specialPostfix, velocityLimit);
 	ImGui::PopItemWidth();
 	spawnDesc.velocityLimit = velocityLimit;
 
@@ -286,7 +292,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Size by Lifetime:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
-	ImGui::DragFloat2(("##SizeByLifetime" + specialPostfix).c_str(), sizeByLifetime, 0.01f);
+	didChangeScene |= ImGui::DragFloat2(("##SizeByLifetime" + specialPostfix).c_str(), sizeByLifetime, 0.01f);
 	ImGui::PopItemWidth();
 	spawnDesc.sizeByLifetime = GPUParticleFloatCurve{ sizeByLifetime[0], sizeByLifetime[1] };
 
@@ -294,7 +300,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Size by Speed Range:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
-	ImGui::DragFloat2(("##SizeBySpeedRange" + specialPostfix).c_str(), sizeBySpeedRange, 0.01f);
+	didChangeScene |= ImGui::DragFloat2(("##SizeBySpeedRange" + specialPostfix).c_str(), sizeBySpeedRange, 0.01f);
 	ImGui::PopItemWidth();
 	spawnDesc.sizeBySpeedRange = Vector2(sizeBySpeedRange[0], sizeBySpeedRange[1]);
 
@@ -302,7 +308,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Size by Speed:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
-	ImGui::DragFloat2(("##SizeBySpeed" + specialPostfix).c_str(), sizeBySpeed, 0.01f);
+	didChangeScene |= ImGui::DragFloat2(("##SizeBySpeed" + specialPostfix).c_str(), sizeBySpeed, 0.01f);
 	ImGui::PopItemWidth();
 	spawnDesc.sizeBySpeed = GPUParticleFloatCurve{ sizeBySpeed[0], sizeBySpeed[1] };
 
@@ -310,7 +316,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Color by Lifetime Start:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_COLOR_INPUT_WIDTH);
-	ImGui::ColorEdit4(("##ColorByLifetimeStart" + specialPostfix).c_str(), colorByLifetimeStart);
+	didChangeScene |= ImGui::ColorEdit4(("##ColorByLifetimeStart" + specialPostfix).c_str(), colorByLifetimeStart);
 	ImGui::PopItemWidth();
 	spawnDesc.colorByLifetime.startValue = Vector4(colorByLifetimeStart[0], colorByLifetimeStart[1], colorByLifetimeStart[2], colorByLifetimeStart[3]);
 
@@ -318,7 +324,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Color by Lifetime End:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_COLOR_INPUT_WIDTH);
-	ImGui::ColorEdit4(("##ColorByLifetimeEnd" + specialPostfix).c_str(), colorByLifetimeEnd);
+	didChangeScene |= ImGui::ColorEdit4(("##ColorByLifetimeEnd" + specialPostfix).c_str(), colorByLifetimeEnd);
 	ImGui::PopItemWidth();
 	spawnDesc.colorByLifetime.endValue = Vector4(colorByLifetimeEnd[0], colorByLifetimeEnd[1], colorByLifetimeEnd[2], colorByLifetimeEnd[3]);
 
@@ -326,7 +332,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Color by Speed Range:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
-	ImGui::DragFloat2(("##ColorBySpeedRange" + specialPostfix).c_str(), colorBySpeedRange, 0.01f);
+	didChangeScene |= ImGui::DragFloat2(("##ColorBySpeedRange" + specialPostfix).c_str(), colorBySpeedRange, 0.01f);
 	ImGui::PopItemWidth();
 	spawnDesc.colorBySpeedRange = Vector2(colorBySpeedRange[0], colorBySpeedRange[1]);
 
@@ -334,7 +340,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Color by Speed Start:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_COLOR_INPUT_WIDTH);
-	ImGui::ColorEdit4(("##ColorBySpeedStart" + specialPostfix).c_str(), colorBySpeedStart);
+	didChangeScene |= ImGui::ColorEdit4(("##ColorBySpeedStart" + specialPostfix).c_str(), colorBySpeedStart);
 	ImGui::PopItemWidth();
 	spawnDesc.colorBySpeed.startValue = Vector4(colorBySpeedStart[0], colorBySpeedStart[1], colorBySpeedStart[2], colorBySpeedStart[3]);
 
@@ -342,7 +348,7 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Color by Speed End:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_COLOR_INPUT_WIDTH);
-	ImGui::ColorEdit4(("##ColorBySpeedEnd" + specialPostfix).c_str(), colorBySpeedEnd);
+	didChangeScene |= ImGui::ColorEdit4(("##ColorBySpeedEnd" + specialPostfix).c_str(), colorBySpeedEnd);
 	ImGui::PopItemWidth();
 	spawnDesc.colorBySpeed.endValue = Vector4(colorBySpeedEnd[0], colorBySpeedEnd[1], colorBySpeedEnd[2], colorBySpeedEnd[3]);
 
@@ -354,9 +360,14 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::Text("Preview Burst Count:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
-	EditorWidgets::DrawInputInt("##PreviewParticleCount" + specialPostfix, previewParticleCount);
+	didChangeScene |= EditorWidgets::DrawInputInt("##PreviewParticleCount" + specialPostfix, previewParticleCount);
 	ImGui::PopItemWidth();
 	particleSystemComponent->SetPreviewParticleCount(static_cast<std::uint32_t>((std::max)(0, previewParticleCount)));
+
+	if (didChangeScene)
+	{
+		EditorContext::Get()->MarkSceneDirty("Particle system changed");
+	}
 
 	if (ImGui::Button(("Regenerate Preview Burst" + specialPostfix).c_str()))
 	{
@@ -414,18 +425,21 @@ void ParticleSystemPanel::OnAssetSelected(const std::string& path)
 		if (StaticMeshParticleSystemComponent* staticMeshParticleSystemComponent = dynamic_cast<StaticMeshParticleSystemComponent*>(particleSystemComponent))
 		{
 			staticMeshParticleSystemComponent->SetStaticMeshPath(normalizedPath);
+			EditorContext::Get()->MarkSceneDirty("Particle static mesh changed");
 		}
 		break;
 	case ParticleSystemAssetSelectionTarget::BillboardTexture:
 		if (BillboardParticleSystemComponent* billboardParticleSystemComponent = dynamic_cast<BillboardParticleSystemComponent*>(particleSystemComponent))
 		{
 			billboardParticleSystemComponent->SetBillboardTexturePath(normalizedPath);
+			EditorContext::Get()->MarkSceneDirty("Particle billboard texture changed");
 		}
 		break;
 	case ParticleSystemAssetSelectionTarget::BillboardMaterial:
 		if (BillboardParticleSystemComponent* billboardParticleSystemComponent = dynamic_cast<BillboardParticleSystemComponent*>(particleSystemComponent))
 		{
 			billboardParticleSystemComponent->SetBillboardMaterialPath(normalizedPath);
+			EditorContext::Get()->MarkSceneDirty("Particle billboard material changed");
 		}
 		break;
 	case ParticleSystemAssetSelectionTarget::None:

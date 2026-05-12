@@ -261,6 +261,21 @@ void EditorContext::SetCameraMovement(bool value)
 	viewportCameraObject->GetController()->SetIsActive(value);
 }
 
+void EditorContext::MarkSceneDirty(const std::string& reason)
+{
+	isSceneDirty_ = true;
+	if (!reason.empty())
+	{
+		sceneDirtyReason_ = reason;
+	}
+}
+
+void EditorContext::ClearSceneDirty()
+{
+	isSceneDirty_ = false;
+	sceneDirtyReason_.clear();
+}
+
 void EditorContext::BuildFileTree()
 {
 	for (auto folder : folderMap)

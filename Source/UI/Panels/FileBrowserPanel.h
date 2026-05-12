@@ -29,6 +29,10 @@ private:
 	void HandleContextMenu(const std::string& itemPath, const std::string& itemName, bool isFolder);
 	void DrawCreateContentMenu(const std::string& targetDirectory);
 	void OpenAssetFile(const std::string& filePath);
+	void RequestOpenScene(const std::string& filePath);
+	void DrawSaveChangesPrompt();
+	void OpenPendingScene();
+	bool SaveCurrentScene();
 
 	// File system operations
 	void MoveFileSystemItem(const std::string& source, const std::string& targetFolder);
@@ -44,7 +48,9 @@ private:
 	bool isCreatingFolder_{ false };
 	bool isCreatingAsset_{ false };
 	bool needsRefresh_{ false };
+	bool shouldOpenSaveChangesPopup_{ false };
 	std::string selectedItemForMenu_{ "" };
+	std::string pendingSceneToOpen_{ "" };
 	std::string pendingCreationDirectory_{};
 	PendingAssetCreationType pendingAssetCreationType_{ PendingAssetCreationType::None };
 	char renameBuffer_[256]{ 0 };

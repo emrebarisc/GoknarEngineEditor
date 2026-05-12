@@ -38,98 +38,118 @@ namespace
 	}
 }
 
-void EditorWidgets::DrawInputText(const std::string& name, std::string& value)
+bool EditorWidgets::DrawInputText(const std::string& name, std::string& value)
 {
 	char* valueChar = const_cast<char*>(value.c_str());
-	ImGui::InputText(name.c_str(), valueChar, 64);
+	bool changed = ImGui::InputText(name.c_str(), valueChar, 64);
 	value = std::string(valueChar);
+	return changed;
 }
 
-void EditorWidgets::DrawInputInt(const std::string& name, int& value)
+bool EditorWidgets::DrawInputInt(const std::string& name, int& value)
 {
 	int newValue = value;
-	ImGui::InputInt((name).c_str(), &newValue);
+	bool changed = ImGui::InputInt((name).c_str(), &newValue);
 	value = newValue;
+	return changed;
 }
 
-void EditorWidgets::DrawInputFloat(const std::string& name, float& value)
+bool EditorWidgets::DrawInputFloat(const std::string& name, float& value)
 {
 	float newValue = value;
-	ImGui::InputFloat((name).c_str(), &newValue);
+	bool changed = ImGui::InputFloat((name).c_str(), &newValue);
 	if (SMALLER_EPSILON < GoknarMath::Abs(value - newValue))
 	{
 		value = newValue;
+		return true;
 	}
+
+	return changed;
 }
 
-void EditorWidgets::DrawInputVector3(const std::string& name, Vector3& vector)
+bool EditorWidgets::DrawInputVector3(const std::string& name, Vector3& vector)
 {
+	bool changed = false;
+
 	float newValueX = vector.x;
-	ImGui::InputFloat((name + "X").c_str(), &newValueX);
+	changed |= ImGui::InputFloat((name + "X").c_str(), &newValueX);
 	if (SMALLER_EPSILON < GoknarMath::Abs(vector.x - newValueX))
 	{
 		vector.x = newValueX;
+		changed = true;
 	}
 
 	ImGui::SameLine();
 
 	float newValueY = vector.y;
-	ImGui::InputFloat((name + "Y").c_str(), &newValueY);
+	changed |= ImGui::InputFloat((name + "Y").c_str(), &newValueY);
 	if (SMALLER_EPSILON < GoknarMath::Abs(vector.y - newValueY))
 	{
 		vector.y = newValueY;
+		changed = true;
 	}
 
 	ImGui::SameLine();
 
 	float newValueZ = vector.z;
-	ImGui::InputFloat((name + "Z").c_str(), &newValueZ);
+	changed |= ImGui::InputFloat((name + "Z").c_str(), &newValueZ);
 	if (SMALLER_EPSILON < GoknarMath::Abs(vector.z - newValueZ))
 	{
 		vector.z = newValueZ;
+		changed = true;
 	}
+
+	return changed;
 }
 
-void EditorWidgets::DrawInputQuaternion(const  std::string& name, Quaternion& quaternion)
+bool EditorWidgets::DrawInputQuaternion(const  std::string& name, Quaternion& quaternion)
 {
+	bool changed = false;
+
 	float newQuaternionX = quaternion.x;
-	ImGui::InputFloat((name + "X").c_str(), &newQuaternionX);
+	changed |= ImGui::InputFloat((name + "X").c_str(), &newQuaternionX);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.x - newQuaternionX))
 	{
 		quaternion.x = newQuaternionX;
+		changed = true;
 	}
 
 	ImGui::SameLine();
 
 	float newQuaternionY = quaternion.y;
-	ImGui::InputFloat((name + "Y").c_str(), &newQuaternionY);
+	changed |= ImGui::InputFloat((name + "Y").c_str(), &newQuaternionY);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.y - newQuaternionY))
 	{
 		quaternion.y = newQuaternionY;
+		changed = true;
 	}
 
 	ImGui::SameLine();
 
 	float newQuaternionZ = quaternion.z;
-	ImGui::InputFloat((name + "Z").c_str(), &newQuaternionZ);
+	changed |= ImGui::InputFloat((name + "Z").c_str(), &newQuaternionZ);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.z - newQuaternionZ))
 	{
 		quaternion.z = newQuaternionZ;
+		changed = true;
 	}
 
 	ImGui::SameLine();
 
 	float newQuaternionW = quaternion.w;
-	ImGui::InputFloat((name + "W").c_str(), &newQuaternionW, 64);
+	changed |= ImGui::InputFloat((name + "W").c_str(), &newQuaternionW, 64);
 	if (SMALLER_EPSILON < GoknarMath::Abs(quaternion.w - newQuaternionW))
 	{
 		quaternion.w = newQuaternionW;
+		changed = true;
 	}
+
+	return changed;
 }
 
-void EditorWidgets::DrawCheckbox(const std::string& name, bool& value)
+bool EditorWidgets::DrawCheckbox(const std::string& name, bool& value)
 {
-	ImGui::Checkbox(name.c_str(), &value);
+	return ImGui::Checkbox(name.c_str(), &value);
 }
 
 bool EditorWidgets::DrawWindowWithOneTextBoxOneButton(const std::string& windowTitle, const std::string& text, const std::string& currentValue, const std::string& buttonText, const Vector2i& size, std::string& resultText, bool& isOpen, ImGuiWindowFlags flags)

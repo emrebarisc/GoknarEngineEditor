@@ -85,6 +85,8 @@ public:
 	bool WasMouseDoubleClicked(ImGuiMouseButton button) const;
 	bool WasLastItemDoubleClicked(ImGuiMouseButton button) const;
 	ObjectBase* CloneSelectedObject();
+	bool InsertSceneReference(const std::string& scenePath, const Vector3& position);
+	Vector3 RaycastWorld();
 
 protected:
 
@@ -127,7 +129,6 @@ private:
 	ObjectBase* CreateObject(const std::string& typeName);
 
 	void OnPlaceObject();
-	Vector3 RaycastWorld();
 	ImVec2 GetCursorPositionForUi() const;
 
 

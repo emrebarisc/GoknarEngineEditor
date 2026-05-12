@@ -25,6 +25,7 @@ void SaveScenePanel::Draw()
 	{
 		EditorContext::Get()->sceneSavePath = resultText;
 		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + resultText);
+		EditorContext::Get()->ClearSceneDirty();
 
 		hud_->HidePanel<SaveScenePanel>();
 	}

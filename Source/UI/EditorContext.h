@@ -21,7 +21,8 @@ enum class EditorSelectionType
 	Object,
 	DirectionalLight,
 	PointLight,
-	SpotLight
+	SpotLight,
+	Scene
 };
 
 enum class EditorAssetType
@@ -102,6 +103,19 @@ public:
 
 	void SetCameraMovement(bool value);
 
+	void MarkSceneDirty(const std::string& reason = "");
+	void ClearSceneDirty();
+
+	bool GetIsSceneDirty() const
+	{
+		return isSceneDirty_;
+	}
+
+	const std::string& GetSceneDirtyReason() const
+	{
+		return sceneDirtyReason_;
+	}
+
 	std::string objectToCreateName;
 	std::string sceneSavePath;
 
@@ -128,4 +142,7 @@ private:
 	EditorContext();
 
 	inline static EditorContext* instance_{ nullptr };
+
+	bool isSceneDirty_{ false };
+	std::string sceneDirtyReason_;
 };

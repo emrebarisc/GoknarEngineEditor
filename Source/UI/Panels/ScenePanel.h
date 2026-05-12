@@ -18,6 +18,7 @@ public:
 
 private:
     void DrawSceneLights();
+    void DrawSceneReferences();
     void DrawSceneObjects();
     void DrawSceneObject(ObjectBase* object);
 };

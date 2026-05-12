@@ -1,11 +1,35 @@
 #include "ObjectCreationPanel.h"
 #include "imgui.h"
 
+#include <algorithm>
+#include <filesystem>
+#include <vector>
+
 #include "Goknar/Factories/DynamicObjectFactory.h"
 
+#include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorContext.h"
 #include "UI/EditorHUD.h"
 #include "UI/Panels/ObjectNameToCreatePanel.h"
+
+namespace
+{
+    std::vector<std::string> GetProjectScenePaths()
+    {
+        std::vector<std::string> scenePaths;
+        EditorContext* context = EditorContext::Get();
+        for (const auto& [assetPath, assetType] : context->assetTypeMap)
+        {
+            if (assetType == EditorAssetType::Scene)
+            {
+                scenePaths.push_back(EditorAssetPathUtils::ToContentRelativePath(assetPath));
+            }
+        }
+
+        std::sort(scenePaths.begin(), scenePaths.end());
+        return scenePaths;
+    }
+}
 
 void ObjectCreationPanel::Draw()
 {
@@ -43,6 +67,34 @@ void ObjectCreationPanel::Draw()
                 SetObjectToCreate(EditorSelectionType::Object, name);
             }
         }
+        ImGui::TreePop();
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::TreeNode("Scene"))
+    {
+        const std::vector<std::string> scenePaths = GetProjectScenePaths();
+        if (scenePaths.empty())
+        {
+            ImGui::TextDisabled("No scenes found");
+        }
+
+        for (const std::string& scenePath : scenePaths)
+        {
+            ImGui::PushID(scenePath.c_str());
+            const std::string label = std::filesystem::path(scenePath).filename().generic_string();
+            if (ImGui::Button(label.c_str()))
+            {
+                SetObjectToCreate(EditorSelectionType::Scene, scenePath);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", scenePath.c_str());
+            }
+            ImGui::PopID();
+        }
+
         ImGui::TreePop();
     }
 

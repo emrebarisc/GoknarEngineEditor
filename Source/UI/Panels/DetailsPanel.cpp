@@ -39,6 +39,14 @@ void AddCollisionComponent(PhysicsObject* physicsObject)
 	physicsObject->AddSubComponent<T>();
 }
 
+namespace
+{
+	void MarkSceneDirty(const std::string& reason)
+	{
+		EditorContext::Get()->MarkSceneDirty(reason);
+	}
+}
+
 DetailsPanel::DetailsPanel(EditorHUD* hud) : IEditorPanel("Details", hud)
 {
 	SetupReflections();
@@ -110,6 +118,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		if (newStaticMesh)
 		{
 			staticMeshComponent->SetMesh(newStaticMesh);
+			MarkSceneDirty("Static mesh changed");
 		}
 		break;
 	}
@@ -127,6 +136,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			materialPaths.resize(subMeshCount);
 			materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
 			SceneParser::ApplyStaticMeshComponentMaterialPaths(staticMeshComponent, materialPaths);
+			MarkSceneDirty("Material changed");
 		}
 		break;
 	}
@@ -183,18 +193,23 @@ void DetailsPanel::DrawTransform()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Position", position);
+	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", position);
 	object->SetWorldPosition(position);
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Rotation", rotation);
+	const bool rotationChanged = EditorWidgets::DrawInputVector3("##Rotation", rotation);
 	object->SetWorldRotation(Quaternion::FromEulerDegrees(rotation));
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Scaling", scale);
+	const bool scalingChanged = EditorWidgets::DrawInputVector3("##Scaling", scale);
 	object->SetWorldScaling(scale);
+
+	if (positionChanged || rotationChanged || scalingChanged)
+	{
+		MarkSceneDirty("Object transform changed");
+	}
 }
 
 void DetailsPanel::DrawObjectDetails()
@@ -219,26 +234,32 @@ void DetailsPanel::DrawObjectDetails()
 	ImGui::Text("Name: ");
 	ImGui::SameLine();
 	std::string newName = selectedObjectName;
-	EditorWidgets::DrawInputText("##Name", newName);
+	const bool nameChanged = EditorWidgets::DrawInputText("##Name", newName);
 	if (newName != selectedObjectName)
 	{
 		object->SetName(newName);
+		MarkSceneDirty("Object name changed");
 	}
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Position", selectedObjectWorldPosition);
+	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", selectedObjectWorldPosition);
 	object->SetWorldPosition(selectedObjectWorldPosition);
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Rotation", selectedObjectWorldRotationEulerDegrees);
+	const bool rotationChanged = EditorWidgets::DrawInputVector3("##Rotation", selectedObjectWorldRotationEulerDegrees);
 	object->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Scaling", selectedObjectWorldScaling);
+	const bool scalingChanged = EditorWidgets::DrawInputVector3("##Scaling", selectedObjectWorldScaling);
 	object->SetWorldScaling(selectedObjectWorldScaling);
+
+	if (!nameChanged && (positionChanged || rotationChanged || scalingChanged))
+	{
+		MarkSceneDirty("Object transform changed");
+	}
 
 	ImGui::Separator();
 	ReflectionProbeObject* reflectionProbeObject = dynamic_cast<ReflectionProbeObject*>(object);
@@ -254,8 +275,11 @@ void DetailsPanel::DrawObjectDetails()
 		float rigidBodyMass = rigidBody->GetMass();
 		ImGui::Text("Mass: ");
 		ImGui::SameLine();
-		EditorWidgets::DrawInputFloat("##Mass", rigidBodyMass);
-		rigidBody->SetMass(rigidBodyMass);
+		if (EditorWidgets::DrawInputFloat("##Mass", rigidBodyMass))
+		{
+			rigidBody->SetMass(rigidBodyMass);
+			MarkSceneDirty("Rigid body mass changed");
+		}
 
 		static const char* collisionGroupNames[]{
 			"",
@@ -388,6 +412,7 @@ void DetailsPanel::DrawObjectDetails()
 				newCollisionGroup = CollisionGroup::Default;
 			}
 			rigidBody->SetCollisionGroup(newCollisionGroup);
+			MarkSceneDirty("Rigid body collision group changed");
 		}
 		ImGui::Columns(1, nullptr, false);
 
@@ -540,6 +565,7 @@ void DetailsPanel::DrawObjectDetails()
 				newCollisionMask = CollisionMask::Default;
 			}
 			rigidBody->SetCollisionMask(newCollisionMask);
+			MarkSceneDirty("Rigid body collision mask changed");
 		}
 		ImGui::Columns(1, nullptr, false);
 	}
@@ -567,8 +593,11 @@ void DetailsPanel::DrawReflectionProbeObjectDetails(ReflectionProbeObject* refle
 
 	ImGui::Text("Probe Size: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3(sizeFieldName, probeSize);
-	reflectionProbeObject->SetSize(probeSize);
+	if (EditorWidgets::DrawInputVector3(sizeFieldName, probeSize))
+	{
+		reflectionProbeObject->SetSize(probeSize);
+		MarkSceneDirty("Reflection probe size changed");
+	}
 }
 
 void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
@@ -648,18 +677,23 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	ImGui::Text("RelativePosition: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
+	const bool relativePositionChanged = EditorWidgets::DrawInputVector3(std::string("##RelativePosition") + specialPostfix, componentRelativePosition);
 	component->SetRelativePosition(componentRelativePosition);
 
 	ImGui::Text("RelativeRotation: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
+	const bool relativeRotationChanged = EditorWidgets::DrawInputVector3(std::string("##RelativeRotation") + specialPostfix, componentRelativeRotationEulerDegrees);
 	component->SetRelativeRotation(Quaternion::FromEulerDegrees(componentRelativeRotationEulerDegrees));
 
 	ImGui::Text("RelativeScaling: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
+	const bool relativeScalingChanged = EditorWidgets::DrawInputVector3(std::string("##RelativeScaling") + specialPostfix, componentRelativeScaling);
 	component->SetRelativeScaling(componentRelativeScaling);
+
+	if (relativePositionChanged || relativeRotationChanged || relativeScalingChanged)
+	{
+		MarkSceneDirty("Component transform changed");
+	}
 
 	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
@@ -778,6 +812,7 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	if (currentValue != (int)staticMeshInstance->GetRenderMask())
 	{
 		staticMeshInstance->SetRenderMask(currentValue);
+		MarkSceneDirty("Static mesh render mask changed");
 	}
 
 	ImGui::PopItemWidth();
@@ -810,8 +845,11 @@ void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* p
 	float particleSize = particleSystemComponent->GetParticleSize();
 	ImGui::Text("Particle Size: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##ParticleSystemParticleSize" + specialPostfix, particleSize);
-	particleSystemComponent->SetParticleSize(particleSize);
+	if (EditorWidgets::DrawInputFloat("##ParticleSystemParticleSize" + specialPostfix, particleSize))
+	{
+		particleSystemComponent->SetParticleSize(particleSize);
+		MarkSceneDirty("Particle size changed");
+	}
 
 	ImGui::Text("Looping: %s", spawnDesc.looping ? "Yes" : "No");
 	ImGui::Text("Spawn Interval: %.3f", spawnDesc.spawnInterval);
@@ -843,6 +881,7 @@ void DetailsPanel::DrawSphereCollisionComponentDetails(SphereCollisionComponent*
 	if (sphereCollisionComponentRadius != sphereCollisionComponent->GetRadius())
 	{
 		sphereCollisionComponent->SetRadius(sphereCollisionComponentRadius);
+		MarkSceneDirty("Sphere collision radius changed");
 	}
 }
 
@@ -856,6 +895,7 @@ void DetailsPanel::DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponen
 	if (capsuleCollisionComponentRadius != capsuleCollisionComponent->GetRadius())
 	{
 		capsuleCollisionComponent->SetRadius(capsuleCollisionComponentRadius);
+		MarkSceneDirty("Capsule collision radius changed");
 	}
 
 	ImGui::Text("Height: ");
@@ -866,6 +906,7 @@ void DetailsPanel::DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponen
 	if (capsuleCollisionComponentHeight != capsuleCollisionComponent->GetHeight())
 	{
 		capsuleCollisionComponent->SetHeight(capsuleCollisionComponentHeight);
+		MarkSceneDirty("Capsule collision height changed");
 	}
 }
 
@@ -948,10 +989,12 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 			if (objectReflections_.find(selectedComponentString) != objectReflections_.end())
 			{
 				objectReflections_[selectedComponentString](physicsObject);
+				MarkSceneDirty("Component added");
 			}
 			else if (physicsReflections_.find(selectedComponentString) != physicsReflections_.end())
 			{
 				physicsReflections_[selectedComponentString](physicsObject);
+				MarkSceneDirty("Collision component added");
 			}
 			selectedItem = 0;
 		}
@@ -966,6 +1009,7 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 			if (objectReflections_.find(selectedComponentString) != objectReflections_.end())
 			{
 				objectReflections_[selectedComponentString](object);
+				MarkSceneDirty("Component added");
 			}
 		}
 	}
@@ -986,33 +1030,38 @@ void DetailsPanel::DrawDirectionalLightDetails()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Position", lightPosition);
+	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Direction", lightDirection);
+	const bool directionChanged = EditorWidgets::DrawInputVector3("##Direction", lightDirection);
 	light->SetDirection(lightDirection);
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
+	const bool intensityChanged = EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
 	light->SetIntensity(lightIntensity);
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Color", lightColor);
+	const bool colorChanged = EditorWidgets::DrawInputVector3("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
-	ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
+	const bool shadowEnabledChanged = ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
 	light->SetIsShadowEnabled(lightIsShadowEnabled);
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
+	const bool shadowIntensityChanged = EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
+
+	if (positionChanged || directionChanged || intensityChanged || colorChanged || shadowEnabledChanged || shadowIntensityChanged)
+	{
+		MarkSceneDirty("Directional light changed");
+	}
 
 	ImGui::PopItemWidth();
 }
@@ -1032,33 +1081,38 @@ void DetailsPanel::DrawPointLightDetails()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Position", lightPosition);
+	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
+	const bool intensityChanged = EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
 	light->SetIntensity(lightIntensity);
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Color", lightColor);
+	const bool colorChanged = EditorWidgets::DrawInputVector3("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Radius: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Radius", lightRadius);
+	const bool radiusChanged = EditorWidgets::DrawInputFloat("##Radius", lightRadius);
 	light->SetRadius(lightRadius);
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
-	ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
+	const bool shadowEnabledChanged = ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
 	light->SetIsShadowEnabled(lightIsShadowEnabled);
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
+	const bool shadowIntensityChanged = EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
+
+	if (positionChanged || intensityChanged || colorChanged || radiusChanged || shadowEnabledChanged || shadowIntensityChanged)
+	{
+		MarkSceneDirty("Point light changed");
+	}
 
 	ImGui::PopItemWidth();
 }
@@ -1081,43 +1135,48 @@ void DetailsPanel::DrawSpotLightDetails()
 
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Position", lightPosition);
+	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", lightPosition);
 	light->SetPosition(lightPosition);
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Direction", lightDirection);
+	const bool directionChanged = EditorWidgets::DrawInputVector3("##Direction", lightDirection);
 	light->SetDirection(lightDirection.GetNormalized());
 
 	ImGui::Text("FalloffAngle: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##FalloffAngle", lightFalloffAngle);
+	const bool falloffChanged = EditorWidgets::DrawInputFloat("##FalloffAngle", lightFalloffAngle);
 	light->SetFalloffAngle(lightFalloffAngle);
 
 	ImGui::Text("CoverageAngle: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##CoverageAngle", lightCoverageAngle);
+	const bool coverageChanged = EditorWidgets::DrawInputFloat("##CoverageAngle", lightCoverageAngle);
 	light->SetCoverageAngle(lightCoverageAngle);
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
+	const bool intensityChanged = EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
 	light->SetIntensity(lightIntensity);
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputVector3("##Color", lightColor);
+	const bool colorChanged = EditorWidgets::DrawInputVector3("##Color", lightColor);
 	light->SetColor(lightColor);
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
-	ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
+	const bool shadowEnabledChanged = ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
 	light->SetIsShadowEnabled(lightIsShadowEnabled);
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
-	EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
+	const bool shadowIntensityChanged = EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
 	light->SetShadowIntensity(lightShadowIntensity);
+
+	if (positionChanged || directionChanged || falloffChanged || coverageChanged || intensityChanged || colorChanged || shadowEnabledChanged || shadowIntensityChanged)
+	{
+		MarkSceneDirty("Spot light changed");
+	}
 
 	ImGui::PopItemWidth();
 }

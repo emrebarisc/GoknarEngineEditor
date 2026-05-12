@@ -7,6 +7,10 @@
 
 #include "Goknar/Camera.h"
 #include "Goknar/Engine.h"
+#include "Goknar/Application.h"
+#include "Goknar/Scene.h"
+#include "Goknar/Helpers/ContentPathUtils.h"
+#include "Goknar/Helpers/SceneParser.h"
 
 #include "Goknar/Contents/Image.h"
 
@@ -36,6 +40,7 @@
 #include "Thirdparty/EditorImGuiOpenGL.h"
 
 #include "EditorContext.h"
+#include "EditorAssetPathUtils.h"
 #include "EditorUtils.h"
 
 #include "Panels/AnimationGraphPanel.h"
@@ -53,7 +58,7 @@
 #include "Panels/ProjectSettingsPanel.h"
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
-#include "Panels/ShaderEditorPanel.h"
+#include "Panels/ShaderEditor/ShaderEditorPanel.h"
 #include "Panels/SkeletalMeshViewerPanel.h"
 #include "Panels/SystemFileBrowserPanel.h"
 #include "Panels/ToolBarPanel.h"
@@ -68,6 +73,83 @@ void AddCollisionComponent(PhysicsObject* physicsObject)
 	}
 
 	T* collisionComponent = physicsObject->AddSubComponent<T>();
+}
+
+namespace
+{
+	struct SceneContentCounts
+	{
+		size_t directionalLightCount{ 0 };
+		size_t pointLightCount{ 0 };
+		size_t spotLightCount{ 0 };
+		size_t textureCount{ 0 };
+	};
+
+	SceneContentCounts CaptureSceneContentCounts(Scene* scene)
+	{
+		SceneContentCounts counts;
+		if (!scene)
+		{
+			return counts;
+		}
+
+		counts.directionalLightCount = scene->GetDirectionalLights().size();
+		counts.pointLightCount = scene->GetPointLights().size();
+		counts.spotLightCount = scene->GetSpotLights().size();
+		counts.textureCount = scene->GetTextures().size();
+		return counts;
+	}
+
+	template <typename T>
+	void InitializeRange(const std::vector<T*>& items, size_t startIndex)
+	{
+		for (size_t itemIndex = startIndex; itemIndex < items.size(); ++itemIndex)
+		{
+			T* item = items[itemIndex];
+			if (!item)
+			{
+				continue;
+			}
+
+			item->PreInit();
+			item->Init();
+			item->PostInit();
+		}
+	}
+
+	void InitializeSceneContentAddedAfter(Scene* scene, const SceneContentCounts& counts)
+	{
+		if (!scene)
+		{
+			return;
+		}
+
+		InitializeRange(scene->GetDirectionalLights(), counts.directionalLightCount);
+		InitializeRange(scene->GetPointLights(), counts.pointLightCount);
+		InitializeRange(scene->GetSpotLights(), counts.spotLightCount);
+		InitializeRange(scene->GetTextures(), counts.textureCount);
+	}
+
+	bool IsSceneAssetPath(EditorContext* context, const std::string& scenePath)
+	{
+		if (!context)
+		{
+			return false;
+		}
+
+		const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(scenePath);
+		if (contentRelativePath.empty())
+		{
+			return false;
+		}
+
+		if (context->GetAssetType("Content/" + contentRelativePath) == EditorAssetType::Scene)
+		{
+			return true;
+		}
+
+		return context->GetAssetType(scenePath) == EditorAssetType::Scene;
+	}
 }
 
 EditorHUD::EditorHUD() : HUD()
@@ -118,6 +200,7 @@ EditorHUD::EditorHUD() : HUD()
 	onCancelInputPressedDelegate_ = Delegate<void()>::Create<EditorHUD, &EditorHUD::OnCancelInputPressed>(this);
 
 	uiImage_ = EditorUtils::GetEditorContent<Image>("Textures/UI/T_UI.png");
+	uiImage_->SetCanUseTextureAtlas(false);
 
 	engine->GetRenderer()->SetDrawOnWindow(true);
 
@@ -455,6 +538,7 @@ ImVec2 EditorHUD::GetCursorPositionForUi() const
 void EditorHUD::OnPlaceObject()
 {
 	Vector3 raycastPosition = RaycastWorld();
+	bool didCreateSceneContent = false;
 
 	switch (context_->objectToCreateType)
 	{
@@ -464,25 +548,33 @@ void EditorHUD::OnPlaceObject()
 		if (object)
 		{
 			object->SetWorldPosition(raycastPosition);
+			didCreateSceneContent = true;
 		}
 		break;
 	}
 	case EditorSelectionType::DirectionalLight:
 	{
 		CreateDirectionalLight();
+		didCreateSceneContent = true;
 		break;
 	}
 	case EditorSelectionType::PointLight:
 	{
 		PointLight* pointLight = CreatePointLight();
 		pointLight->SetPosition(raycastPosition);
+		didCreateSceneContent = true;
 		break;
 	}
 	case EditorSelectionType::SpotLight:
 	{
-		CreateSpotLight();
 		SpotLight* spotLight = CreateSpotLight();
 		spotLight->SetPosition(raycastPosition);
+		didCreateSceneContent = true;
+		break;
+	}
+	case EditorSelectionType::Scene:
+	{
+		InsertSceneReference(context_->objectToCreateName, raycastPosition);
 		break;
 	}
 	case EditorSelectionType::None:
@@ -495,6 +587,11 @@ void EditorHUD::OnPlaceObject()
 	context_->objectToCreateName = "";
 
 	HidePanel<ObjectNameToCreatePanel>();
+
+	if (didCreateSceneContent)
+	{
+		context_->MarkSceneDirty("Scene object created");
+	}
 }
 
 Vector3 EditorHUD::RaycastWorld()
@@ -525,6 +622,49 @@ Vector3 EditorHUD::RaycastWorld()
 	return raycastResult.hitPosition;
 }
 
+bool EditorHUD::InsertSceneReference(const std::string& scenePath, const Vector3& position)
+{
+	Scene* currentScene = engine->GetApplication()->GetMainScene();
+	if (!currentScene)
+	{
+		return false;
+	}
+
+	if (!IsSceneAssetPath(context_, scenePath))
+	{
+		return false;
+	}
+
+	const std::string contentRelativeScenePath = ContentPathUtils::NormalizePath(EditorAssetPathUtils::ToContentRelativePath(scenePath));
+	if (contentRelativeScenePath.empty())
+	{
+		return false;
+	}
+
+	const std::string currentScenePath = ContentPathUtils::NormalizePath(ContentPathUtils::ToContentRelativePath(currentScene->GetPath()));
+	if (!currentScenePath.empty() && currentScenePath == contentRelativeScenePath)
+	{
+		return false;
+	}
+
+	SceneReference sceneReference;
+	sceneReference.path = contentRelativeScenePath;
+	sceneReference.relativePosition = position;
+
+	const SceneContentCounts counts = CaptureSceneContentCounts(currentScene);
+	if (!SceneParser::InsertSceneReference(currentScene, sceneReference))
+	{
+		return false;
+	}
+
+	InitializeSceneContentAddedAfter(currentScene, counts);
+	engine->GetResourceManager()->InitializePendingMaterials();
+	engine->InitializePendingObjectsAndComponents();
+
+	context_->MarkSceneDirty("Scene reference added");
+	return true;
+}
+
 void EditorHUD::OnDeleteInputPressed()
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -537,6 +677,7 @@ void EditorHUD::OnDeleteInputPressed()
 	switch (context_->selectedObjectType)
 	{
 	case EditorSelectionType::Object:
+		engine->GetApplication()->GetMainScene()->RemoveObject((ObjectBase*)context_->selectedObject);
 		((ObjectBase*)context_->selectedObject)->Destroy();
 		break;
 	case EditorSelectionType::DirectionalLight:
@@ -555,6 +696,7 @@ void EditorHUD::OnDeleteInputPressed()
 
 	context_->selectedObjectType = EditorSelectionType::None;
 	context_->selectedObject = nullptr;
+	context_->MarkSceneDirty("Scene object deleted");
 }
 
 void EditorHUD::OnCloneInputPressed()
@@ -588,7 +730,9 @@ ObjectBase* EditorHUD::CloneSelectedObject()
 		clonedObject->SetParent(parentObject, SnappingRule::KeepWorldAll, false);
 	}
 
+	engine->GetApplication()->GetMainScene()->AddObject(clonedObject);
 	context_->SetSelection(clonedObject, EditorSelectionType::Object);
+	context_->MarkSceneDirty("Scene object duplicated");
 
 	return clonedObject;
 }
@@ -741,6 +885,7 @@ ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
 	newObjectBase->SetName(typeName);
 	context_->selectedObjectType = EditorSelectionType::Object;
 	context_->selectedObject = newObjectBase;
+	engine->GetApplication()->GetMainScene()->AddObject(newObjectBase);
 
 	return newObjectBase;
 }

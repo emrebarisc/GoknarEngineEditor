@@ -70,6 +70,17 @@ void ViewportPanel::Draw()
 		ImVec2{ 1.f, 0.f }
 	);
 
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PAYLOAD"))
+		{
+			const std::string sourcePath = static_cast<const char*>(payload->Data);
+			hud_->InsertSceneReference(sourcePath, hud_->RaycastWorld());
+		}
+
+		ImGui::EndDragDropTarget();
+	}
+
 	EditorUtils::DrawWorldAxis(EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera());
 
 	if (showDebugOverlay_ && debugPanel_)

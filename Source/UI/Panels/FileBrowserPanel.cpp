@@ -7,6 +7,9 @@
 #include "tinyxml2.h"
 
 #include "Goknar/Engine.h"
+#include "Goknar/Application.h"
+#include "Goknar/Helpers/ContentPathUtils.h"
+#include "Goknar/Helpers/SceneParser.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Renderer/Texture.h"
@@ -21,7 +24,7 @@
 #include "AnimationGraphPanel.h"
 #include "ImageViewerPanel.h"
 #include "MeshViewerPanel.h"
-#include "ShaderEditorPanel.h"
+#include "ShaderEditor/ShaderEditorPanel.h"
 #include "SkeletalMeshViewerPanel.h"
 #include "UI/EditorHUD.h"
 
@@ -327,6 +330,8 @@ void FileBrowserPanel::Draw()
 		ImGui::EndPopup();
 	}
 
+	DrawSaveChangesPrompt();
+
 	ImGui::End();
 
 	// Perform the delayed folder refresh outside of the ImGui loops
@@ -475,7 +480,12 @@ void FileBrowserPanel::DrawGrid()
 			{
 				std::string fileFullPath = GetAbsoluteProjectPath(currentFolder_->path + file);
 				const std::string assetFileType = TryGetGameAssetFileType(fileFullPath);
-				if (!assetFileType.empty())
+				const EditorAssetType assetType = EditorContext::Get()->GetAssetType(currentFolder_->path + file);
+				if (assetFileType == "Scene" || assetType == EditorAssetType::Scene)
+				{
+					RequestOpenScene(fileFullPath);
+				}
+				else if (!assetFileType.empty())
 				{
 					OpenAssetFile(fileFullPath);
 				}
@@ -557,7 +567,7 @@ void FileBrowserPanel::HandleDragDropSource(const std::string& sourcePath, const
 		std::string cleanPath = sourcePath;
 		if (!cleanPath.empty() && cleanPath.back() == '/') cleanPath.pop_back();
 
-		ImGui::Text("Moving: %s", std::filesystem::path(cleanPath).filename().string().c_str());
+		ImGui::Text("Dragging: %s", std::filesystem::path(cleanPath).filename().string().c_str());
 		ImGui::EndDragDropSource();
 	}
 }
@@ -696,6 +706,104 @@ void FileBrowserPanel::OpenAssetFile(const std::string& filePath)
 			animationGraphPanel->SetIsOpen(true);
 		}
 	}
+	else if (fileType == "Scene")
+	{
+		RequestOpenScene(filePath);
+	}
+}
+
+void FileBrowserPanel::RequestOpenScene(const std::string& filePath)
+{
+	pendingSceneToOpen_ = ContentPathUtils::NormalizePath(EditorAssetPathUtils::ToContentRelativePath(filePath));
+	if (pendingSceneToOpen_.empty())
+	{
+		return;
+	}
+
+	EditorContext* context = EditorContext::Get();
+	if (pendingSceneToOpen_ == ContentPathUtils::NormalizePath(context->sceneSavePath))
+	{
+		pendingSceneToOpen_.clear();
+		return;
+	}
+
+	if (context->GetIsSceneDirty() && pendingSceneToOpen_ != context->sceneSavePath)
+	{
+		shouldOpenSaveChangesPopup_ = true;
+		return;
+	}
+
+	OpenPendingScene();
+}
+
+void FileBrowserPanel::DrawSaveChangesPrompt()
+{
+	if (shouldOpenSaveChangesPopup_)
+	{
+		ImGui::OpenPopup("Save changes?");
+		shouldOpenSaveChangesPopup_ = false;
+	}
+
+	if (ImGui::BeginPopupModal("Save changes?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::TextWrapped("Save changes to the current scene before opening another scene?");
+
+		if (ImGui::Button("Yes", ImVec2(120, 0)))
+		{
+			if (SaveCurrentScene())
+			{
+				OpenPendingScene();
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("No", ImVec2(120, 0)))
+		{
+			OpenPendingScene();
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			pendingSceneToOpen_.clear();
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void FileBrowserPanel::OpenPendingScene()
+{
+	if (pendingSceneToOpen_.empty())
+	{
+		return;
+	}
+
+	if (engine->GetApplication()->OpenScene(pendingSceneToOpen_))
+	{
+		EditorContext* context = EditorContext::Get();
+		context->sceneSavePath = pendingSceneToOpen_;
+		context->ClearSceneDirty();
+		context->ClearSelection();
+	}
+
+	pendingSceneToOpen_.clear();
+}
+
+bool FileBrowserPanel::SaveCurrentScene()
+{
+	EditorContext* context = EditorContext::Get();
+	if (context->sceneSavePath.empty())
+	{
+		return false;
+	}
+
+	SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + context->sceneSavePath);
+	context->ClearSceneDirty();
+	return true;
 }
 
 void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::string& targetFolder)

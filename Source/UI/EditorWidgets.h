@@ -15,12 +15,12 @@ struct Folder;
 class EditorWidgets
 {
 public:
-	static void DrawInputText(const std::string& name, std::string& value);
-	static void DrawInputInt(const std::string& name, int& value);
-	static void DrawInputFloat(const std::string& name, float& value);
-	static void DrawInputVector3(const std::string& name, Vector3& vector);
-	static void DrawInputQuaternion(const  std::string& name, Quaternion& quaternion);
-	static void DrawCheckbox(const std::string& name, bool& value);
+	static bool DrawInputText(const std::string& name, std::string& value);
+	static bool DrawInputInt(const std::string& name, int& value);
+	static bool DrawInputFloat(const std::string& name, float& value);
+	static bool DrawInputVector3(const std::string& name, Vector3& vector);
+	static bool DrawInputQuaternion(const  std::string& name, Quaternion& quaternion);
+	static bool DrawCheckbox(const std::string& name, bool& value);
 
 	static bool DrawWindowWithOneTextBoxOneButton(
 		const std::string& windowTitle,

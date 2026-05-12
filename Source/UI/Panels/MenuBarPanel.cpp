@@ -8,8 +8,8 @@
 #include "UI/Panels/ViewportPanel.h"
 #include "UI/Panels/ProjectSettingsPanel.h"
 #include "UI/Panels/SaveScenePanel.h"
-#include "UI/Panels/ShaderEditorPanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
+#include "UI/Panels/ShaderEditor/ShaderEditorPanel.h"
 
 #include "Editor.h"
 
@@ -386,6 +386,7 @@ bool MenuBarPanel::SaveSceneToCurrentPath() const
 	}
 
 	SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + path);
+	EditorContext::Get()->ClearSceneDirty();
 	return true;
 }
 

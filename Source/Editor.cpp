@@ -71,7 +71,8 @@ Editor::Editor() : Application()
 
 			std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
 			EditorContext::Get()->sceneSavePath = mainScenePath;
-			mainScene_->ReadSceneData(mainScenePath);
+			OpenScene(mainScenePath);
+			EditorContext::Get()->ClearSceneDirty();
 
 		}
 		else
@@ -126,7 +127,8 @@ void Editor::LoadProject(const std::string& projectPath)
 
 		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
 		EditorContext::Get()->sceneSavePath = mainScenePath;
-		mainScene_->ReadSceneData(mainScenePath);
+		OpenScene(mainScenePath);
+		EditorContext::Get()->ClearSceneDirty();
 	}
 	else
 	{
