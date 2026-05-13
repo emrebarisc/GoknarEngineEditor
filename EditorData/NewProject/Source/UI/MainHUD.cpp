@@ -7,6 +7,7 @@
 
 #include "Goknar/Application.h"
 #include "Goknar/Engine.h"
+#include "Goknar/Graphics/IGraphicsAPI.h"
 
 #include "Goknar/Contents/Image.h"
 
@@ -151,8 +152,8 @@ void MainHUD::UpdateHUD()
 
 	if (!engine->GetRenderer()->GetDrawOnWindow())
 	{
-		glClearColor(0.f, 0.f, 0.f, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		engine->GetGraphicsAPI()->ClearColor(0.f, 0.f, 0.f, 1.f);
+		engine->GetGraphicsAPI()->Clear(GraphicsClearBuffer::Color | GraphicsClearBuffer::Depth);
 	}
 
 	WindowManager* windowManager = engine->GetWindowManager();

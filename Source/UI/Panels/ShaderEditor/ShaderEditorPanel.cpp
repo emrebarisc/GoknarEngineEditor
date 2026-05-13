@@ -913,10 +913,11 @@ void ShaderEditorPanel::ResetEditorGraph(const ImVec2& masterNodePos)
 
 	if (IsEditingMaterial())
 	{
-		masterNode.size = ImVec2(220, GetNodeBodyHeightFromPins(7, 0));
+		masterNode.size = ImVec2(220, GetNodeBodyHeightFromPins(8, 0));
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Base Color", ShaderPinType::Vector4, ShaderPinKind::Input, Vector4(1.f) });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Emissive", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f) });
-		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Normal", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f, 0.f, 1.f) });
+		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Fragment Normal", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f, 0.f, 1.f) });
+		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Vertex Normal", ShaderPinType::Vector3, ShaderPinKind::Input, Vector3(0.f, 0.f, 1.f) });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Ambient Occlusion", ShaderPinType::Float, ShaderPinKind::Input, 1.0f });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Metallic", ShaderPinType::Float, ShaderPinKind::Input, 0.0f });
 		masterNode.inputs.push_back({ nextId_++, masterNode.id, "Roughness", ShaderPinType::Float, ShaderPinKind::Input, 0.5f });
@@ -1282,16 +1283,25 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 
 	ImVec2 nodePos(100, 100);
 
-	auto GetMasterInputPinId = [&](int inputIndex) -> int
-	{
-		ShaderNode* masterNode = FindNode(masterNodeId_);
-		if (!masterNode || inputIndex < 0 || static_cast<size_t>(inputIndex) >= masterNode->inputs.size())
+	auto GetMasterInputPinIdByName = [&](const std::string& inputName) -> int
 		{
-			return -1;
-		}
+			ShaderNode* masterNode = FindNode(masterNodeId_);
+			if (!masterNode)
+			{
+				return -1;
+			}
 
-		return masterNode->inputs[inputIndex].id;
-	};
+			const auto inputIterator =
+				std::find_if(
+					masterNode->inputs.begin(),
+					masterNode->inputs.end(),
+					[&inputName](const ShaderPin& pin)
+					{
+						return pin.name == inputName;
+					});
+
+			return inputIterator == masterNode->inputs.end() ? -1 : inputIterator->id;
+		};
 
 	const bool materialDefaultUseTextureAtlas = ReadTextureAtlasUsage(root, true);
 
@@ -1322,7 +1332,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		return false;
 		};
 
-	auto ParseColorConstant = [&](const char* name, int inputIndex, bool isVec4) {
+	auto ParseColorConstant = [&](const char* name, const char* masterInputName, bool isVec4) {
 		const std::string propertyName = name ? name : "";
 		if (HasCalculation((propertyName == "DiffuseReflectance" || propertyName == "BaseColorValue") ? "BaseColor" : "EmissiveColor")) return;
 
@@ -1336,7 +1346,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 				cn.inputs[0].defaultValue = c.x; cn.inputs[1].defaultValue = c.y;
 				cn.inputs[2].defaultValue = c.z; cn.inputs[3].defaultValue = c.w;
 				nodes_.push_back(cn);
-				const int masterInputPinId = GetMasterInputPinId(inputIndex);
+				const int masterInputPinId = GetMasterInputPinIdByName(masterInputName);
 				if (masterInputPinId != -1 && !cn.outputs.empty())
 				{
 					links_.push_back({ nextId_++, cn.outputs[0].id, masterInputPinId });
@@ -1349,7 +1359,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 				cn.inputs[0].defaultValue = c.x; cn.inputs[1].defaultValue = c.y;
 				cn.inputs[2].defaultValue = c.z;
 				nodes_.push_back(cn);
-				const int masterInputPinId = GetMasterInputPinId(inputIndex);
+				const int masterInputPinId = GetMasterInputPinIdByName(masterInputName);
 				if (masterInputPinId != -1 && !cn.outputs.empty())
 				{
 					links_.push_back({ nextId_++, cn.outputs[0].id, masterInputPinId });
@@ -1359,43 +1369,43 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		}
 		};
 
-	ParseColorConstant("DiffuseReflectance", 0, false);
-	ParseColorConstant("BaseColorValue", 0, true);
-	ParseColorConstant("EmmisiveColorValue", 1, false);
+	ParseColorConstant("DiffuseReflectance", "Base Color", false);
+	ParseColorConstant("BaseColorValue", "Base Color", true);
+	ParseColorConstant("EmmisiveColorValue", "Emissive", false);
 
-	auto ParseFloatConstant = [&](const char* name, int inputIndex, const char* shaderFunctionTag)
-	{
-		if (HasCalculation(shaderFunctionTag))
+	auto ParseFloatConstant = [&](const char* name, const char* masterInputName, const char* shaderFunctionTag)
 		{
-			return;
-		}
-
-		std::string s = GetText(name);
-		if (!s.empty())
-		{
-			std::stringstream ss(s);
-			float value = 0.f;
-			ss >> value;
-			ShaderNode constantNode = SpawnNode("Constants", "Float Constant", nodePos);
-			if (!constantNode.outputs.empty())
+			if (HasCalculation(shaderFunctionTag))
 			{
-				constantNode.outputs[0].defaultValue = value;
+				return;
 			}
-			nodes_.push_back(constantNode);
-			const int masterInputPinId = GetMasterInputPinId(inputIndex);
-			if (masterInputPinId != -1 && !constantNode.outputs.empty())
+
+			std::string s = GetText(name);
+			if (!s.empty())
 			{
-				links_.push_back({ nextId_++, constantNode.outputs[0].id, masterInputPinId });
+				std::stringstream ss(s);
+				float value = 0.f;
+				ss >> value;
+				ShaderNode constantNode = SpawnNode("Constants", "Float Constant", nodePos);
+				if (!constantNode.outputs.empty())
+				{
+					constantNode.outputs[0].defaultValue = value;
+				}
+				nodes_.push_back(constantNode);
+				const int masterInputPinId = GetMasterInputPinIdByName(masterInputName);
+				if (masterInputPinId != -1 && !constantNode.outputs.empty())
+				{
+					links_.push_back({ nextId_++, constantNode.outputs[0].id, masterInputPinId });
+				}
+				nodePos.y += 130;
 			}
-			nodePos.y += 130;
-		}
-	};
+		};
 
-	ParseFloatConstant("AmbientOcclusionValue", 3, "AmbientOcclusion");
-	ParseFloatConstant("MetallicValue", 4, "Metallic");
-	ParseFloatConstant("RoughnessValue", 5, "Roughness");
+	ParseFloatConstant("AmbientOcclusionValue", "Ambient Occlusion", "AmbientOcclusion");
+	ParseFloatConstant("MetallicValue", "Metallic", "Metallic");
+	ParseFloatConstant("RoughnessValue", "Roughness", "Roughness");
 
-	auto AddCustomGLSLNode = [&](const char* tag, int masterInputIndex) {
+	auto AddCustomGLSLNode = [&](const char* tag, const char* masterInputName) {
 		tinyxml2::XMLElement* el = root->FirstChildElement(tag);
 		if (el) {
 			std::string calcStr = el->FirstChildElement("Calculation") && el->FirstChildElement("Calculation")->GetText() ? el->FirstChildElement("Calculation")->GetText() : "";
@@ -1406,7 +1416,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 				nodePos.y += 150;
 				customNode.stringData = calcStr + "\nRETURN_RESULT:" + resStr;
 				nodes_.push_back(customNode);
-				const int masterInputPinId = GetMasterInputPinId(masterInputIndex);
+				const int masterInputPinId = GetMasterInputPinIdByName(masterInputName);
 				if (masterInputPinId != -1 && !customNode.outputs.empty())
 				{
 					links_.push_back({ nextId_++, customNode.outputs[0].id, masterInputPinId });
@@ -1415,45 +1425,47 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 		}
 		};
 
-	AddCustomGLSLNode("BaseColor", 0);
-	AddCustomGLSLNode("EmissiveColor", 1);
-	AddCustomGLSLNode("FragmentNormal", 2);
-	AddCustomGLSLNode("AmbientOcclusion", 3);
-	AddCustomGLSLNode("Metallic", 4);
-	AddCustomGLSLNode("Roughness", 5);
-	AddCustomGLSLNode("VertexPositionOffset", 6);
+	AddCustomGLSLNode("BaseColor", "Base Color");
+	AddCustomGLSLNode("EmissiveColor", "Emissive");
+	AddCustomGLSLNode("FragmentNormal", "Fragment Normal");
+	AddCustomGLSLNode("Normal", "Fragment Normal");
+	AddCustomGLSLNode("VertexNormal", "Vertex Normal");
+	AddCustomGLSLNode("AmbientOcclusion", "Ambient Occlusion");
+	AddCustomGLSLNode("Metallic", "Metallic");
+	AddCustomGLSLNode("Roughness", "Roughness");
+	AddCustomGLSLNode("VertexPositionOffset", "World Position Offset");
 
 	std::unordered_set<std::string> parsedMaterialNodeNames;
 	auto AddMaterialNodesFromShaderText = [&](const std::string& shaderText)
-	{
-		std::stringstream stream(shaderText);
-		std::string line;
-		while (std::getline(stream, line))
 		{
-			ShaderNode parsedNode;
-			if (!TryParseMaterialNodeMetadata(line, parsedNode) || parsedMaterialNodeNames.find(parsedNode.name) != parsedMaterialNodeNames.end())
+			std::stringstream stream(shaderText);
+			std::string line;
+			while (std::getline(stream, line))
 			{
-				continue;
-			}
+				ShaderNode parsedNode;
+				if (!TryParseMaterialNodeMetadata(line, parsedNode) || parsedMaterialNodeNames.find(parsedNode.name) != parsedMaterialNodeNames.end())
+				{
+					continue;
+				}
 
-			ShaderNode node = SpawnNode(parsedNode.typeCategory, parsedNode.name, nodePos);
-			node.name = parsedNode.name;
-			node.isUniform = parsedNode.isUniform;
-			if (!parsedNode.outputs.empty() && !node.outputs.empty())
-			{
-				node.outputs[0].type = parsedNode.outputs[0].type;
-				node.outputs[0].defaultValue = parsedNode.outputs[0].defaultValue;
+				ShaderNode node = SpawnNode(parsedNode.typeCategory, parsedNode.name, nodePos);
+				node.name = parsedNode.name;
+				node.isUniform = parsedNode.isUniform;
+				if (!parsedNode.outputs.empty() && !node.outputs.empty())
+				{
+					node.outputs[0].type = parsedNode.outputs[0].type;
+					node.outputs[0].defaultValue = parsedNode.outputs[0].defaultValue;
+				}
+				if (node.typeCategory == "MaterialVariableArray")
+				{
+					node.arrayDefaultValues = parsedNode.arrayDefaultValues;
+					EnsureArrayDefaultsMatchNode(node);
+				}
+				nodes_.push_back(node);
+				parsedMaterialNodeNames.insert(node.name);
+				nodePos.y += 130.0f;
 			}
-			if (node.typeCategory == "MaterialVariableArray")
-			{
-				node.arrayDefaultValues = parsedNode.arrayDefaultValues;
-				EnsureArrayDefaultsMatchNode(node);
-			}
-			nodes_.push_back(node);
-			parsedMaterialNodeNames.insert(node.name);
-			nodePos.y += 130.0f;
-		}
-	};
+		};
 
 	AddMaterialNodesFromShaderText(GetText("VertexShaderUniforms"));
 	AddMaterialNodesFromShaderText(GetText("FragmentShaderUniforms"));
@@ -1466,24 +1478,39 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	else if (ShaderNode* masterNode = FindNode(masterNodeId_))
 	{
 		auto EnsureMasterInput = [&](const char* pinName, ShaderPinType pinType, const ShaderValue& defaultValue)
-		{
-			const auto existingPinIterator =
-				std::find_if(
-					masterNode->inputs.begin(),
-					masterNode->inputs.end(),
-					[pinName](const ShaderPin& pin)
-					{
-						return pin.name == pinName;
-					});
-			if (existingPinIterator == masterNode->inputs.end())
 			{
-				masterNode->inputs.push_back({ nextId_++, masterNode->id, pinName, pinType, ShaderPinKind::Input, defaultValue });
-			}
-		};
+				const auto existingPinIterator =
+					std::find_if(
+						masterNode->inputs.begin(),
+						masterNode->inputs.end(),
+						[pinName](const ShaderPin& pin)
+						{
+							return pin.name == pinName;
+						});
+				if (existingPinIterator == masterNode->inputs.end())
+				{
+					masterNode->inputs.push_back({ nextId_++, masterNode->id, pinName, pinType, ShaderPinKind::Input, defaultValue });
+				}
+			};
 
+		for (ShaderPin& pin : masterNode->inputs)
+		{
+			if (pin.name == "Normal")
+			{
+				pin.name = "Fragment Normal";
+				pin.type = ShaderPinType::Vector3;
+				EnsureValueMatchesType(pin.defaultValue, pin.type);
+			}
+		}
+
+		EnsureMasterInput("Base Color", ShaderPinType::Vector4, Vector4(1.f));
+		EnsureMasterInput("Emissive", ShaderPinType::Vector3, Vector3(0.f));
+		EnsureMasterInput("Fragment Normal", ShaderPinType::Vector3, Vector3(0.f, 0.f, 1.f));
+		EnsureMasterInput("Vertex Normal", ShaderPinType::Vector3, Vector3(0.f, 0.f, 1.f));
 		EnsureMasterInput("Ambient Occlusion", ShaderPinType::Float, 1.0f);
 		EnsureMasterInput("Metallic", ShaderPinType::Float, 0.0f);
 		EnsureMasterInput("Roughness", ShaderPinType::Float, 0.5f);
+		EnsureMasterInput("World Position Offset", ShaderPinType::Vector3, Vector3(0.f));
 		masterNode->size.y = GetNodeBodyHeightFromPins(masterNode->inputs.size(), masterNode->outputs.size());
 	}
 
@@ -1649,6 +1676,7 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 	}
 
 	CompileGraphToMaterial(initData);
+	initData->vertexShaderUniforms += missingTextureUniformDeclarations;
 	initData->fragmentShaderUniforms += missingTextureUniformDeclarations;
 
 	activeMaterial_->Build(nullptr);
@@ -1680,8 +1708,8 @@ void ShaderEditorPanel::Draw()
 		{
 			browser->OpenFileSelector(
 				IsEditingMaterial() ?
-					Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialOpened>(this) :
-					Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialFunctionOpened>(this),
+				Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialOpened>(this) :
+				Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialFunctionOpened>(this),
 				GetAssetBrowserDirectory(currentAssetPath_),
 				EditorAssetPathUtils::GetProjectRootPath());
 		}
@@ -1699,8 +1727,8 @@ void ShaderEditorPanel::Draw()
 		{
 			browser->SaveFileSelector(
 				IsEditingMaterial() ?
-					Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialSaved>(this) :
-					Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialFunctionSaved>(this),
+				Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialSaved>(this) :
+				Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnMaterialFunctionSaved>(this),
 				GetAssetBrowserDirectory(currentAssetPath_),
 				"",
 				EditorAssetPathUtils::GetProjectRootPath());
@@ -1796,21 +1824,21 @@ void ShaderEditorPanel::SaveEditorReflection(const std::string& assetPath)
 		nodeElement->InsertEndChild(stringDataElement);
 
 		auto SerializePins = [&](const char* containerName, const std::vector<ShaderPin>& pins)
-		{
-			tinyxml2::XMLElement* pinsElement = doc.NewElement(containerName);
-			for (const ShaderPin& pin : pins)
 			{
-				tinyxml2::XMLElement* pinElement = doc.NewElement("Pin");
-				pinElement->SetAttribute("Id", pin.id);
-				pinElement->SetAttribute("NodeId", pin.nodeId);
-				pinElement->SetAttribute("Name", pin.name.c_str());
-				pinElement->SetAttribute("Type", ShaderPinTypeToString(pin.type));
-				pinElement->SetAttribute("Kind", ShaderPinKindToString(pin.kind));
-				SerializePinDefaultValue(doc, pinElement, pin);
-				pinsElement->InsertEndChild(pinElement);
-			}
-			nodeElement->InsertEndChild(pinsElement);
-		};
+				tinyxml2::XMLElement* pinsElement = doc.NewElement(containerName);
+				for (const ShaderPin& pin : pins)
+				{
+					tinyxml2::XMLElement* pinElement = doc.NewElement("Pin");
+					pinElement->SetAttribute("Id", pin.id);
+					pinElement->SetAttribute("NodeId", pin.nodeId);
+					pinElement->SetAttribute("Name", pin.name.c_str());
+					pinElement->SetAttribute("Type", ShaderPinTypeToString(pin.type));
+					pinElement->SetAttribute("Kind", ShaderPinKindToString(pin.kind));
+					SerializePinDefaultValue(doc, pinElement, pin);
+					pinsElement->InsertEndChild(pinElement);
+				}
+				nodeElement->InsertEndChild(pinsElement);
+			};
 
 		SerializePins("Inputs", node.inputs);
 		SerializePins("Outputs", node.outputs);
@@ -1903,23 +1931,23 @@ bool ShaderEditorPanel::LoadEditorReflection(const std::string& assetPath)
 		node.stringData = stringDataElement && stringDataElement->GetText() ? stringDataElement->GetText() : "";
 
 		auto DeserializePins = [&](const char* containerName, std::vector<ShaderPin>& pins)
-		{
-			tinyxml2::XMLElement* pinsElement = nodeElement->FirstChildElement(containerName);
-			for (tinyxml2::XMLElement* pinElement = pinsElement ? pinsElement->FirstChildElement("Pin") : nullptr;
-				pinElement != nullptr;
-				pinElement = pinElement->NextSiblingElement("Pin"))
 			{
-				ShaderPin pin{};
-				pin.id = pinElement->IntAttribute("Id");
-				pin.nodeId = pinElement->IntAttribute("NodeId", node.id);
-				pin.name = pinElement->Attribute("Name") ? pinElement->Attribute("Name") : "";
-				pin.type = StringToShaderPinType(pinElement->Attribute("Type") ? pinElement->Attribute("Type") : "");
-				pin.kind = StringToShaderPinKind(pinElement->Attribute("Kind") ? pinElement->Attribute("Kind") : "Input");
-				pin.defaultValue = DeserializePinDefaultValue(pinElement);
-				pins.push_back(pin);
-				maxId = std::max(maxId, pin.id);
-			}
-		};
+				tinyxml2::XMLElement* pinsElement = nodeElement->FirstChildElement(containerName);
+				for (tinyxml2::XMLElement* pinElement = pinsElement ? pinsElement->FirstChildElement("Pin") : nullptr;
+					pinElement != nullptr;
+					pinElement = pinElement->NextSiblingElement("Pin"))
+				{
+					ShaderPin pin{};
+					pin.id = pinElement->IntAttribute("Id");
+					pin.nodeId = pinElement->IntAttribute("NodeId", node.id);
+					pin.name = pinElement->Attribute("Name") ? pinElement->Attribute("Name") : "";
+					pin.type = StringToShaderPinType(pinElement->Attribute("Type") ? pinElement->Attribute("Type") : "");
+					pin.kind = StringToShaderPinKind(pinElement->Attribute("Kind") ? pinElement->Attribute("Kind") : "Input");
+					pin.defaultValue = DeserializePinDefaultValue(pinElement);
+					pins.push_back(pin);
+					maxId = std::max(maxId, pin.id);
+				}
+			};
 
 		DeserializePins("Inputs", node.inputs);
 		DeserializePins("Outputs", node.outputs);
@@ -1970,9 +1998,9 @@ bool ShaderEditorPanel::LoadEditorReflection(const std::string& assetPath)
 		for (const ShaderLink& link : links_)
 		{
 			const auto pinMatches = [&link](const ShaderPin& pin)
-			{
-				return link.startPinId == pin.id || link.endPinId == pin.id;
-			};
+				{
+					return link.startPinId == pin.id || link.endPinId == pin.id;
+				};
 
 			if (std::any_of(node.inputs.begin(), node.inputs.end(), pinMatches) ||
 				std::any_of(node.outputs.begin(), node.outputs.end(), pinMatches))
@@ -2016,6 +2044,20 @@ bool ShaderEditorPanel::LoadEditorReflection(const std::string& assetPath)
 	}
 
 	nodes_.insert(nodes_.end(), migratedAccessorNodes.begin(), migratedAccessorNodes.end());
+
+	if (ShaderNode* masterNode = FindNode(masterNodeId_))
+	{
+		for (ShaderPin& pin : masterNode->inputs)
+		{
+			if (pin.name == "Normal")
+			{
+				pin.name = "Fragment Normal";
+				pin.type = ShaderPinType::Vector3;
+				EnsureValueMatchesType(pin.defaultValue, pin.type);
+			}
+		}
+	}
+
 	SynchronizeMaterialVariableAccessorNodes();
 	MigrateLegacyTextureSampleNodes();
 	RefreshTextureBindingsFromNodes();
@@ -2133,29 +2175,29 @@ void ShaderEditorPanel::DrawMaterialProperties()
 {
 	const char* materialValueTypeLabels[] = { "Float", "Vector2", "Vector3", "Vector4" };
 	auto GetMaterialValueTypeIndex = [](ShaderPinType type)
-	{
-		switch (type)
 		{
-		case ShaderPinType::Vector2: return 1;
-		case ShaderPinType::Vector3: return 2;
-		case ShaderPinType::Vector4: return 3;
-		case ShaderPinType::Float:
-		default:
-			return 0;
-		}
-	};
+			switch (type)
+			{
+			case ShaderPinType::Vector2: return 1;
+			case ShaderPinType::Vector3: return 2;
+			case ShaderPinType::Vector4: return 3;
+			case ShaderPinType::Float:
+			default:
+				return 0;
+			}
+		};
 	auto GetMaterialValueTypeFromIndex = [](int index)
-	{
-		switch (index)
 		{
-		case 1: return ShaderPinType::Vector2;
-		case 2: return ShaderPinType::Vector3;
-		case 3: return ShaderPinType::Vector4;
-		case 0:
-		default:
-			return ShaderPinType::Float;
-		}
-	};
+			switch (index)
+			{
+			case 1: return ShaderPinType::Vector2;
+			case 2: return ShaderPinType::Vector3;
+			case 3: return ShaderPinType::Vector4;
+			case 0:
+			default:
+				return ShaderPinType::Float;
+			}
+		};
 
 	ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Material Settings");
 	ImGui::Separator();
@@ -3137,29 +3179,29 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 
 	const char* materialValueTypeLabels[] = { "Float", "Vector2", "Vector3", "Vector4" };
 	auto GetMaterialValueTypeIndex = [](ShaderPinType type)
-	{
-		switch (type)
 		{
-		case ShaderPinType::Vector2: return 1;
-		case ShaderPinType::Vector3: return 2;
-		case ShaderPinType::Vector4: return 3;
-		case ShaderPinType::Float:
-		default:
-			return 0;
-		}
-	};
+			switch (type)
+			{
+			case ShaderPinType::Vector2: return 1;
+			case ShaderPinType::Vector3: return 2;
+			case ShaderPinType::Vector4: return 3;
+			case ShaderPinType::Float:
+			default:
+				return 0;
+			}
+		};
 	auto GetMaterialValueTypeFromIndex = [](int index)
-	{
-		switch (index)
 		{
-		case 1: return ShaderPinType::Vector2;
-		case 2: return ShaderPinType::Vector3;
-		case 3: return ShaderPinType::Vector4;
-		case 0:
-		default:
-			return ShaderPinType::Float;
-		}
-	};
+			switch (index)
+			{
+			case 1: return ShaderPinType::Vector2;
+			case 2: return ShaderPinType::Vector3;
+			case 3: return ShaderPinType::Vector4;
+			case 0:
+			default:
+				return ShaderPinType::Float;
+			}
+		};
 
 	if (selectedNodeIds_.size() == 1)
 	{
@@ -3660,7 +3702,7 @@ void ShaderEditorPanel::RefreshMaterialFunctionCallNodeSignature(ShaderNode& nod
 			inputDefinition.type,
 			ShaderPinKind::Input,
 			GetDefaultValueForPinType(inputDefinition.type)
-		});
+			});
 	}
 
 	const std::vector<MaterialFunctionPinDefinition>& outputDefinitions = materialFunction.GetOutputs();
@@ -4244,136 +4286,136 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 	outMaterialFunction.SetGeneratedFunctionName(generatedFunctionName);
 
 	auto GetGLSLTypeString = [](ShaderPinType type) -> std::string
-	{
-		switch (type)
 		{
-		case ShaderPinType::Float: return "float";
-		case ShaderPinType::Vector2: return "vec2";
-		case ShaderPinType::Vector3: return "vec3";
-		case ShaderPinType::Vector4: return "vec4";
-		case ShaderPinType::Vector4i: return "ivec4";
-		case ShaderPinType::Matrix4x4: return "mat4";
-		case ShaderPinType::Texture: return "sampler2D";
-		case ShaderPinType::Any:
-		case ShaderPinType::None:
-		default:
-			return "float";
-		}
-	};
+			switch (type)
+			{
+			case ShaderPinType::Float: return "float";
+			case ShaderPinType::Vector2: return "vec2";
+			case ShaderPinType::Vector3: return "vec3";
+			case ShaderPinType::Vector4: return "vec4";
+			case ShaderPinType::Vector4i: return "ivec4";
+			case ShaderPinType::Matrix4x4: return "mat4";
+			case ShaderPinType::Texture: return "sampler2D";
+			case ShaderPinType::Any:
+			case ShaderPinType::None:
+			default:
+				return "float";
+			}
+		};
 
 	auto PromoteTypes = [](ShaderPinType left, ShaderPinType right) -> ShaderPinType
-	{
-		if (left == right) return left;
-		if (left == ShaderPinType::Any) return right;
-		if (right == ShaderPinType::Any) return left;
-		if (left == ShaderPinType::Float) return right;
-		if (right == ShaderPinType::Float) return left;
-		return std::max(left, right);
-	};
+		{
+			if (left == right) return left;
+			if (left == ShaderPinType::Any) return right;
+			if (right == ShaderPinType::Any) return left;
+			if (left == ShaderPinType::Float) return right;
+			if (right == ShaderPinType::Float) return left;
+			return std::max(left, right);
+		};
 
 	auto GetDefaultValueString = [&](const ShaderPin& pin) -> std::pair<std::string, ShaderPinType>
-	{
-		switch (pin.type)
 		{
-		case ShaderPinType::Vector2:
-			if (std::holds_alternative<Vector2>(pin.defaultValue))
+			switch (pin.type)
 			{
-				const Vector2 value = std::get<Vector2>(pin.defaultValue);
-				return { "vec2(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ")", ShaderPinType::Vector2 };
+			case ShaderPinType::Vector2:
+				if (std::holds_alternative<Vector2>(pin.defaultValue))
+				{
+					const Vector2 value = std::get<Vector2>(pin.defaultValue);
+					return { "vec2(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ")", ShaderPinType::Vector2 };
+				}
+				break;
+			case ShaderPinType::Vector3:
+				if (std::holds_alternative<Vector3>(pin.defaultValue))
+				{
+					const Vector3 value = std::get<Vector3>(pin.defaultValue);
+					return { "vec3(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z) + ")", ShaderPinType::Vector3 };
+				}
+				break;
+			case ShaderPinType::Vector4:
+				if (std::holds_alternative<Vector4>(pin.defaultValue))
+				{
+					const Vector4 value = std::get<Vector4>(pin.defaultValue);
+					return { "vec4(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z) + ", " + std::to_string(value.w) + ")", ShaderPinType::Vector4 };
+				}
+				break;
+			case ShaderPinType::Any:
+			case ShaderPinType::Float:
+			case ShaderPinType::None:
+			default:
+				if (std::holds_alternative<float>(pin.defaultValue))
+				{
+					return { std::to_string(std::get<float>(pin.defaultValue)) + "f", ShaderPinType::Float };
+				}
+				break;
 			}
-			break;
-		case ShaderPinType::Vector3:
-			if (std::holds_alternative<Vector3>(pin.defaultValue))
-			{
-				const Vector3 value = std::get<Vector3>(pin.defaultValue);
-				return { "vec3(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z) + ")", ShaderPinType::Vector3 };
-			}
-			break;
-		case ShaderPinType::Vector4:
-			if (std::holds_alternative<Vector4>(pin.defaultValue))
-			{
-				const Vector4 value = std::get<Vector4>(pin.defaultValue);
-				return { "vec4(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z) + ", " + std::to_string(value.w) + ")", ShaderPinType::Vector4 };
-			}
-			break;
-		case ShaderPinType::Any:
-		case ShaderPinType::Float:
-		case ShaderPinType::None:
-		default:
-			if (std::holds_alternative<float>(pin.defaultValue))
-			{
-				return { std::to_string(std::get<float>(pin.defaultValue)) + "f", ShaderPinType::Float };
-			}
-			break;
-		}
 
-		return { "0.0f", ShaderPinType::Float };
-	};
+			return { "0.0f", ShaderPinType::Float };
+		};
 
 	auto GetGLSLFuncName = [](const std::string& nodeName) -> std::string
-	{
-		if (nodeName == "Sine") return "sin";
-		if (nodeName == "Cosine") return "cos";
-		if (nodeName == "Tangent") return "tan";
-		if (nodeName == "InverseSqrt") return "inversesqrt";
-		if (nodeName == "FloatBitsToInt") return "floatBitsToInt";
-		if (nodeName == "FloatBitsToUint") return "floatBitsToUint";
-		if (nodeName == "IntBitsToFloat") return "intBitsToFloat";
-		if (nodeName == "UintBitsToFloat") return "uintBitsToFloat";
-		if (nodeName == "MatrixCompMult") return "matrixCompMult";
-		if (nodeName == "OuterProduct") return "outerProduct";
-		if (nodeName == "RoundEven") return "roundEven";
-		if (nodeName == "IsNan") return "isnan";
-		if (nodeName == "IsInf") return "isinf";
+		{
+			if (nodeName == "Sine") return "sin";
+			if (nodeName == "Cosine") return "cos";
+			if (nodeName == "Tangent") return "tan";
+			if (nodeName == "InverseSqrt") return "inversesqrt";
+			if (nodeName == "FloatBitsToInt") return "floatBitsToInt";
+			if (nodeName == "FloatBitsToUint") return "floatBitsToUint";
+			if (nodeName == "IntBitsToFloat") return "intBitsToFloat";
+			if (nodeName == "UintBitsToFloat") return "uintBitsToFloat";
+			if (nodeName == "MatrixCompMult") return "matrixCompMult";
+			if (nodeName == "OuterProduct") return "outerProduct";
+			if (nodeName == "RoundEven") return "roundEven";
+			if (nodeName == "IsNan") return "isnan";
+			if (nodeName == "IsInf") return "isinf";
 
-		std::string glslName = nodeName;
-		glslName[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(glslName[0])));
-		return glslName;
-	};
+			std::string glslName = nodeName;
+			glslName[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(glslName[0])));
+			return glslName;
+		};
 
 	auto GetMaskComponentExpression = [](const std::string& value, ShaderPinType inputType, size_t componentIndex) -> std::string
-	{
-		static const char* componentNames[] = { "x", "y", "z", "w" };
-		if (componentIndex >= 4)
 		{
-			return "0.0f";
-		}
+			static const char* componentNames[] = { "x", "y", "z", "w" };
+			if (componentIndex >= 4)
+			{
+				return "0.0f";
+			}
 
-		switch (inputType)
-		{
-		case ShaderPinType::Float:
-			return componentIndex == 0 ? value : "0.0f";
-		case ShaderPinType::Vector2:
-			return componentIndex < 2 ? value + "." + componentNames[componentIndex] : "0.0f";
-		case ShaderPinType::Vector3:
-			return componentIndex < 3 ? value + "." + componentNames[componentIndex] : "0.0f";
-		case ShaderPinType::Vector4:
-			return value + "." + componentNames[componentIndex];
-		case ShaderPinType::Vector4i:
-			return "float(" + value + "." + componentNames[componentIndex] + ")";
-		case ShaderPinType::Any:
-		case ShaderPinType::Matrix4x4:
-		case ShaderPinType::Texture:
-		case ShaderPinType::None:
-		default:
-			return componentIndex == 0 ? value : "0.0f";
-		}
-	};
+			switch (inputType)
+			{
+			case ShaderPinType::Float:
+				return componentIndex == 0 ? value : "0.0f";
+			case ShaderPinType::Vector2:
+				return componentIndex < 2 ? value + "." + componentNames[componentIndex] : "0.0f";
+			case ShaderPinType::Vector3:
+				return componentIndex < 3 ? value + "." + componentNames[componentIndex] : "0.0f";
+			case ShaderPinType::Vector4:
+				return value + "." + componentNames[componentIndex];
+			case ShaderPinType::Vector4i:
+				return "float(" + value + "." + componentNames[componentIndex] + ")";
+			case ShaderPinType::Any:
+			case ShaderPinType::Matrix4x4:
+			case ShaderPinType::Texture:
+			case ShaderPinType::None:
+			default:
+				return componentIndex == 0 ? value : "0.0f";
+			}
+		};
 
 	auto FormatOutputValue = [](const std::string& value, ShaderPinType actualType, ShaderPinType expectedType) -> std::string
-	{
-		if (actualType == expectedType || actualType == ShaderPinType::Any)
 		{
-			return value;
-		}
+			if (actualType == expectedType || actualType == ShaderPinType::Any)
+			{
+				return value;
+			}
 
-		if (expectedType == ShaderPinType::Vector4 && actualType == ShaderPinType::Vector3) return "vec4(" + value + ", 1.0f)";
-		if (expectedType == ShaderPinType::Vector4 && actualType == ShaderPinType::Float) return "vec4(" + value + ")";
-		if (expectedType == ShaderPinType::Vector3 && actualType == ShaderPinType::Vector4) return value + ".xyz";
-		if (expectedType == ShaderPinType::Vector3 && actualType == ShaderPinType::Float) return "vec3(" + value + ")";
-		if (expectedType == ShaderPinType::Vector2 && actualType == ShaderPinType::Float) return "vec2(" + value + ")";
-		return value;
-	};
+			if (expectedType == ShaderPinType::Vector4 && actualType == ShaderPinType::Vector3) return "vec4(" + value + ", 1.0f)";
+			if (expectedType == ShaderPinType::Vector4 && actualType == ShaderPinType::Float) return "vec4(" + value + ")";
+			if (expectedType == ShaderPinType::Vector3 && actualType == ShaderPinType::Vector4) return value + ".xyz";
+			if (expectedType == ShaderPinType::Vector3 && actualType == ShaderPinType::Float) return "vec3(" + value + ")";
+			if (expectedType == ShaderPinType::Vector2 && actualType == ShaderPinType::Float) return "vec2(" + value + ")";
+			return value;
+		};
 
 	std::vector<ShaderNode*> executionOrder;
 	std::unordered_set<int> visitedNodes;
@@ -4381,38 +4423,38 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 	std::unordered_set<std::string> emittedFunctionNames;
 
 	std::function<void(int)> backtrace = [&](int nodeId)
-	{
-		if (visitedNodes.find(nodeId) != visitedNodes.end())
 		{
-			return;
-		}
-
-		visitedNodes.insert(nodeId);
-		ShaderNode* node = FindNode(nodeId);
-		if (!node)
-		{
-			return;
-		}
-
-		for (const ShaderPin& inputPin : node->inputs)
-		{
-			for (const ShaderLink& link : links_)
+			if (visitedNodes.find(nodeId) != visitedNodes.end())
 			{
-				if (link.endPinId == inputPin.id)
+				return;
+			}
+
+			visitedNodes.insert(nodeId);
+			ShaderNode* node = FindNode(nodeId);
+			if (!node)
+			{
+				return;
+			}
+
+			for (const ShaderPin& inputPin : node->inputs)
+			{
+				for (const ShaderLink& link : links_)
 				{
-					if (ShaderPin* connectedOutput = FindPin(link.startPinId))
+					if (link.endPinId == inputPin.id)
 					{
-						backtrace(connectedOutput->nodeId);
+						if (ShaderPin* connectedOutput = FindPin(link.startPinId))
+						{
+							backtrace(connectedOutput->nodeId);
+						}
 					}
 				}
 			}
-		}
 
-		if (nodeId != masterNodeId_)
-		{
-			executionOrder.push_back(node);
-		}
-	};
+			if (nodeId != masterNodeId_)
+			{
+				executionOrder.push_back(node);
+			}
+		};
 
 	for (const ShaderPin& masterOutputPin : masterNode->inputs)
 	{
@@ -4429,45 +4471,45 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 	}
 
 	auto GetPinValueAndType = [&](const ShaderPin& pin) -> std::pair<std::string, ShaderPinType>
-	{
-		for (const ShaderLink& link : links_)
 		{
-			if (link.endPinId != pin.id)
+			for (const ShaderLink& link : links_)
 			{
-				continue;
+				if (link.endPinId != pin.id)
+				{
+					continue;
+				}
+
+				ShaderPin* outputPin = FindPin(link.startPinId);
+				ShaderNode* sourceNode = outputPin ? FindNode(outputPin->nodeId) : nullptr;
+				if (!outputPin || !sourceNode)
+				{
+					continue;
+				}
+
+				if (sourceNode->typeCategory == "FunctionInput")
+				{
+					return { SanitizeIdentifier(sourceNode->name), outputPin->type };
+				}
+
+				if (sourceNode->typeCategory == "Variables")
+				{
+					return { sourceNode->name, outputPin->type };
+				}
+
+				const ShaderPinType actualType = resolvedPinTypes.count(outputPin->id) ? resolvedPinTypes.at(outputPin->id) : outputPin->type;
+				return { "node_" + std::to_string(sourceNode->id) + "_out_" + std::to_string(outputPin->id), actualType };
 			}
 
-			ShaderPin* outputPin = FindPin(link.startPinId);
-			ShaderNode* sourceNode = outputPin ? FindNode(outputPin->nodeId) : nullptr;
-			if (!outputPin || !sourceNode)
-			{
-				continue;
-			}
-
-			if (sourceNode->typeCategory == "FunctionInput")
-			{
-				return { SanitizeIdentifier(sourceNode->name), outputPin->type };
-			}
-
-			if (sourceNode->typeCategory == "Variables")
-			{
-				return { sourceNode->name, outputPin->type };
-			}
-
-			const ShaderPinType actualType = resolvedPinTypes.count(outputPin->id) ? resolvedPinTypes.at(outputPin->id) : outputPin->type;
-			return { "node_" + std::to_string(sourceNode->id) + "_out_" + std::to_string(outputPin->id), actualType };
-		}
-
-		return GetDefaultValueString(pin);
-	};
+			return GetDefaultValueString(pin);
+		};
 
 	auto IsInputPinConnected = [&](int pinId) -> bool
-	{
-		return std::any_of(links_.begin(), links_.end(), [pinId](const ShaderLink& link)
 		{
-			return link.endPinId == pinId;
-		});
-	};
+			return std::any_of(links_.begin(), links_.end(), [pinId](const ShaderLink& link)
+				{
+					return link.endPinId == pinId;
+				});
+		};
 
 	std::string nestedFunctionDefinitions;
 	std::string functionBody = "\t// --- Generated Material Function Calculations ---\n";
