@@ -90,6 +90,7 @@ private:
     void DrawHierarchySidebar();
 
     void CollectNodes(const std::shared_ptr<AnimationNode>& node, std::unordered_set<const AnimationNode*>& visited, std::vector<std::shared_ptr<AnimationNode>>& outNodes);
+    void AddNodeToViewingState(AnimationNodeType nodeType, const ImVec2& position);
 
     std::shared_ptr<AnimationGraph> activeGraph_;
 

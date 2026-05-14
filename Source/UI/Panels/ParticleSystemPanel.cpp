@@ -328,6 +328,22 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::PopItemWidth();
 	spawnDesc.colorByLifetime.endValue = Vector4(colorByLifetimeEnd[0], colorByLifetimeEnd[1], colorByLifetimeEnd[2], colorByLifetimeEnd[3]);
 
+	float emissiveColorStart[3] = { spawnDesc.emissiveColorByLifetime.startValue.x, spawnDesc.emissiveColorByLifetime.startValue.y, spawnDesc.emissiveColorByLifetime.startValue.z };
+	ImGui::Text("Emissive Color Start:");
+	ImGui::SameLine();
+	ImGui::PushItemWidth(PARTICLE_COLOR_INPUT_WIDTH);
+	didChangeScene |= ImGui::ColorEdit3(("##EmissiveColorStart" + specialPostfix).c_str(), emissiveColorStart, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+	ImGui::PopItemWidth();
+	spawnDesc.emissiveColorByLifetime.startValue = Vector3(emissiveColorStart[0], emissiveColorStart[1], emissiveColorStart[2]);
+
+	float emissiveColorEnd[3] = { spawnDesc.emissiveColorByLifetime.endValue.x, spawnDesc.emissiveColorByLifetime.endValue.y, spawnDesc.emissiveColorByLifetime.endValue.z };
+	ImGui::Text("Emissive Color End:");
+	ImGui::SameLine();
+	ImGui::PushItemWidth(PARTICLE_COLOR_INPUT_WIDTH);
+	didChangeScene |= ImGui::ColorEdit3(("##EmissiveColorEnd" + specialPostfix).c_str(), emissiveColorEnd, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+	ImGui::PopItemWidth();
+	spawnDesc.emissiveColorByLifetime.endValue = Vector3(emissiveColorEnd[0], emissiveColorEnd[1], emissiveColorEnd[2]);
+
 	float colorBySpeedRange[2] = { spawnDesc.colorBySpeedRange.x, spawnDesc.colorBySpeedRange.y };
 	ImGui::Text("Color by Speed Range:");
 	ImGui::SameLine();

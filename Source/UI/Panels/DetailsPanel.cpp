@@ -956,7 +956,7 @@ void DetailsPanel::DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* skele
 void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* particleSystemComponent)
 {
 	const std::string specialPostfix = "##" + std::to_string(particleSystemComponent->GetGUID());
-	const GPUParticleSpawnDesc& spawnDesc = particleSystemComponent->GetSpawnDesc();
+	GPUParticleSpawnDesc spawnDesc = particleSystemComponent->GetSpawnDesc();
 	const BillboardParticleSystemComponent* billboardParticleSystemComponent = dynamic_cast<const BillboardParticleSystemComponent*>(particleSystemComponent);
 	const StaticMeshParticleSystemComponent* staticMeshParticleSystemComponent = dynamic_cast<const StaticMeshParticleSystemComponent*>(particleSystemComponent);
 
@@ -984,6 +984,36 @@ void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* p
 	{
 		particleSystemComponent->SetParticleSize(particleSize);
 		MarkSceneDirty("Particle size changed");
+	}
+
+	float emissiveColorStart[3] = {
+		spawnDesc.emissiveColorByLifetime.startValue.x,
+		spawnDesc.emissiveColorByLifetime.startValue.y,
+		spawnDesc.emissiveColorByLifetime.startValue.z
+	};
+	ImGui::Text("Emissive Start: ");
+	ImGui::SameLine();
+	const bool emissiveStartChanged = ImGui::ColorEdit3(("##ParticleSystemEmissiveStart" + specialPostfix).c_str(), emissiveColorStart, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+	if (emissiveStartChanged)
+	{
+		spawnDesc.emissiveColorByLifetime.startValue = Vector3(emissiveColorStart[0], emissiveColorStart[1], emissiveColorStart[2]);
+		particleSystemComponent->SetSpawnDesc(spawnDesc);
+		MarkSceneDirty("Particle emissive color changed");
+	}
+
+	float emissiveColorEnd[3] = {
+		spawnDesc.emissiveColorByLifetime.endValue.x,
+		spawnDesc.emissiveColorByLifetime.endValue.y,
+		spawnDesc.emissiveColorByLifetime.endValue.z
+	};
+	ImGui::Text("Emissive End: ");
+	ImGui::SameLine();
+	const bool emissiveEndChanged = ImGui::ColorEdit3(("##ParticleSystemEmissiveEnd" + specialPostfix).c_str(), emissiveColorEnd, ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+	if (emissiveEndChanged)
+	{
+		spawnDesc.emissiveColorByLifetime.endValue = Vector3(emissiveColorEnd[0], emissiveColorEnd[1], emissiveColorEnd[2]);
+		particleSystemComponent->SetSpawnDesc(spawnDesc);
+		MarkSceneDirty("Particle emissive color changed");
 	}
 
 	ImGui::Text("Looping: %s", spawnDesc.looping ? "Yes" : "No");

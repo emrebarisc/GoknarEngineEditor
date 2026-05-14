@@ -97,6 +97,7 @@ namespace
 		tinyxml2::XMLDocument document;
 		tinyxml2::XMLElement* root = document.NewElement("GameAsset");
 		root->SetAttribute("FileType", "AnimationGraph");
+		root->SetAttribute("SchemaVersion", "2");
 		document.InsertFirstChild(root);
 
 		root->InsertEndChild(document.NewElement("Variables"));
@@ -114,8 +115,10 @@ namespace
 		tinyxml2::XMLElement* nodesElement = document.NewElement("Nodes");
 		tinyxml2::XMLElement* nodeElement = document.NewElement("Node");
 		nodeElement->SetAttribute("id", 1);
+		nodeElement->SetAttribute("type", "Clip");
 		nodeElement->SetAttribute("animationName", "Idle");
-		nodeElement->SetAttribute("loop", false);
+		nodeElement->SetAttribute("loop", true);
+		nodeElement->SetAttribute("playRate", 1.0f);
 		nodeElement->InsertEndChild(document.NewElement("OutboundConnections"));
 		nodesElement->InsertEndChild(nodeElement);
 

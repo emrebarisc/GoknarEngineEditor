@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <cstring>
 #include <filesystem>
 #include <sstream>
 #include <queue>
@@ -29,6 +30,184 @@ namespace
 		}
 
 		return EditorAssetPathUtils::GetContentRootPath();
+	}
+
+	const char* AnimationNodeTypeToLabel(AnimationNodeType type)
+	{
+		switch (type)
+		{
+		case AnimationNodeType::BlendSpace1D: return "Blend Space 1D";
+		case AnimationNodeType::BlendSpace2D: return "Blend Space 2D";
+		case AnimationNodeType::Clip:
+		default: return "Clip";
+		}
+	}
+
+	int AnimationNodeTypeToIndex(AnimationNodeType type)
+	{
+		switch (type)
+		{
+		case AnimationNodeType::BlendSpace1D: return 1;
+		case AnimationNodeType::BlendSpace2D: return 2;
+		case AnimationNodeType::Clip:
+		default: return 0;
+		}
+	}
+
+	AnimationNodeType AnimationNodeTypeFromIndex(int index)
+	{
+		switch (index)
+		{
+		case 1: return AnimationNodeType::BlendSpace1D;
+		case 2: return AnimationNodeType::BlendSpace2D;
+		case 0:
+		default: return AnimationNodeType::Clip;
+		}
+	}
+
+	bool DrawStringInput(const char* label, std::string& value)
+	{
+		char buffer[256] = {};
+		value.copy(buffer, sizeof(buffer) - 1);
+		if (ImGui::InputText(label, buffer, sizeof(buffer)))
+		{
+			value = buffer;
+			return true;
+		}
+
+		return false;
+	}
+
+	std::string BuildNodeDisplayName(const AnimationNode* node)
+	{
+		if (!node)
+		{
+			return "Node";
+		}
+
+		switch (node->type)
+		{
+		case AnimationNodeType::BlendSpace1D:
+			return node->parameterName.empty() ? "Blend Space 1D" : "Blend 1D: " + node->parameterName;
+		case AnimationNodeType::BlendSpace2D:
+			if (!node->parameterXName.empty() || !node->parameterYName.empty())
+			{
+				return "Blend 2D: " + node->parameterXName + "/" + node->parameterYName;
+			}
+			return "Blend Space 2D";
+		case AnimationNodeType::Clip:
+		default:
+			return node->animationName.empty() ? "Clip" : node->animationName;
+		}
+	}
+
+	ImU32 GetNodeColor(const AnimationNode* node, bool selected, bool entry)
+	{
+		if (entry)
+		{
+			return selected ? IM_COL32(100, 120, 80, 255) : IM_COL32(50, 100, 50, 255);
+		}
+
+		if (!node)
+		{
+			return selected ? IM_COL32(80, 80, 120, 255) : IM_COL32(50, 50, 50, 255);
+		}
+
+		if (selected)
+		{
+			return IM_COL32(80, 80, 120, 255);
+		}
+
+		switch (node->type)
+		{
+		case AnimationNodeType::BlendSpace1D: return IM_COL32(56, 76, 104, 255);
+		case AnimationNodeType::BlendSpace2D: return IM_COL32(78, 62, 104, 255);
+		case AnimationNodeType::Clip:
+		default: return IM_COL32(50, 50, 50, 255);
+		}
+	}
+
+	AnimationVariable MakeDefaultConditionValueForVariable(const AnimationVariable& variable)
+	{
+		return std::visit([](const auto& value) -> AnimationVariable
+			{
+				using T = std::decay_t<decltype(value)>;
+				if constexpr (std::is_same_v<T, bool>) return false;
+				else if constexpr (std::is_same_v<T, int>) return 0;
+				else if constexpr (std::is_same_v<T, float>) return 0.f;
+				else if constexpr (std::is_same_v<T, Vector2>) return Vector2(0.f);
+				else if constexpr (std::is_same_v<T, Vector2i>) return Vector2i(0);
+				else if constexpr (std::is_same_v<T, Vector3>) return Vector3(0.f);
+				else if constexpr (std::is_same_v<T, Vector3i>) return Vector3i(0);
+				else if constexpr (std::is_same_v<T, Vector4>) return Vector4(0.f);
+				else return false;
+			}, variable);
+	}
+
+	void DrawAnimationVariableValueEditor(const char* label, AnimationVariable& value)
+	{
+		std::visit([label](auto&& arg)
+			{
+				using T = std::decay_t<decltype(arg)>;
+				if constexpr (std::is_same_v<T, bool>) ImGui::Checkbox(label, &arg);
+				else if constexpr (std::is_same_v<T, int>) ImGui::DragInt(label, &arg);
+				else if constexpr (std::is_same_v<T, float>) ImGui::DragFloat(label, &arg, 0.01f);
+				else if constexpr (std::is_same_v<T, Vector2>) ImGui::DragFloat2(label, &arg.x, 0.01f);
+				else if constexpr (std::is_same_v<T, Vector2i>) ImGui::DragInt2(label, &arg.x);
+				else if constexpr (std::is_same_v<T, Vector3>) ImGui::DragFloat3(label, &arg.x, 0.01f);
+				else if constexpr (std::is_same_v<T, Vector3i>) ImGui::DragInt3(label, &arg.x);
+				else if constexpr (std::is_same_v<T, Vector4>) ImGui::DragFloat4(label, &arg.x, 0.01f);
+			}, value);
+	}
+
+	void ConfigureNodeForType(AnimationNode& node, AnimationNodeType nodeType)
+	{
+		if (node.type == nodeType)
+		{
+			return;
+		}
+
+		node.type = nodeType;
+		switch (nodeType)
+		{
+		case AnimationNodeType::Clip:
+			node.blendSpace1DPoints.clear();
+			node.blendSpace2DPoints.clear();
+			break;
+		case AnimationNodeType::BlendSpace1D:
+			if (node.parameterName.empty())
+			{
+				node.parameterName = "Speed";
+			}
+			if (node.blendSpace1DPoints.empty())
+			{
+				BlendSpace1DPoint point;
+				point.value = 0.f;
+				point.animationName = node.animationName;
+				node.blendSpace1DPoints.push_back(point);
+			}
+			node.blendSpace2DPoints.clear();
+			break;
+		case AnimationNodeType::BlendSpace2D:
+			if (node.parameterXName.empty())
+			{
+				node.parameterXName = "MoveX";
+			}
+			if (node.parameterYName.empty())
+			{
+				node.parameterYName = "MoveY";
+			}
+			if (node.blendSpace2DPoints.empty())
+			{
+				BlendSpace2DPoint point;
+				point.x = 0.f;
+				point.y = 0.f;
+				point.animationName = node.animationName;
+				node.blendSpace2DPoints.push_back(point);
+			}
+			node.blendSpace1DPoints.clear();
+			break;
+		}
 	}
 }
 
@@ -126,11 +305,14 @@ void AnimationGraphPanel::ResetToDefaultGraph()
     rootNode.id = nextId_++;
     rootNode.name = "Idle";
     rootNode.pos = ImVec2(50, 50);
-    rootNode.size = ImVec2(150, 50);
+    rootNode.size = ImVec2(190, 64);
     rootNode.animNode = std::make_shared<AnimationNode>();
+    rootNode.animNode->type = AnimationNodeType::Clip;
     rootNode.animNode->animationName = "Idle";
+    rootNode.name = BuildNodeDisplayName(rootNode.animNode.get());
 
     rootState.animState->SetEntryNode(rootNode.animNode);
+    rootState.animState->AddNode(rootNode.animNode);
 
     editorStates_.push_back(rootState);
     stateNodes_[rootState.animState.get()].push_back(rootNode);
@@ -275,12 +457,12 @@ void AnimationGraphPanel::DrawVariablesSidebar()
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, bool>) ImGui::Checkbox("Value", &arg);
                 else if constexpr (std::is_same_v<T, int>) ImGui::DragInt("Value", &arg);
-                else if constexpr (std::is_same_v<T, float>) ImGui::DragFloat("Value", &arg, 0.1f);
-                else if constexpr (std::is_same_v<T, Vector2>) ImGui::DragFloat2("Value", &arg.x, 0.1f);
+                else if constexpr (std::is_same_v<T, float>) ImGui::DragFloat("Value", &arg, 0.01f);
+                else if constexpr (std::is_same_v<T, Vector2>) ImGui::DragFloat2("Value", &arg.x, 0.01f);
                 else if constexpr (std::is_same_v<T, Vector2i>) ImGui::DragInt2("Value", &arg.x);
-                else if constexpr (std::is_same_v<T, Vector3>) ImGui::DragFloat3("Value", &arg.x, 0.1f);
+                else if constexpr (std::is_same_v<T, Vector3>) ImGui::DragFloat3("Value", &arg.x, 0.01f);
                 else if constexpr (std::is_same_v<T, Vector3i>) ImGui::DragInt3("Value", &arg.x);
-                else if constexpr (std::is_same_v<T, Vector4>) ImGui::DragFloat4("Value", &arg.x, 0.1f);
+                else if constexpr (std::is_same_v<T, Vector4>) ImGui::DragFloat4("Value", &arg.x, 0.01f);
                 }, value);
             ImGui::Unindent();
 
@@ -388,14 +570,18 @@ void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
 
         std::weak_ptr<AnimationNode> entryNodeWeakPtr = state->GetEntryNode();
         CollectNodes(entryNodeWeakPtr.lock(), visitedNodes, flatNodes);
+        for (const std::shared_ptr<AnimationNode>& node : state->GetNodes())
+        {
+            CollectNodes(node, visitedNodes, flatNodes);
+        }
 
         for (const auto& node : flatNodes)
         {
             EditorAnimationNode editorNode;
             editorNode.id = nextId_++;
-            editorNode.name = node->animationName.empty() ? "Node" : node->animationName;
+            editorNode.name = BuildNodeDisplayName(node.get());
             editorNode.pos = ImVec2(50.0f, 50.0f);
-            editorNode.size = ImVec2(160.0f, 50.0f);
+            editorNode.size = ImVec2(190.0f, 64.0f);
             editorNode.animNode = node;
             stateNodes_[state.get()].push_back(editorNode);
             nodeToEditorId[node.get()] = editorNode.id;
@@ -417,6 +603,10 @@ void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
         std::unordered_set<const AnimationNode*> visitedNodes;
         std::vector<std::shared_ptr<AnimationNode>> flatNodes;
         CollectNodes(state->GetEntryNode(), visitedNodes, flatNodes);
+        for (const std::shared_ptr<AnimationNode>& node : state->GetNodes())
+        {
+            CollectNodes(node, visitedNodes, flatNodes);
+        }
         for (const auto& node : flatNodes)
         {
             for (const auto& transition : node->outboundConnections)
@@ -430,6 +620,30 @@ void AnimationGraphPanel::RebuildEditorGraphFromRuntimeData()
             }
         }
     }
+}
+
+void AnimationGraphPanel::AddNodeToViewingState(AnimationNodeType nodeType, const ImVec2& position)
+{
+    if (!viewingState_)
+    {
+        return;
+    }
+
+    EditorAnimationNode editorNode;
+    editorNode.id = nextId_++;
+    editorNode.pos = position;
+    editorNode.size = ImVec2(190.0f, 64.0f);
+    editorNode.animNode = std::make_shared<AnimationNode>();
+    ConfigureNodeForType(*editorNode.animNode, nodeType);
+    editorNode.name = BuildNodeDisplayName(editorNode.animNode.get());
+
+    if (!viewingState_->GetEntryNode())
+    {
+        viewingState_->SetEntryNode(editorNode.animNode);
+    }
+
+    viewingState_->AddNode(editorNode.animNode);
+    stateNodes_[viewingState_.get()].push_back(editorNode);
 }
 
 void AnimationGraphPanel::AutoLayoutEditorGraph()
@@ -479,6 +693,10 @@ void AnimationGraphPanel::AutoLayoutEditorGraph()
         std::unordered_set<const AnimationNode*> visitedNodes;
         std::vector<std::shared_ptr<AnimationNode>> flatNodes;
         CollectNodes(state.animState->GetEntryNode(), visitedNodes, flatNodes);
+        for (const std::shared_ptr<AnimationNode>& node : state.animState->GetNodes())
+        {
+            CollectNodes(node, visitedNodes, flatNodes);
+        }
 
         std::unordered_map<const AnimationNode*, int> nodeDepths;
         std::unordered_map<int, int> nodeRowCounters;
@@ -655,12 +873,82 @@ void AnimationGraphPanel::DrawPropertiesPanel()
         if (it != nodes.end())
         {
             ImGui::LabelText("Type", "Animation Node");
-            char buf[64]; strcpy_s(buf, it->animNode->animationName.c_str());
-            if (ImGui::InputText("FBX Name", buf, sizeof(buf))) {
-                it->animNode->animationName = buf;
-                it->name = buf;
+            AnimationNode* node = it->animNode.get();
+
+            const char* nodeTypeNames[] = { "Clip", "Blend Space 1D", "Blend Space 2D" };
+            int nodeTypeIndex = AnimationNodeTypeToIndex(node->type);
+            if (ImGui::Combo("Node Type", &nodeTypeIndex, nodeTypeNames, IM_ARRAYSIZE(nodeTypeNames)))
+            {
+                ConfigureNodeForType(*node, AnimationNodeTypeFromIndex(nodeTypeIndex));
             }
+
             ImGui::Checkbox("Looping", &it->animNode->loop);
+            ImGui::DragFloat("Play Rate", &node->playRate, 0.01f, 0.0f, 10.0f, "%.2f");
+            ImGui::DragFloat("Parameter Smoothing", &node->parameterSmoothingSpeed, 0.1f, 0.0f, 60.0f, "%.2f");
+            DrawStringInput("Sync Group", node->syncGroup);
+            ImGui::Separator();
+
+            if (node->type == AnimationNodeType::Clip)
+            {
+                DrawStringInput("Animation Clip", node->animationName);
+            }
+            else if (node->type == AnimationNodeType::BlendSpace1D)
+            {
+                DrawStringInput("Parameter", node->parameterName);
+                ImGui::Text("Blend Points");
+                if (ImGui::Button("+ Add 1D Point"))
+                {
+                    BlendSpace1DPoint point;
+                    point.value = node->blendSpace1DPoints.empty() ? 0.f : node->blendSpace1DPoints.back().value + 0.1f;
+                    node->blendSpace1DPoints.push_back(point);
+                }
+
+                for (size_t pointIndex = 0; pointIndex < node->blendSpace1DPoints.size(); ++pointIndex)
+                {
+                    ImGui::PushID(static_cast<int>(pointIndex));
+                    BlendSpace1DPoint& point = node->blendSpace1DPoints[pointIndex];
+                    ImGui::DragFloat("Value", &point.value, 0.001f);
+                    DrawStringInput("Clip", point.animationName);
+                    if (ImGui::Button("Remove Point"))
+                    {
+                        node->blendSpace1DPoints.erase(node->blendSpace1DPoints.begin() + pointIndex);
+                        ImGui::PopID();
+                        break;
+                    }
+                    ImGui::Separator();
+                    ImGui::PopID();
+                }
+            }
+            else if (node->type == AnimationNodeType::BlendSpace2D)
+            {
+                DrawStringInput("Parameter X", node->parameterXName);
+                DrawStringInput("Parameter Y", node->parameterYName);
+                ImGui::Text("Blend Points");
+                if (ImGui::Button("+ Add 2D Point"))
+                {
+                    BlendSpace2DPoint point;
+                    node->blendSpace2DPoints.push_back(point);
+                }
+
+                for (size_t pointIndex = 0; pointIndex < node->blendSpace2DPoints.size(); ++pointIndex)
+                {
+                    ImGui::PushID(static_cast<int>(pointIndex));
+                    BlendSpace2DPoint& point = node->blendSpace2DPoints[pointIndex];
+                    ImGui::DragFloat("X", &point.x, 0.001f);
+                    ImGui::DragFloat("Y", &point.y, 0.001f);
+                    DrawStringInput("Clip", point.animationName);
+                    if (ImGui::Button("Remove Point"))
+                    {
+                        node->blendSpace2DPoints.erase(node->blendSpace2DPoints.begin() + pointIndex);
+                        ImGui::PopID();
+                        break;
+                    }
+                    ImGui::Separator();
+                    ImGui::PopID();
+                }
+            }
+
+            it->name = BuildNodeDisplayName(node);
 
             if (viewingState_->GetEntryNode() == it->animNode)
             {
@@ -678,44 +966,67 @@ void AnimationGraphPanel::DrawPropertiesPanel()
 
         std::vector<AnimationCondition>* conditions = nullptr;
         bool* transitDone = nullptr;
+        float* duration = nullptr;
 
         if (selectionType_ == EditorAnimationSelectionType::StateLink) {
             auto it = std::find_if(stateLinks_.begin(), stateLinks_.end(), [&](const auto& l) { return l.id == selectedId_; });
-            if (it != stateLinks_.end()) { conditions = &it->transition->conditions; transitDone = &it->transition->transitWhenAnimationDone; }
+            if (it != stateLinks_.end()) { conditions = &it->transition->conditions; transitDone = &it->transition->transitWhenAnimationDone; duration = &it->transition->duration; }
         }
         else {
             auto& links = stateNodeLinks_[viewingState_.get()];
             auto it = std::find_if(links.begin(), links.end(), [&](const auto& l) { return l.id == selectedId_; });
-            if (it != links.end()) { conditions = &it->transition->conditions; transitDone = &it->transition->transitWhenAnimationDone; }
+            if (it != links.end()) { conditions = &it->transition->conditions; transitDone = &it->transition->transitWhenAnimationDone; duration = &it->transition->duration; }
         }
 
-        if (conditions && transitDone)
+        if (conditions && transitDone && duration)
         {
             ImGui::Checkbox("Transit on Exit", transitDone);
+            ImGui::DragFloat("Crossfade Duration", duration, 0.01f, 0.0f, 5.0f, "%.2f");
+            *duration = GoknarMath::Max(*duration, 0.f);
             ImGui::Separator();
             ImGui::Text("Conditions");
-            if (ImGui::Button("+ Add Condition")) conditions->push_back({ "NewVar", CompareOp::Equal, false });
+            if (ImGui::Button("+ Add Condition"))
+            {
+                if (!activeGraph_->variables.empty())
+                {
+                    const auto& firstVariable = *activeGraph_->variables.begin();
+                    conditions->push_back({ firstVariable.first, CompareOp::Equal, MakeDefaultConditionValueForVariable(firstVariable.second) });
+                }
+                else
+                {
+                    conditions->push_back({ "NewVar", CompareOp::Equal, false });
+                }
+            }
 
             for (size_t i = 0; i < conditions->size(); ++i)
             {
                 ImGui::PushID((int)i);
                 auto& cond = (*conditions)[i];
 
-                char vBuf[64]; strcpy_s(vBuf, cond.variableName.c_str());
-                if (ImGui::InputText("Variable", vBuf, sizeof(vBuf))) cond.variableName = vBuf;
+                if (ImGui::BeginCombo("Variable", cond.variableName.empty() ? "<none>" : cond.variableName.c_str()))
+                {
+                    for (const auto& variablePair : activeGraph_->variables)
+                    {
+                        const bool selected = cond.variableName == variablePair.first;
+                        if (ImGui::Selectable(variablePair.first.c_str(), selected))
+                        {
+                            cond.variableName = variablePair.first;
+                            cond.targetValue = MakeDefaultConditionValueForVariable(variablePair.second);
+                        }
+                        if (selected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                DrawStringInput("Variable Name", cond.variableName);
 
                 const char* opNames[] = { "==", "!=", ">", "<", ">=", "<=" };
                 int currentOp = (int)cond.operation;
                 if (ImGui::Combo("Operator", &currentOp, opNames, 6)) cond.operation = (CompareOp)currentOp;
 
-                float val = 0.0f;
-                if (std::holds_alternative<float>(cond.targetValue)) val = std::get<float>(cond.targetValue);
-                if (std::holds_alternative<bool>(cond.targetValue)) val = std::get<bool>(cond.targetValue) ? 1.0f : 0.0f;
-
-                if (ImGui::DragFloat("Value", &val)) {
-                    if (std::holds_alternative<bool>(cond.targetValue)) cond.targetValue = (val > 0.5f);
-                    else cond.targetValue = val;
-                }
+                DrawAnimationVariableValueEditor("Value", cond.targetValue);
 
                 if (ImGui::Button("Remove")) conditions->erase(conditions->begin() + i);
                 ImGui::Separator();
@@ -831,15 +1142,14 @@ void AnimationGraphPanel::DrawNodeCanvas()
             ImVec2 scaled_size = ImVec2(element.size.x * scale_, element.size.y * scale_);
             ImVec2 rect_max = ImVec2(rect_min.x + scaled_size.x, rect_min.y + scaled_size.y);
 
-            ImU32 bg_col = (selectionType_ == type && selectedId_ == element.id) ? IM_COL32(80, 80, 120, 255) : IM_COL32(50, 50, 50, 255);
+            const bool isSelected = selectionType_ == type && selectedId_ == element.id;
+            ImU32 bg_col = isSelected ? IM_COL32(80, 80, 120, 255) : IM_COL32(50, 50, 50, 255);
 
             // ONLY compile this block if the element is an EditorAnimationNode
             if constexpr (std::is_same_v<ElementType, EditorAnimationNode>)
             {
-                // Give the Entry Node a greener highlight
-                if (viewingState_ && viewingState_->GetEntryNode() == element.animNode) {
-                    bg_col = (selectionType_ == type && selectedId_ == element.id) ? IM_COL32(100, 120, 80, 255) : IM_COL32(50, 100, 50, 255);
-                }
+                const bool isEntry = viewingState_ && viewingState_->GetEntryNode() == element.animNode;
+                bg_col = GetNodeColor(element.animNode.get(), isSelected, isEntry);
             }
 
             draw_list->AddRectFilled(rect_min, rect_max, bg_col, 4.0f * scale_);
@@ -847,7 +1157,16 @@ void AnimationGraphPanel::DrawNodeCanvas()
 
             ImGui::SetCursorScreenPos(ImVec2(rect_min.x + 10.0f * scale_, rect_min.y + 15.0f * scale_));
             ImGui::SetWindowFontScale(scale_);
-            ImGui::Text("%s", element.name.c_str());
+            if constexpr (std::is_same_v<ElementType, EditorAnimationNode>)
+            {
+                ImGui::TextDisabled("%s", AnimationNodeTypeToLabel(element.animNode->type));
+                ImGui::SetCursorScreenPos(ImVec2(rect_min.x + 10.0f * scale_, rect_min.y + 34.0f * scale_));
+                ImGui::Text("%s", element.name.c_str());
+            }
+            else
+            {
+                ImGui::Text("%s", element.name.c_str());
+            }
             ImGui::SetWindowFontScale(1.0f);
 
             ImVec2 in_pin = ImVec2(rect_min.x, rect_min.y + scaled_size.y / 2.0f);
@@ -937,11 +1256,29 @@ void AnimationGraphPanel::DrawNodeCanvas()
         }
         else if (currentViewMode_ == EditorAnimationViewMode::InsideState && ImGui::MenuItem("Add Node"))
         {
-            EditorAnimationNode n; n.id = nextId_++; n.name = "New Node";
-            n.pos = ImVec2((ImGui::GetIO().MouseClickedPos[1].x - offset.x) / scale_, (ImGui::GetIO().MouseClickedPos[1].y - offset.y) / scale_);
-            n.size = ImVec2(160, 50); n.animNode = std::make_shared<AnimationNode>();
-            if (!viewingState_->GetEntryNode()) viewingState_->SetEntryNode(n.animNode); // Make first node the entry node
-            stateNodes_[viewingState_.get()].push_back(n);
+            AddNodeToViewingState(
+                AnimationNodeType::Clip,
+                ImVec2((ImGui::GetIO().MouseClickedPos[1].x - offset.x) / scale_, (ImGui::GetIO().MouseClickedPos[1].y - offset.y) / scale_));
+        }
+        else if (currentViewMode_ == EditorAnimationViewMode::InsideState && ImGui::BeginMenu("Add Typed Node"))
+        {
+            const ImVec2 nodePosition(
+                (ImGui::GetIO().MouseClickedPos[1].x - offset.x) / scale_,
+                (ImGui::GetIO().MouseClickedPos[1].y - offset.y) / scale_);
+
+            if (ImGui::MenuItem("Clip"))
+            {
+                AddNodeToViewingState(AnimationNodeType::Clip, nodePosition);
+            }
+            if (ImGui::MenuItem("Blend Space 1D"))
+            {
+                AddNodeToViewingState(AnimationNodeType::BlendSpace1D, nodePosition);
+            }
+            if (ImGui::MenuItem("Blend Space 2D"))
+            {
+                AddNodeToViewingState(AnimationNodeType::BlendSpace2D, nodePosition);
+            }
+            ImGui::EndMenu();
         }
         ImGui::EndPopup();
     }
