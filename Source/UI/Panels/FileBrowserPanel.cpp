@@ -499,7 +499,7 @@ void FileBrowserPanel::DrawGrid()
 							ImageViewerPanel* viewer = (ImageViewerPanel*)hud_->GetPanel<ImageViewerPanel>();
 							if (viewer)
 							{
-								viewer->SetTargetTexture(img->GetGeneratedTexture());
+								viewer->SetTargetImage(img);
 								viewer->SetIsOpen(true);
 							}
 							break;
