@@ -7,9 +7,12 @@
 #include "Goknar/Objects/ReflectionProbeObject.h"
 #include "Goknar/Components/ParticleSystemComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
+#include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Model/StaticMesh.h"
+#include "Goknar/Model/SkeletalMesh.h"
+#include "Goknar/Model/SkeletalMeshInstance.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
@@ -54,14 +57,20 @@ DetailsPanel::DetailsPanel(EditorHUD* hud) : IEditorPanel("Details", hud)
 
 void DetailsPanel::SetupReflections()
 {
-	objectReflections_["StaticMeshComponent"] = [](ObjectBase* o) { 
-		o->AddSubComponent<StaticMeshComponent>(); 
-	};
+	objectReflections_["StaticMeshComponent"] = [](ObjectBase* o) {
+		o->AddSubComponent<StaticMeshComponent>();
+		};
 
 	objectReflections_["StaticMeshComponent"] =
 		[](ObjectBase* objectBase)
 		{
 			objectBase->AddSubComponent<StaticMeshComponent>();
+		};
+
+	objectReflections_["SkeletalMeshComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<SkeletalMeshComponent>();
 		};
 
 	objectReflections_["BillboardParticleSystemComponent"] =
@@ -141,7 +150,34 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		break;
 	}
 	case DetailsAssetSelectionTarget::SkeletalMesh:
+	{
+		SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent_;
+		SkeletalMesh* newSkeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(normalizedPath);
+		if (skeletalMeshComponent && newSkeletalMesh)
+		{
+			skeletalMeshComponent->SetMesh(newSkeletalMesh);
+			MarkSceneDirty("Skeletal mesh changed");
+		}
 		break;
+	}
+	case DetailsAssetSelectionTarget::SkeletalMeshMaterial:
+	{
+		SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent_;
+		std::vector<std::string> materialPaths = SceneParser::GetSkeletalMeshComponentMaterialPaths(skeletalMeshComponent);
+
+		SkeletalMeshInstance* meshInstance = skeletalMeshComponent ? skeletalMeshComponent->GetMeshInstance() : nullptr;
+		SkeletalMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+		const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
+
+		if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
+		{
+			materialPaths.resize(subMeshCount);
+			materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
+			SceneParser::ApplySkeletalMeshComponentMaterialPaths(skeletalMeshComponent, materialPaths);
+			MarkSceneDirty("Skeletal mesh material changed");
+		}
+		break;
+	}
 	case DetailsAssetSelectionTarget::Image:
 		break;
 	case DetailsAssetSelectionTarget::Audio:
@@ -609,6 +645,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	ParticleSystemComponent* particleSystemComponent{ nullptr };
 	StaticMeshComponent* staticMeshComponent{ nullptr };
+	SkeletalMeshComponent* skeletalMeshComponent{ nullptr };
 	BoxCollisionComponent* boxCollisionComponent{ nullptr };
 	SphereCollisionComponent* sphereCollisionComponent{ nullptr };
 	CapsuleCollisionComponent* capsuleCollisionComponent{ nullptr };
@@ -619,6 +656,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	skeletalMeshComponent = dynamic_cast<SkeletalMeshComponent*>(component);
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
 	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
 	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
@@ -634,6 +672,10 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (staticMeshComponent)
 	{
 		componentTypeString = "StaticMeshComponent";
+	}
+	else if (skeletalMeshComponent)
+	{
+		componentTypeString = "SkeletalMeshComponent";
 	}
 	else if (boxCollisionComponent)
 	{
@@ -697,6 +739,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
+	skeletalMeshComponent = dynamic_cast<SkeletalMeshComponent*>(component);
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
 	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
 	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
@@ -710,6 +753,10 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (staticMeshComponent)
 	{
 		DrawStaticMeshComponentDetails(staticMeshComponent);
+	}
+	else if (skeletalMeshComponent)
+	{
+		DrawSkeletalMeshComponentDetails(skeletalMeshComponent);
 	}
 	else if (boxCollisionComponent)
 	{
@@ -752,7 +799,7 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 		assetSelectionComponentType_ = DetailsAssetSelectionTarget::StaticMesh;
 		EditorContext::Get()->assetSelectorFilter = EditorAssetType::StaticMesh;
 
-		AssetSelectorPanel::OnAssetSelected = 
+		AssetSelectorPanel::OnAssetSelected =
 			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
 
 		hud_->ShowPanel<AssetSelectorPanel>();
@@ -813,6 +860,94 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	{
 		staticMeshInstance->SetRenderMask(currentValue);
 		MarkSceneDirty("Static mesh render mask changed");
+	}
+
+	ImGui::PopItemWidth();
+}
+
+void DetailsPanel::DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* skeletalMeshComponent)
+{
+	std::string specialPostfix = "##" + std::to_string(skeletalMeshComponent->GetGUID());
+
+	ImGui::Text("Mesh: ");
+
+	ImGui::SameLine();
+	SkeletalMeshInstance* skeletalMeshInstance = skeletalMeshComponent->GetMeshInstance();
+	SkeletalMesh* skeletalMesh = skeletalMeshInstance ? skeletalMeshInstance->GetMesh() : nullptr;
+	ImGui::Text(skeletalMesh ? skeletalMesh->GetPath().substr(ContentDir.size()).c_str() : "");
+
+	std::string specialName = std::string("Select asset") + specialPostfix;
+
+	ImGui::SameLine();
+	if (ImGui::Button(specialName.c_str()))
+	{
+		assetSelectionComponent_ = skeletalMeshComponent;
+		assetSelectionComponentType_ = DetailsAssetSelectionTarget::SkeletalMesh;
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::SkeletalMesh;
+
+		AssetSelectorPanel::OnAssetSelected =
+			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+		hud_->ShowPanel<AssetSelectorPanel>();
+	}
+
+	ImGui::Text("Default Materials:");
+
+	const std::vector<std::string> materialPaths = SceneParser::GetSkeletalMeshComponentMaterialPaths(skeletalMeshComponent);
+	const size_t subMeshCount = skeletalMesh ? skeletalMesh->GetSubMeshes().size() : 0;
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	{
+		ImGui::PushID(static_cast<int>(subMeshIndex));
+
+		const std::string& subMeshName = skeletalMesh->GetSubMeshes()[subMeshIndex]->GetName();
+		if (subMeshName.empty())
+		{
+			ImGui::Text("Sub Mesh %d", static_cast<int>(subMeshIndex));
+		}
+		else
+		{
+			ImGui::Text("Sub Mesh %d: %s", static_cast<int>(subMeshIndex), subMeshName.c_str());
+		}
+
+		const char* materialPath = subMeshIndex < materialPaths.size() && !materialPaths[subMeshIndex].empty() ? materialPaths[subMeshIndex].c_str() : "";
+		ImGui::TextWrapped("%s", materialPath);
+
+		if (ImGui::Button("Select Asset"))
+		{
+			assetSelectionComponent_ = skeletalMeshComponent;
+			assetSelectionComponentType_ = DetailsAssetSelectionTarget::SkeletalMeshMaterial;
+			assetSelectionSubMeshIndex_ = static_cast<int>(subMeshIndex);
+			EditorContext::Get()->assetSelectorFilter = EditorAssetType::Material;
+
+			AssetSelectorPanel::OnAssetSelected =
+				Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+			hud_->ShowPanel<AssetSelectorPanel>();
+		}
+
+		ImGui::PopID();
+
+		if (subMeshIndex + 1 < subMeshCount)
+		{
+			ImGui::Separator();
+		}
+	}
+
+	ImGui::Text("Render mask: ");
+
+	ImGui::SameLine();
+
+	ImGui::PushItemWidth(100.f);
+
+	if (skeletalMeshInstance)
+	{
+		int currentValue = skeletalMeshInstance->GetRenderMask();
+		EditorWidgets::DrawInputInt("##SkeletalMeshInstanceRenderMask" + specialPostfix, currentValue);
+		if (currentValue != static_cast<int>(skeletalMeshInstance->GetRenderMask()))
+		{
+			skeletalMeshInstance->SetRenderMask(currentValue);
+			MarkSceneDirty("Skeletal mesh render mask changed");
+		}
 	}
 
 	ImGui::PopItemWidth();
@@ -960,6 +1095,7 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 	static const char* objectBaseComponents[]{
 		"",
 		"StaticMeshComponent",
+		"SkeletalMeshComponent",
 		"BillboardParticleSystemComponent",
 		"StaticMeshParticleSystemComponent"
 	};
@@ -967,6 +1103,7 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 	static const char* physicsObjectComponents[]{
 		"",
 		"StaticMeshComponent",
+		"SkeletalMeshComponent",
 		"BillboardParticleSystemComponent",
 		"StaticMeshParticleSystemComponent",
 		"BoxCollisionComponent",

@@ -19,7 +19,7 @@ namespace
 		TextureUsage::AmbientOcclusion,
 		TextureUsage::Metallic,
 		TextureUsage::Specular,
-		TextureUsage::Emisive,
+		TextureUsage::Emissive,
 		TextureUsage::Roughness,
 		TextureUsage::Height,
 		TextureUsage::ORM

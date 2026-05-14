@@ -14,6 +14,7 @@ class ReflectionProbeObject;
 class Component;
 class ParticleSystemComponent;
 class StaticMeshComponent;
+class SkeletalMeshComponent;
 class BoxCollisionComponent;
 class SphereCollisionComponent;
 class CapsuleCollisionComponent;
@@ -26,6 +27,7 @@ enum class DetailsAssetSelectionTarget
 	StaticMesh,
 	Material,
 	SkeletalMesh,
+	SkeletalMeshMaterial,
 	Image,
 	Audio
 };
@@ -48,6 +50,7 @@ private:
 	void DrawComponentDetails(ObjectBase* owner, Component* component);
 	void DrawParticleSystemComponentDetails(ParticleSystemComponent* component);
 	void DrawStaticMeshComponentDetails(StaticMeshComponent* component);
+	void DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* component);
 	void DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCollisionComponent);
 	void DrawSphereCollisionComponentDetails(SphereCollisionComponent* sphereCollisionComponent);
 	void DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponent* capsuleCollisionComponent);

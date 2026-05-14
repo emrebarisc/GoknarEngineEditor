@@ -9,7 +9,8 @@ enum class PendingAssetCreationType
 	None = 0,
 	Material,
 	MaterialFunction,
-	AnimationGraph
+	AnimationGraph,
+	Scene
 };
 
 class FileBrowserPanel : public IEditorPanel
@@ -49,6 +50,7 @@ private:
 	bool isCreatingAsset_{ false };
 	bool needsRefresh_{ false };
 	bool shouldOpenSaveChangesPopup_{ false };
+	bool shouldFocusCreationNameInput_{ false };
 	std::string selectedItemForMenu_{ "" };
 	std::string pendingSceneToOpen_{ "" };
 	std::string pendingCreationDirectory_{};

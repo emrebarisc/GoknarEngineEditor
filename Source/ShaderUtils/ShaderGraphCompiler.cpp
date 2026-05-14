@@ -384,8 +384,8 @@ void ShaderGraphCompiler::CompileMaterial(const ShaderGraphCompileInput& input, 
 
 	outMaterialData->baseColor.calculation = "";
 	outMaterialData->baseColor.result = "";
-	outMaterialData->emisiveColor.calculation = "";
-	outMaterialData->emisiveColor.result = "";
+	outMaterialData->emissiveColor.calculation = "";
+	outMaterialData->emissiveColor.result = "";
 	outMaterialData->ambientOcclusion.calculation = "";
 	outMaterialData->ambientOcclusion.result = "";
 	outMaterialData->metallic.calculation = "";
@@ -1267,7 +1267,7 @@ void ShaderGraphCompiler::CompileMaterial(const ShaderGraphCompileInput& input, 
 		};
 
 	AssignMaterialResult("Base Color", outMaterialData->baseColor);
-	AssignMaterialResult("Emissive", outMaterialData->emisiveColor);
+	AssignMaterialResult("Emissive", outMaterialData->emissiveColor);
 	const bool hasFragmentNormal = AssignMaterialResult("Fragment Normal", outMaterialData->fragmentNormal);
 	if (hasFragmentNormal)
 	{

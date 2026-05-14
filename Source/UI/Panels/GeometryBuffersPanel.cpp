@@ -28,7 +28,7 @@ void GeometryBuffersPanel::Draw()
 
 	ImGui::SetCursorPos(imagePosition);
 	Texture* diffuseTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->diffuseTexture;
-	Texture* emmisiveColorTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->emisiveColorTexture;
+	Texture* emissiveColorTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->emissiveColorTexture;
 	Texture* ambientOcclusionMetallicRoughnessTexture =
 		EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->ambientOcclusionMetallicRoughnessTexture;
 	Texture* worldPositionTexture = EditorContext::Get()->viewportRenderTarget->GetDeferredRenderingData()->geometryBufferData->worldPositionTexture;
@@ -44,7 +44,7 @@ void GeometryBuffersPanel::Draw()
 	imagePosition = { imageSize.x, 0.f };
 	ImGui::SetCursorPos(imagePosition);
 	ImGui::Image(
-		(ImTextureID)(intptr_t)emmisiveColorTexture->GetRendererTextureId(),
+		(ImTextureID)(intptr_t)emissiveColorTexture->GetRendererTextureId(),
 		imageSize,
 		ImVec2{ 0.f, 1.f },
 		ImVec2{ 1.f, 0.f }

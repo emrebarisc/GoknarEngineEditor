@@ -1371,7 +1371,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 
 	ParseColorConstant("DiffuseReflectance", "Base Color", false);
 	ParseColorConstant("BaseColorValue", "Base Color", true);
-	ParseColorConstant("EmmisiveColorValue", "Emissive", false);
+	ParseColorConstant("EmissiveColorValue", "Emissive", false);
 
 	auto ParseFloatConstant = [&](const char* name, const char* masterInputName, const char* shaderFunctionTag)
 		{

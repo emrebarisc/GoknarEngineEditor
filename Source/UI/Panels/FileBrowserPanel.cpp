@@ -70,7 +70,17 @@ namespace
 
 		tinyxml2::XMLElement* root = document.FirstChildElement("GameAsset");
 		const char* fileType = root ? root->Attribute("FileType") : nullptr;
-		return fileType ? fileType : "";
+		if (fileType)
+		{
+			return fileType;
+		}
+
+		if (document.FirstChildElement("Scene"))
+		{
+			return "Scene";
+		}
+
+		return "";
 	}
 
 	bool WriteMaterialAssetFile(const std::string& filePath)
@@ -112,6 +122,18 @@ namespace
 		stateElement->InsertEndChild(nodesElement);
 		statesElement->InsertEndChild(stateElement);
 		root->InsertEndChild(statesElement);
+
+		return document.SaveFile(filePath.c_str()) == tinyxml2::XML_SUCCESS;
+	}
+
+	bool WriteSceneAssetFile(const std::string& filePath)
+	{
+		tinyxml2::XMLDocument document;
+		tinyxml2::XMLElement* root = document.NewElement("Scene");
+		document.InsertFirstChild(root);
+
+		root->InsertEndChild(document.NewElement("Lights"));
+		root->InsertEndChild(document.NewElement("Objects"));
 
 		return document.SaveFile(filePath.c_str()) == tinyxml2::XML_SUCCESS;
 	}
@@ -283,8 +305,14 @@ void FileBrowserPanel::Draw()
 
 	if (ImGui::BeginPopupModal("Create Folder", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::InputText("Folder Name", creationNameBuffer_, sizeof(creationNameBuffer_));
-		if (ImGui::Button("OK", ImVec2(120, 0)))
+		if (shouldFocusCreationNameInput_)
+		{
+			ImGui::SetKeyboardFocusHere();
+			shouldFocusCreationNameInput_ = false;
+		}
+
+		const bool isNameSubmitted = ImGui::InputText("Folder Name", creationNameBuffer_, sizeof(creationNameBuffer_), ImGuiInputTextFlags_EnterReturnsTrue);
+		if (isNameSubmitted || ImGui::Button("OK", ImVec2(120, 0)))
 		{
 			FinalizeFolderCreation();
 			ImGui::CloseCurrentPopup();
@@ -295,6 +323,7 @@ void FileBrowserPanel::Draw()
 		{
 			isCreatingFolder_ = false;
 			pendingCreationDirectory_.clear();
+			shouldFocusCreationNameInput_ = false;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
@@ -310,10 +339,18 @@ void FileBrowserPanel::Draw()
 		const char* assetTypeLabel = pendingAssetCreationType_ == PendingAssetCreationType::Material ? "Material" :
 			pendingAssetCreationType_ == PendingAssetCreationType::MaterialFunction ? "Material Function" :
 			pendingAssetCreationType_ == PendingAssetCreationType::AnimationGraph ? "Animation Graph" :
+			pendingAssetCreationType_ == PendingAssetCreationType::Scene ? "Scene" :
 			"Asset";
 		ImGui::Text("Asset Type: %s", assetTypeLabel);
-		ImGui::InputText("Asset Name", creationNameBuffer_, sizeof(creationNameBuffer_));
-		if (ImGui::Button("OK", ImVec2(120, 0)))
+
+		if (shouldFocusCreationNameInput_)
+		{
+			ImGui::SetKeyboardFocusHere();
+			shouldFocusCreationNameInput_ = false;
+		}
+
+		const bool isNameSubmitted = ImGui::InputText("Asset Name", creationNameBuffer_, sizeof(creationNameBuffer_), ImGuiInputTextFlags_EnterReturnsTrue);
+		if (isNameSubmitted || ImGui::Button("OK", ImVec2(120, 0)))
 		{
 			FinalizeAssetCreation();
 			ImGui::CloseCurrentPopup();
@@ -324,6 +361,7 @@ void FileBrowserPanel::Draw()
 		{
 			isCreatingAsset_ = false;
 			pendingCreationDirectory_.clear();
+			shouldFocusCreationNameInput_ = false;
 			pendingAssetCreationType_ = PendingAssetCreationType::None;
 			ImGui::CloseCurrentPopup();
 		}
@@ -643,6 +681,7 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 		isCreatingFolder_ = true;
 		isCreatingAsset_ = false;
 		pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
+		shouldFocusCreationNameInput_ = true;
 		creationNameBuffer_[0] = '\0';
 	}
 
@@ -654,6 +693,7 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 			isCreatingAsset_ = true;
 			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
 			pendingAssetCreationType_ = PendingAssetCreationType::Material;
+			shouldFocusCreationNameInput_ = true;
 			creationNameBuffer_[0] = '\0';
 		}
 
@@ -663,6 +703,7 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 			isCreatingAsset_ = true;
 			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
 			pendingAssetCreationType_ = PendingAssetCreationType::MaterialFunction;
+			shouldFocusCreationNameInput_ = true;
 			creationNameBuffer_[0] = '\0';
 		}
 
@@ -672,6 +713,17 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 			isCreatingAsset_ = true;
 			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
 			pendingAssetCreationType_ = PendingAssetCreationType::AnimationGraph;
+			shouldFocusCreationNameInput_ = true;
+			creationNameBuffer_[0] = '\0';
+		}
+
+		if (ImGui::MenuItem("Scene"))
+		{
+			isCreatingFolder_ = false;
+			isCreatingAsset_ = true;
+			pendingCreationDirectory_ = EnsureTrailingSlash(targetDirectory);
+			pendingAssetCreationType_ = PendingAssetCreationType::Scene;
+			shouldFocusCreationNameInput_ = true;
 			creationNameBuffer_[0] = '\0';
 		}
 
@@ -884,6 +936,7 @@ void FileBrowserPanel::FinalizeFolderCreation()
 
 	isCreatingFolder_ = false;
 	pendingCreationDirectory_.clear();
+	shouldFocusCreationNameInput_ = false;
 	creationNameBuffer_[0] = '\0';
 }
 
@@ -915,6 +968,10 @@ void FileBrowserPanel::FinalizeAssetCreation()
 				{
 					isSaved = WriteAnimationGraphAssetFile(newAssetPath.generic_string());
 				}
+				else if (pendingAssetCreationType_ == PendingAssetCreationType::Scene)
+				{
+					isSaved = WriteSceneAssetFile(newAssetPath.generic_string());
+				}
 
 				if (isSaved)
 				{
@@ -929,6 +986,7 @@ void FileBrowserPanel::FinalizeAssetCreation()
 
 	isCreatingAsset_ = false;
 	pendingCreationDirectory_.clear();
+	shouldFocusCreationNameInput_ = false;
 	pendingAssetCreationType_ = PendingAssetCreationType::None;
 	creationNameBuffer_[0] = '\0';
 }
