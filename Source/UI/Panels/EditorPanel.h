@@ -24,7 +24,7 @@ public:
 	virtual void Init() {}
 	virtual void Draw() = 0;
 
-	void SetIsOpen(bool isOpen)
+	virtual void SetIsOpen(bool isOpen)
 	{
 		isOpen_ = isOpen;
 	}

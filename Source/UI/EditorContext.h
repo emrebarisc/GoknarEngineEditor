@@ -34,6 +34,7 @@ enum class EditorAssetType
 	StaticMesh,
 	SkeletalMesh,
 	AnimationGraph,
+	NavigationTree,
 	Audio,
 	Scene,
 	HeaderFile,

@@ -71,6 +71,10 @@ namespace
 		{
 			return EditorAssetType::AnimationGraph;
 		}
+		if (fileTypeString == "NavigationTree")
+		{
+			return EditorAssetType::NavigationTree;
+		}
 		if (fileTypeString == "Scene")
 		{
 			return EditorAssetType::Scene;

@@ -17,6 +17,7 @@ namespace
 		case EditorAssetType::StaticMesh: return "Static Mesh";
 		case EditorAssetType::SkeletalMesh: return "Skeletal Mesh";
 		case EditorAssetType::AnimationGraph: return "Animation Graph";
+		case EditorAssetType::NavigationTree: return "Navigation Tree";
 		case EditorAssetType::Audio: return "Audio";
 		case EditorAssetType::Scene: return "Scene";
 		case EditorAssetType::HeaderFile: return "Header";

@@ -53,6 +53,7 @@
 #include "Panels/ImageViewerPanel.h"
 #include "Panels/MenuBarPanel.h"
 #include "Panels/MeshViewerPanel.h"
+#include "Panels/NavigationPanel.h"
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
 #include "Panels/ParticleSystemPanel.h"
@@ -167,6 +168,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ImageViewerPanel>();
 	AddPanel<MenuBarPanel>();
 	AddPanel<MeshViewerPanel>();
+	AddPanel<NavigationPanel>();
 	AddPanel<ObjectCreationPanel>();
 	AddPanel<ObjectNameToCreatePanel>();
 	AddPanel<ParticleSystemPanel>();
@@ -452,6 +454,14 @@ void EditorHUD::OnLeftClickPressed()
 	ImGuiIO& io = ImGui::GetIO();
 	io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
 	doubleClickController_.OnMouseButtonPressed(ImGuiMouseButton_Left, GetCursorPositionForUi());
+
+	if (NavigationPanel* navigationPanel = GetPanel<NavigationPanel>())
+	{
+		if (navigationPanel->HandleViewportLeftClick())
+		{
+			return;
+		}
+	}
 
 	if (context_->objectToCreateType != EditorSelectionType::None)
 	{

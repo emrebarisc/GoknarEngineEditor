@@ -2,7 +2,7 @@
 
 isDebugBuild=true
 cleanBuild=false
-build=true
+build=false
 runAfterBuild=false
 isUnix=true
 onlySyncFiles=false
