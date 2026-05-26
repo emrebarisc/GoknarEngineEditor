@@ -20,6 +20,7 @@ class SphereCollisionComponent;
 class CapsuleCollisionComponent;
 class MovingTriangleMeshCollisionComponent;
 class NonMovingTriangleMeshCollisionComponent;
+class NavigationTreeComponent;
 
 enum class DetailsAssetSelectionTarget
 {
@@ -28,6 +29,7 @@ enum class DetailsAssetSelectionTarget
 	Material,
 	SkeletalMesh,
 	SkeletalMeshMaterial,
+	NavigationTree,
 	Image,
 	Audio
 };
@@ -51,6 +53,7 @@ private:
 	void DrawParticleSystemComponentDetails(ParticleSystemComponent* component);
 	void DrawStaticMeshComponentDetails(StaticMeshComponent* component);
 	void DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* component);
+	void DrawNavigationTreeComponentDetails(NavigationTreeComponent* component);
 	void DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCollisionComponent);
 	void DrawSphereCollisionComponentDetails(SphereCollisionComponent* sphereCollisionComponent);
 	void DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponent* capsuleCollisionComponent);

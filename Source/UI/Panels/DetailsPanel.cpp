@@ -3,7 +3,9 @@
 #include "imgui.h"
 
 #include "Goknar/Engine.h"
+#include "Goknar/Application.h"
 #include "Goknar/ObjectBase.h"
+#include "Goknar/Scene.h"
 #include "Goknar/Objects/ReflectionProbeObject.h"
 #include "Goknar/Components/ParticleSystemComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
@@ -20,6 +22,8 @@
 #include "Goknar/Physics/Components/SphereCollisionComponent.h"
 #include "Goknar/Physics/Components/NonMovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
+#include "Goknar/Navigation/NavigationTreeComponent.h"
+#include "Goknar/Navigation/NavigationTypes.h"
 #include "Goknar/Lights/DirectionalLight.h"
 #include "Goknar/Lights/PointLight.h"
 #include "Goknar/Lights/SpotLight.h"
@@ -47,6 +51,41 @@ namespace
 	void MarkSceneDirty(const std::string& reason)
 	{
 		EditorContext::Get()->MarkSceneDirty(reason);
+	}
+
+	void RebuildSceneNavigationMesh()
+	{
+		Scene* scene = engine && engine->GetApplication() ? engine->GetApplication()->GetMainScene() : nullptr;
+		if (!scene)
+		{
+			return;
+		}
+
+		const NavMeshSettings defaultSettings;
+		scene->RebuildNavigationMesh(defaultSettings);
+	}
+
+	bool ObjectHasNavigationTreeComponent(ObjectBase* object)
+	{
+		if (!object)
+		{
+			return false;
+		}
+
+		if (object->GetFirstComponentOfType<NavigationTreeComponent>())
+		{
+			return true;
+		}
+
+		for (ObjectBase* childObject : object->GetChildren())
+		{
+			if (ObjectHasNavigationTreeComponent(childObject))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
 
@@ -83,6 +122,12 @@ void DetailsPanel::SetupReflections()
 		[](ObjectBase* objectBase)
 		{
 			objectBase->AddSubComponent<StaticMeshParticleSystemComponent>();
+		};
+
+	objectReflections_["NavigationTreeComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<NavigationTreeComponent>();
 		};
 
 	physicsReflections_["BoxCollisionComponent"] =
@@ -175,6 +220,21 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
 			SceneParser::ApplySkeletalMeshComponentMaterialPaths(skeletalMeshComponent, materialPaths);
 			MarkSceneDirty("Skeletal mesh material changed");
+		}
+		break;
+	}
+	case DetailsAssetSelectionTarget::NavigationTree:
+	{
+		NavigationTreeComponent* navigationTreeComponent = (NavigationTreeComponent*)assetSelectionComponent_;
+		if (navigationTreeComponent)
+		{
+			const std::string previousPath = navigationTreeComponent->GetNavigationTreePath();
+			const bool loadedNavigationTree = navigationTreeComponent->SetNavigationTreePath(normalizedPath);
+			if (loadedNavigationTree && previousPath != navigationTreeComponent->GetNavigationTreePath())
+			{
+				RebuildSceneNavigationMesh();
+				MarkSceneDirty("Navigation tree changed");
+			}
 		}
 		break;
 	}
@@ -292,9 +352,17 @@ void DetailsPanel::DrawObjectDetails()
 	const bool scalingChanged = EditorWidgets::DrawInputVector3("##Scaling", selectedObjectWorldScaling);
 	object->SetWorldScaling(selectedObjectWorldScaling);
 
-	if (!nameChanged && (positionChanged || rotationChanged || scalingChanged))
+	if (positionChanged || rotationChanged || scalingChanged)
 	{
-		MarkSceneDirty("Object transform changed");
+		if (ObjectHasNavigationTreeComponent(object))
+		{
+			RebuildSceneNavigationMesh();
+		}
+
+		if (!nameChanged)
+		{
+			MarkSceneDirty("Object transform changed");
+		}
 	}
 
 	ImGui::Separator();
@@ -651,6 +719,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	CapsuleCollisionComponent* capsuleCollisionComponent{ nullptr };
 	MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent{ nullptr };
 	NonMovingTriangleMeshCollisionComponent* nonMvingTriangleMeshCollisionComponent{ nullptr };
+	NavigationTreeComponent* navigationTreeComponent{ nullptr };
 
 	std::string componentTypeString;
 
@@ -662,6 +731,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
 	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
 	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
+	navigationTreeComponent = dynamic_cast<NavigationTreeComponent*>(component);
 
 	if (particleSystemComponent)
 	{
@@ -696,6 +766,10 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (nonMvingTriangleMeshCollisionComponent)
 	{
 		componentTypeString = "NonMovingTriangleMeshCollisionComponent";
+	}
+	else if (navigationTreeComponent)
+	{
+		componentTypeString = "NavigationTreeComponent";
 	}
 	else
 	{
@@ -734,6 +808,11 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 
 	if (relativePositionChanged || relativeRotationChanged || relativeScalingChanged)
 	{
+		if (navigationTreeComponent)
+		{
+			RebuildSceneNavigationMesh();
+		}
+
 		MarkSceneDirty("Component transform changed");
 	}
 
@@ -745,6 +824,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
 	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
 	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
+	navigationTreeComponent = dynamic_cast<NavigationTreeComponent*>(component);
 
 	if (particleSystemComponent)
 	{
@@ -777,6 +857,10 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (nonMvingTriangleMeshCollisionComponent)
 	{
 		DrawNonMovingTriangleMeshCollisionComponentDetails(nonMvingTriangleMeshCollisionComponent);
+	}
+	else if (navigationTreeComponent)
+	{
+		DrawNavigationTreeComponentDetails(navigationTreeComponent);
 	}
 }
 
@@ -953,6 +1037,49 @@ void DetailsPanel::DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* skele
 	ImGui::PopItemWidth();
 }
 
+void DetailsPanel::DrawNavigationTreeComponentDetails(NavigationTreeComponent* navigationTreeComponent)
+{
+	if (!navigationTreeComponent)
+	{
+		return;
+	}
+
+	const std::string specialPostfix = "##" + std::to_string(navigationTreeComponent->GetGUID());
+	const std::string navigationTreePath = navigationTreeComponent->GetNavigationTreePath();
+
+	ImGui::Text("Navigation Tree: ");
+	ImGui::SameLine();
+	ImGui::TextWrapped("%s", navigationTreePath.c_str());
+
+	const std::string selectAssetLabel = std::string("Select asset") + specialPostfix;
+	if (ImGui::Button(selectAssetLabel.c_str()))
+	{
+		assetSelectionComponent_ = navigationTreeComponent;
+		assetSelectionComponentType_ = DetailsAssetSelectionTarget::NavigationTree;
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::NavigationTree;
+
+		AssetSelectorPanel::OnAssetSelected =
+			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+		hud_->ShowPanel<AssetSelectorPanel>();
+	}
+
+	if (!navigationTreePath.empty())
+	{
+		ImGui::SameLine();
+		const std::string clearAssetLabel = std::string("Clear") + specialPostfix;
+		if (ImGui::Button(clearAssetLabel.c_str()))
+		{
+			navigationTreeComponent->SetNavigationTreePath("");
+			RebuildSceneNavigationMesh();
+			MarkSceneDirty("Navigation tree cleared");
+		}
+	}
+
+	ImGui::Text("Relative Nodes: %d", static_cast<int>(navigationTreeComponent->GetRelativeNavigationTree().GetNodes().size()));
+	ImGui::Text("World Nodes: %d", static_cast<int>(navigationTreeComponent->GetNavigationTree().GetNodes().size()));
+}
+
 void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* particleSystemComponent)
 {
 	const std::string specialPostfix = "##" + std::to_string(particleSystemComponent->GetGUID());
@@ -1127,7 +1254,8 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 		"StaticMeshComponent",
 		"SkeletalMeshComponent",
 		"BillboardParticleSystemComponent",
-		"StaticMeshParticleSystemComponent"
+		"StaticMeshParticleSystemComponent",
+		"NavigationTreeComponent"
 	};
 
 	static const char* physicsObjectComponents[]{
@@ -1136,6 +1264,7 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 		"SkeletalMeshComponent",
 		"BillboardParticleSystemComponent",
 		"StaticMeshParticleSystemComponent",
+		"NavigationTreeComponent",
 		"BoxCollisionComponent",
 		"CapsuleCollisionComponent",
 		"SphereCollisionComponent",
@@ -1178,6 +1307,8 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 				objectReflections_[selectedComponentString](object);
 				MarkSceneDirty("Component added");
 			}
+
+			selectedItem = 0;
 		}
 	}
 }

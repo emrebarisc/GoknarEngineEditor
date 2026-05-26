@@ -49,6 +49,14 @@ private:
 	void DrawPathFinder();
 	void DrawPathPointEditor(int pointIndex, const char* label);
 
+	NavigationTree* GetSceneNavigationTree() const;
+	NavigationTree* GetActiveNavigationTree();
+	const NavigationTree* GetActiveNavigationTree() const;
+	bool IsUsingSceneNavigationMesh() const;
+	bool CanEditActiveNavigationTree() const;
+	void RebuildSceneNavigationMesh(bool updateStatus = false);
+	void ValidateSelectedNode();
+
 	void AddNodeAtPosition(const Vector3& position);
 	void SelectNode(NavigationNode* node);
 	NavigationNode* FindNodeAtPosition(const Vector3& position) const;
@@ -90,6 +98,7 @@ private:
 
 	NavMeshSettings navMeshSettings_{};
 	EditorMode editorMode_{ EditorMode::Select };
+	bool useSceneNavigationMesh_{ true };
 
 	std::string navigationTreePath_{};
 	std::array<char, 512> navigationTreePathBuffer_{};

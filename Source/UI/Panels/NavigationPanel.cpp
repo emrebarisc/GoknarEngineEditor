@@ -11,7 +11,9 @@
 #include "Goknar/Color.h"
 #include "Goknar/Debug/DebugDrawer.h"
 #include "Goknar/Engine.h"
+#include "Goknar/Application.h"
 #include "Goknar/ObjectBase.h"
+#include "Goknar/Scene.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Helpers/ContentPathUtils.h"
 #include "Goknar/Managers/InputManager.h"
@@ -20,6 +22,7 @@
 #include "Goknar/Materials/MaterialInstance.h"
 #include "Goknar/Math/Matrix.h"
 #include "Goknar/Model/StaticMesh.h"
+#include "Goknar/Navigation/NavigationMesh.h"
 #include "Goknar/Navigation/NavigationTreeSerializer.h"
 #include "Goknar/Navigation/PathFinder.h"
 #include "Goknar/Physics/PhysicsWorld.h"
@@ -300,6 +303,24 @@ namespace
 			std::find(node->neighbours.begin(), node->neighbours.end(), candidate) != node->neighbours.end();
 	}
 
+	bool ContainsNavigationNode(const NavigationTree* navigationTree, const NavigationNode* navigationNode)
+	{
+		if (!navigationTree || !navigationNode)
+		{
+			return false;
+		}
+
+		for (const std::unique_ptr<NavigationNode>& node : navigationTree->GetNodes())
+		{
+			if (node.get() == navigationNode)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	bool RayIntersectsSphere(const Vector3& rayOrigin, const Vector3& rayDirection, const Vector3& sphereCenter, float radius, float& outRayDistance)
 	{
 		const Vector3 originToCenter = rayOrigin - sphereCenter;
@@ -434,7 +455,7 @@ namespace
 }
 
 NavigationPanel::NavigationPanel(EditorHUD* hud) :
-	IEditorPanel("NavMesh Editor", hud)
+	IEditorPanel("Navigation Editor", hud)
 {
 	isOpen_ = false;
 	navigationTreePath_ = GetDefaultNavigationTreePath();
@@ -478,6 +499,7 @@ void NavigationPanel::Draw()
 	size_ = Vector2i((int)windowSize.x, (int)windowSize.y);
 
 	DrawToolbar();
+	ValidateSelectedNode();
 	ImGui::Separator();
 	DrawSettings();
 	ImGui::Separator();
@@ -526,6 +548,11 @@ void NavigationPanel::SetIsOpen(bool isOpen)
 	}
 	else
 	{
+		if (IsUsingSceneNavigationMesh())
+		{
+			RebuildSceneNavigationMesh();
+		}
+
 		MarkVisualsDirty();
 	}
 }
@@ -559,7 +586,7 @@ bool NavigationPanel::HandleViewportLeftClick()
 		return false;
 	}
 
-	if (TryHandlePointGizmoClick(rayOrigin, rayDirection))
+	if (CanEditActiveNavigationTree() && TryHandlePointGizmoClick(rayOrigin, rayDirection))
 	{
 		return true;
 	}
@@ -577,7 +604,7 @@ bool NavigationPanel::HandleViewportLeftClick()
 		return true;
 	}
 
-	if (editorMode_ == EditorMode::Draw)
+	if (CanEditActiveNavigationTree() && editorMode_ == EditorMode::Draw)
 	{
 		AddNodeAtPosition(hitPosition);
 		return true;
@@ -593,8 +620,110 @@ std::string NavigationPanel::GetDefaultNavigationTreePath() const
 	return ContentDir + std::string("Navigation/NavigationTree");
 }
 
+NavigationTree* NavigationPanel::GetSceneNavigationTree() const
+{
+	Scene* scene = engine && engine->GetApplication() ? engine->GetApplication()->GetMainScene() : nullptr;
+	NavigationMesh* navigationMesh = scene ? scene->GetNavigationMesh() : nullptr;
+	return navigationMesh ? &navigationMesh->GetNavigationTree() : nullptr;
+}
+
+NavigationTree* NavigationPanel::GetActiveNavigationTree()
+{
+	if (useSceneNavigationMesh_)
+	{
+		if (NavigationTree* sceneNavigationTree = GetSceneNavigationTree())
+		{
+			return sceneNavigationTree;
+		}
+	}
+
+	return navigationTree_;
+}
+
+const NavigationTree* NavigationPanel::GetActiveNavigationTree() const
+{
+	if (useSceneNavigationMesh_)
+	{
+		if (NavigationTree* sceneNavigationTree = GetSceneNavigationTree())
+		{
+			return sceneNavigationTree;
+		}
+	}
+
+	return navigationTree_;
+}
+
+bool NavigationPanel::IsUsingSceneNavigationMesh() const
+{
+	return useSceneNavigationMesh_ && GetSceneNavigationTree() != nullptr;
+}
+
+bool NavigationPanel::CanEditActiveNavigationTree() const
+{
+	return GetActiveNavigationTree() != nullptr;
+}
+
+void NavigationPanel::RebuildSceneNavigationMesh(bool updateStatus)
+{
+	Scene* scene = engine && engine->GetApplication() ? engine->GetApplication()->GetMainScene() : nullptr;
+	if (!scene)
+	{
+		if (updateStatus)
+		{
+			statusText_ = "Scene NavigationMesh rebuild failed. No scene is loaded.";
+		}
+		return;
+	}
+
+	scene->RebuildNavigationMesh(navMeshSettings_);
+	selectedNode_ = nullptr;
+	ClearPointGizmoSelection();
+	ClearPathDebugDraws();
+	MarkVisualsDirty();
+
+	if (updateStatus)
+	{
+		statusText_ = "Scene NavigationMesh rebuilt.";
+	}
+}
+
+void NavigationPanel::ValidateSelectedNode()
+{
+	if (ContainsNavigationNode(GetActiveNavigationTree(), selectedNode_))
+	{
+		return;
+	}
+
+	selectedNode_ = nullptr;
+	ClearPointGizmoSelection();
+}
+
 void NavigationPanel::DrawToolbar()
 {
+	bool useSceneNavigationMesh = useSceneNavigationMesh_;
+	if (ImGui::Checkbox("Use Scene NavigationMesh", &useSceneNavigationMesh))
+	{
+		useSceneNavigationMesh_ = useSceneNavigationMesh;
+		editorMode_ = EditorMode::Select;
+		selectedNode_ = nullptr;
+		ClearPointGizmoSelection();
+		ClearPathDebugDraws();
+
+		if (IsUsingSceneNavigationMesh())
+		{
+			RebuildSceneNavigationMesh();
+		}
+
+		MarkVisualsDirty();
+	}
+
+	if (IsUsingSceneNavigationMesh())
+	{
+		NavigationTree* sceneNavigationTree = GetSceneNavigationTree();
+		ImGui::Text("Source: Scene NavigationMesh");
+		ImGui::Text("Nodes: %d", sceneNavigationTree ? (int)sceneNavigationTree->GetNodes().size() : 0);
+	}
+
 	if (ImGui::InputText("Tree Path", navigationTreePathBuffer_.data(), navigationTreePathBuffer_.size()))
 	{
 		navigationTreePath_ = navigationTreePathBuffer_.data();
@@ -612,6 +741,7 @@ void NavigationPanel::DrawToolbar()
 
 	if (ImGui::Button("Save"))
 	{
+		NavigationTree* activeNavigationTree = GetActiveNavigationTree();
 		std::filesystem::path savePath = ContentPathUtils::ToAbsoluteContentPath(navigationTreePath_);
 		if (savePath.has_parent_path())
 		{
@@ -619,7 +749,7 @@ void NavigationPanel::DrawToolbar()
 			std::filesystem::create_directories(savePath.parent_path(), errorCode);
 		}
 
-		if (NavigationTreeSerializer::Serialize(navigationTreePath_, *navigationTree_))
+		if (activeNavigationTree && NavigationTreeSerializer::Serialize(navigationTreePath_, *activeNavigationTree))
 		{
 			statusText_ = "NavigationTree saved.";
 			EditorContext::Get()->BuildFileTree();
@@ -630,30 +760,42 @@ void NavigationPanel::DrawToolbar()
 		}
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Load"))
+	if (!IsUsingSceneNavigationMesh())
 	{
-		if (NavigationTreeSerializer::Deserialize(navigationTreePath_, *navigationTree_))
+		if (ImGui::Button("Load"))
 		{
-			selectedNode_ = navigationTree_->GetRoot();
-			ClearPointGizmoSelection();
-			ClearPathDebugDraws();
-			statusText_ = "NavigationTree loaded.";
-			MarkVisualsDirty();
+			if (NavigationTreeSerializer::Deserialize(navigationTreePath_, *navigationTree_))
+			{
+				selectedNode_ = navigationTree_->GetRoot();
+				ClearPointGizmoSelection();
+				ClearPathDebugDraws();
+				statusText_ = "NavigationTree loaded.";
+				MarkVisualsDirty();
+			}
+			else
+			{
+				statusText_ = "NavigationTree load failed.";
+			}
+		}
+		ImGui::SameLine();
+	}
+
+	if (ImGui::Button("Clear"))
+	{
+		NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+		if (activeNavigationTree)
+		{
+			activeNavigationTree->Clear();
+			statusText_ = "NavigationTree cleared.";
 		}
 		else
 		{
-			statusText_ = "NavigationTree load failed.";
+			statusText_ = "NavigationTree clear failed.";
 		}
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Clear"))
-	{
-		navigationTree_->Clear();
 		selectedNode_ = nullptr;
 		pathPointPickIndex_ = -1;
 		ClearPointGizmoSelection();
 		ClearPathDebugDraws();
-		statusText_ = "NavigationTree cleared.";
 		MarkVisualsDirty();
 	}
 }
@@ -668,17 +810,25 @@ void NavigationPanel::DrawSettings()
 	rebuildNeighbours |= ImGui::InputFloat("Edge Connect Distance", &neighbourEdgeConnectionDistance_, 0.01f, 0.1f);
 	ImGui::InputFloat("Default Node Half Extent", &defaultNodeHalfExtent_, 0.1f, 1.f);
 	ImGui::InputFloat("Connection Line Thickness", &visualLineThickness_, 0.01f, 0.05f);
-	ImGui::InputInt("Grid X", &gridDivisionCountX_);
-	ImGui::InputInt("Grid Y", &gridDivisionCountY_);
 
 	navMeshSettings_.maxStepSize = GoknarMath::Max(navMeshSettings_.maxStepSize, 0.f);
 	neighbourEdgeConnectionDistance_ = GoknarMath::Max(neighbourEdgeConnectionDistance_, 0.f);
 	defaultNodeHalfExtent_ = GoknarMath::Max(defaultNodeHalfExtent_, 0.01f);
 	visualLineThickness_ = GoknarMath::Max(visualLineThickness_, 0.005f);
-	gridDivisionCountX_ = GoknarMath::Clamp(gridDivisionCountX_, 1, 64);
-	gridDivisionCountY_ = GoknarMath::Clamp(gridDivisionCountY_, 1, 64);
 
-	if (ImGui::Button("Rebuild Neighbours") || rebuildNeighbours)
+	if (IsUsingSceneNavigationMesh())
+	{
+		if (ImGui::Button("Rebuild Neighbours") || rebuildNeighbours)
+		{
+			RebuildNeighbours();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Rebuild Scene Mesh"))
+		{
+			RebuildSceneNavigationMesh(true);
+		}
+	}
+	else if (ImGui::Button("Rebuild Neighbours") || rebuildNeighbours)
 	{
 		RebuildNeighbours();
 	}
@@ -741,7 +891,14 @@ void NavigationPanel::DrawPathPointEditor(int pointIndex, const char* label)
 
 void NavigationPanel::DrawNodeList()
 {
-	const auto& nodes = navigationTree_->GetNodes();
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		ImGui::Text("Nodes: 0");
+		return;
+	}
+
+	const auto& nodes = activeNavigationTree->GetNodes();
 	ImGui::Text("Nodes: %d", (int)nodes.size());
 
 	if (ImGui::BeginChild("NavigationNodes", ImVec2(0.f, 160.f), true))
@@ -763,7 +920,7 @@ void NavigationPanel::DrawNodeList()
 	}
 	ImGui::EndChild();
 
-	if (selectedNode_ && ImGui::Button("Delete Selected Node"))
+	if (CanEditActiveNavigationTree() && selectedNode_ && ImGui::Button("Delete Selected Node"))
 	{
 		DeleteSelectedNode();
 	}
@@ -777,15 +934,18 @@ void NavigationPanel::DrawSelectedNodeProperties()
 		return;
 	}
 
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	const bool canEditNavigationTree = CanEditActiveNavigationTree();
+
 	ImGui::Text("Selected Node: %d", selectedNode_->id);
 	ImGui::SameLine();
-	if (navigationTree_->GetRoot() == selectedNode_)
+	if (activeNavigationTree && activeNavigationTree->GetRoot() == selectedNode_)
 	{
 		ImGui::TextDisabled("Root");
 	}
-	else if (ImGui::Button("Make Root"))
+	else if (canEditNavigationTree && ImGui::Button("Make Root"))
 	{
-		navigationTree_->SetRoot(selectedNode_);
+		activeNavigationTree->SetRoot(selectedNode_);
 	}
 
 	bool areaChanged = false;
@@ -794,12 +954,19 @@ void NavigationPanel::DrawSelectedNodeProperties()
 		Vector3& point = GetMutableAreaPoint(selectedNode_->area, pointIndex);
 		float pointValues[3] = { point.x, point.y, point.z };
 		const std::string label = "Point " + std::to_string(pointIndex);
-		if (ImGui::InputFloat3(label.c_str(), pointValues))
+		if (canEditNavigationTree)
 		{
-			point.x = pointValues[0];
-			point.y = pointValues[1];
-			point.z = pointValues[2];
-			areaChanged = true;
+			if (ImGui::InputFloat3(label.c_str(), pointValues))
+			{
+				point.x = pointValues[0];
+				point.y = pointValues[1];
+				point.z = pointValues[2];
+				areaChanged = true;
+			}
+		}
+		else
+		{
+			ImGui::Text("%s: %.3f %.3f %.3f", label.c_str(), point.x, point.y, point.z);
 		}
 	}
 
@@ -808,10 +975,18 @@ void NavigationPanel::DrawSelectedNodeProperties()
 		RebuildNeighbours();
 	}
 
-	if (ImGui::Button("Divide Selected Node Into Grid"))
+	if (canEditNavigationTree)
 	{
-		DivideSelectedNodeIntoGrid();
-		return;
+		ImGui::InputInt("Grid X", &gridDivisionCountX_);
+		ImGui::InputInt("Grid Y", &gridDivisionCountY_);
+		gridDivisionCountX_ = GoknarMath::Clamp(gridDivisionCountX_, 1, 64);
+		gridDivisionCountY_ = GoknarMath::Clamp(gridDivisionCountY_, 1, 64);
+
+		if (ImGui::Button("Divide Selected Node Into Grid"))
+		{
+			DivideSelectedNodeIntoGrid();
+			return;
+		}
 	}
 
 	ImGui::Text("Neighbours");
@@ -838,6 +1013,12 @@ void NavigationPanel::DrawSelectedNodeProperties()
 
 void NavigationPanel::AddNodeAtPosition(const Vector3& position)
 {
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		return;
+	}
+
 	const float halfExtent = GoknarMath::Max(defaultNodeHalfExtent_, 0.01f);
 
 	Area area;
@@ -846,7 +1027,7 @@ void NavigationPanel::AddNodeAtPosition(const Vector3& position)
 	area.point2 = position + Vector3(halfExtent, halfExtent, 0.f);
 	area.point3 = position + Vector3(-halfExtent, halfExtent, 0.f);
 
-	NavigationNode* node = navigationTree_->AddNode(area);
+	NavigationNode* node = activeNavigationTree->AddNode(area);
 	SelectNode(node);
 	RebuildNeighbours();
 	statusText_ = "NavigationNode added.";
@@ -867,10 +1048,16 @@ void NavigationPanel::SelectNode(NavigationNode* node)
 
 NavigationNode* NavigationPanel::FindNodeAtPosition(const Vector3& position) const
 {
+	const NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		return nullptr;
+	}
+
 	NavigationNode* closestNode = nullptr;
 	float closestHeightDistance = MAX_FLOAT;
 
-	for (const std::unique_ptr<NavigationNode>& node : navigationTree_->GetNodes())
+	for (const std::unique_ptr<NavigationNode>& node : activeNavigationTree->GetNodes())
 	{
 		if (!node || !AreaContainsHorizontalPoint(node->area, position))
 		{
@@ -890,12 +1077,18 @@ NavigationNode* NavigationPanel::FindNodeAtPosition(const Vector3& position) con
 
 void NavigationPanel::DeleteSelectedNode()
 {
-	if (!selectedNode_)
+	if (!CanEditActiveNavigationTree() || !selectedNode_)
 	{
 		return;
 	}
 
-	navigationTree_->RemoveNode(selectedNode_);
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		return;
+	}
+
+	activeNavigationTree->RemoveNode(selectedNode_);
 	selectedNode_ = nullptr;
 	ClearPointGizmoSelection();
 	ClearPathDebugDraws();
@@ -905,7 +1098,13 @@ void NavigationPanel::DeleteSelectedNode()
 
 void NavigationPanel::DivideSelectedNodeIntoGrid()
 {
-	if (!selectedNode_)
+	if (!CanEditActiveNavigationTree() || !selectedNode_)
+	{
+		return;
+	}
+
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
 	{
 		return;
 	}
@@ -913,7 +1112,7 @@ void NavigationPanel::DivideSelectedNodeIntoGrid()
 	const int divisionsX = GoknarMath::Clamp(gridDivisionCountX_, 1, 64);
 	const int divisionsY = GoknarMath::Clamp(gridDivisionCountY_, 1, 64);
 	const Area sourceArea = selectedNode_->area;
-	const bool wasRoot = navigationTree_->GetRoot() == selectedNode_;
+	const bool wasRoot = activeNavigationTree->GetRoot() == selectedNode_;
 
 	if ((sourceArea.point1 - sourceArea.point0).SquareLength() <= SMALLER_EPSILON ||
 		(sourceArea.point3 - sourceArea.point0).SquareLength() <= SMALLER_EPSILON)
@@ -922,7 +1121,7 @@ void NavigationPanel::DivideSelectedNodeIntoGrid()
 		return;
 	}
 
-	navigationTree_->RemoveNode(selectedNode_);
+	activeNavigationTree->RemoveNode(selectedNode_);
 	selectedNode_ = nullptr;
 	ClearPointGizmoSelection();
 	ClearPathDebugDraws();
@@ -944,7 +1143,7 @@ void NavigationPanel::DivideSelectedNodeIntoGrid()
 			cellArea.point2 = SampleArea(sourceArea, maxXAlpha, maxYAlpha);
 			cellArea.point3 = SampleArea(sourceArea, minXAlpha, maxYAlpha);
 
-			NavigationNode* node = navigationTree_->AddNode(cellArea);
+			NavigationNode* node = activeNavigationTree->AddNode(cellArea);
 			if (!firstCreatedNode)
 			{
 				firstCreatedNode = node;
@@ -954,7 +1153,7 @@ void NavigationPanel::DivideSelectedNodeIntoGrid()
 
 	if (wasRoot && firstCreatedNode)
 	{
-		navigationTree_->SetRoot(firstCreatedNode);
+		activeNavigationTree->SetRoot(firstCreatedNode);
 	}
 
 	SelectNode(firstCreatedNode);
@@ -964,8 +1163,14 @@ void NavigationPanel::DivideSelectedNodeIntoGrid()
 
 void NavigationPanel::RebuildNeighbours()
 {
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		return;
+	}
+
 	const float connectionDistance = GoknarMath::Max(neighbourEdgeConnectionDistance_, 0.f);
-	const auto& nodes = navigationTree_->GetNodes();
+	const auto& nodes = activeNavigationTree->GetNodes();
 
 	for (const std::unique_ptr<NavigationNode>& node : nodes)
 	{
@@ -1112,7 +1317,14 @@ void NavigationPanel::FindAndDrawPath()
 		return;
 	}
 
-	PathFinder pathFinder(navigationTree_);
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		statusText_ = "Path not found. No navigation tree is available.";
+		return;
+	}
+
+	PathFinder pathFinder(activeNavigationTree);
 	std::vector<NavigationPath> path;
 	if (!pathFinder.FindPath(pathPoints_[0], pathPoints_[1], path))
 	{
@@ -1204,6 +1416,12 @@ void NavigationPanel::UpdatePointGizmoDrag()
 		return;
 	}
 
+	if (!CanEditActiveNavigationTree())
+	{
+		EndPointGizmoDrag(false);
+		return;
+	}
+
 	if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
 	{
 		EndPointGizmoDrag(true);
@@ -1272,7 +1490,7 @@ void NavigationPanel::ClearPointGizmoSelection()
 
 bool NavigationPanel::TryHandlePointGizmoClick(const Vector3& rayOrigin, const Vector3& rayDirection)
 {
-	if (!selectedNode_)
+	if (!CanEditActiveNavigationTree() || !selectedNode_)
 	{
 		return false;
 	}
@@ -1381,9 +1599,16 @@ void NavigationPanel::RebuildDebugVisuals()
 
 	areVisualsDirty_ = false;
 	ClearDebugVisuals();
+	ValidateSelectedNode();
+
+	NavigationTree* activeNavigationTree = GetActiveNavigationTree();
+	if (!activeNavigationTree)
+	{
+		return;
+	}
 
 	bool createdVisualObject = false;
-	for (const std::unique_ptr<NavigationNode>& node : navigationTree_->GetNodes())
+	for (const std::unique_ptr<NavigationNode>& node : activeNavigationTree->GetNodes())
 	{
 		if (node)
 		{
@@ -1392,7 +1617,7 @@ void NavigationPanel::RebuildDebugVisuals()
 		}
 	}
 
-	for (const std::unique_ptr<NavigationNode>& node : navigationTree_->GetNodes())
+	for (const std::unique_ptr<NavigationNode>& node : activeNavigationTree->GetNodes())
 	{
 		if (!node)
 		{
@@ -1411,7 +1636,7 @@ void NavigationPanel::RebuildDebugVisuals()
 		}
 	}
 
-	if (selectedNode_)
+	if (CanEditActiveNavigationTree() && selectedNode_)
 	{
 		CreateSelectedNodePointVisuals();
 		createdVisualObject = true;
