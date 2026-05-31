@@ -1,5 +1,7 @@
 #include "FileBrowserPanel.h"
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <cstring>
 
@@ -19,6 +21,7 @@
 #include "Goknar/Materials/MaterialFunctionSerializer.h"
 
 #include "UI/EditorAssetPathUtils.h"
+#include "UI/EditorSourceCodeUtils.h"
 #include "UI/EditorUtils.h"
 
 #include "AnimationGraphPanel.h"
@@ -48,6 +51,15 @@ namespace
 		}
 
 		return path + "/";
+	}
+
+	std::string ToLower(std::string value)
+	{
+		std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character)
+			{
+				return static_cast<char>(std::tolower(character));
+			});
+		return value;
 	}
 
 	std::string GetAbsoluteProjectPath(const std::string& relativePath)
@@ -81,6 +93,34 @@ namespace
 		}
 
 		return "";
+	}
+
+	std::string GetLowerExtension(const std::string& filePath)
+	{
+		std::string extension = std::filesystem::path(filePath).extension().generic_string();
+		if (!extension.empty() && extension.front() == '.')
+		{
+			extension.erase(extension.begin());
+		}
+
+		return ToLower(extension);
+	}
+
+	bool IsHeaderFile(const std::string& filePath)
+	{
+		const std::string extension = GetLowerExtension(filePath);
+		return extension == "h" || extension == "hpp" || extension == "inl";
+	}
+
+	bool IsSourceFile(const std::string& filePath)
+	{
+		const std::string extension = GetLowerExtension(filePath);
+		return extension == "c" || extension == "cc" || extension == "cpp" || extension == "cxx";
+	}
+
+	bool IsSourceCodeFile(const std::string& filePath)
+	{
+		return IsHeaderFile(filePath) || IsSourceFile(filePath);
 	}
 
 	bool WriteMaterialAssetFile(const std::string& filePath)
@@ -223,6 +263,14 @@ void FileBrowserPanel::Draw()
 		if (ImGui::BeginPopupContextWindow("EmptySpaceMenu", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 		{
 			const std::string targetDirectory = currentFolder_ ? GetAbsoluteProjectPath(currentFolder_->path) : "";
+			if (!targetDirectory.empty() && ImGui::MenuItem("Show in Explorer"))
+			{
+				EditorSourceCodeUtils::ShowInFileExplorer(targetDirectory, false);
+			}
+			if (IsContentDirectory(targetDirectory))
+			{
+				ImGui::Separator();
+			}
 			DrawCreateContentMenu(targetDirectory);
 			ImGui::EndPopup();
 		}
@@ -502,14 +550,12 @@ void FileBrowserPanel::DrawGrid()
 			}
 			else
 			{
-				std::string extension = ResourceManagerUtils::GetExtension(file);
-
-				if (extension == "h")
+				if (IsHeaderFile(file))
 				{
 					uv0 = GetUV0(766.f, 0.0f);
 					uv1 = GetUV1(766.f, 0.0f);
 				}
-				else if (extension == "cpp")
+				else if (IsSourceFile(file))
 				{
 					uv0 = GetUV0(896.f, 0.0f);
 					uv1 = GetUV1(896.f, 0.0f);
@@ -571,18 +617,9 @@ void FileBrowserPanel::DrawGrid()
 				}
 				else
 				{
-					std::string extension = ResourceManagerUtils::GetExtension(file);
-
-					if (extension == "h" || extension == "cpp")
+					if (IsSourceCodeFile(file))
 					{
-						std::string fullPath = fileFullPath;
-						std::string command;
-#ifdef GOKNAR_PLATFORM_WINDOWS
-						command = "start \"\" \"" + fullPath + "\"";
-#else
-						command = "open \"" + fullPath + "\"";
-#endif
-						system(command.c_str());
+						EditorSourceCodeUtils::OpenSourceFile(fileFullPath);
 					}
 				}
 			}
@@ -640,6 +677,12 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 			DrawCreateContentMenu(itemPath);
 			ImGui::Separator();
 		}
+
+		if (ImGui::MenuItem("Show in Explorer"))
+		{
+			EditorSourceCodeUtils::ShowInFileExplorer(itemPath, true);
+		}
+		ImGui::Separator();
 
 		if (ImGui::MenuItem("Rename"))
 		{

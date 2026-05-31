@@ -17,7 +17,8 @@ private:
 	enum class SettingsView
 	{
 		Build = 0,
-		Game
+		Game,
+		DefaultIDE
 	};
 
 	struct ConfigField
@@ -51,6 +52,7 @@ private:
 	void LoadConfigDocuments();
 	void DrawNavigation();
 	void DrawSelectedSettings();
+	void DrawDefaultIDESettings();
 	void DrawConfigDocument(ConfigDocument& document);
 	void DrawConfigSection(const std::string& configId, ConfigSection& section, ConfigDocument& document);
 	void DrawConfigField(const std::string& configId, const std::string& sectionName, ConfigField& field, ConfigDocument& document);

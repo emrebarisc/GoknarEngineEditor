@@ -3,6 +3,7 @@
 #include "imgui.h"
 
 #include "Goknar/Managers/ConfigManager.h"
+#include "UI/EditorSourceCodeUtils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -106,7 +107,9 @@ void ProjectSettingsPanel::LoadConfigDocuments()
 	buildConfigDocument_ = LoadConfigDocument(buildConfigPath_, "Build");
 	gameConfigDocument_ = LoadConfigDocument(gameConfigPath_, "Game");
 
-	if (selectedSettingsView_ != SettingsView::Build && selectedSettingsView_ != SettingsView::Game)
+	if (selectedSettingsView_ != SettingsView::Build &&
+		selectedSettingsView_ != SettingsView::Game &&
+		selectedSettingsView_ != SettingsView::DefaultIDE)
 	{
 		selectedSettingsView_ = SettingsView::Build;
 	}
@@ -123,12 +126,109 @@ void ProjectSettingsPanel::DrawNavigation()
 	{
 		selectedSettingsView_ = SettingsView::Game;
 	}
+
+	if (ImGui::Selectable("Default IDE Settings", selectedSettingsView_ == SettingsView::DefaultIDE))
+	{
+		selectedSettingsView_ = SettingsView::DefaultIDE;
+	}
 }
 
 void ProjectSettingsPanel::DrawSelectedSettings()
 {
+	if (selectedSettingsView_ == SettingsView::DefaultIDE)
+	{
+		DrawDefaultIDESettings();
+		return;
+	}
+
 	ConfigDocument* document = selectedSettingsView_ == SettingsView::Build ? &buildConfigDocument_ : &gameConfigDocument_;
 	DrawConfigDocument(*document);
+}
+
+void ProjectSettingsPanel::DrawDefaultIDESettings()
+{
+	using namespace EditorSourceCodeUtils;
+
+	ImGui::TextWrapped("%s", "Config/EditorConfig.ini");
+	ImGui::Spacing();
+
+	ImGui::Text("%s", "Default IDE Settings");
+	ImGui::Separator();
+
+	if (ImGui::BeginTable("DefaultIDESettingsTable", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("%s", "Source Code Editor");
+
+		ImGui::TableSetColumnIndex(1);
+		const SourceCodeEditor preferredEditor = GetPreferredSourceCodeEditor();
+		const char* currentLabel = GetSourceCodeEditorLabel(preferredEditor);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (ImGui::BeginCombo("##SourceCodeEditor", currentLabel))
+		{
+			for (const SourceCodeEditorOption& option : GetSourceCodeEditorOptions())
+			{
+				std::string optionLabel = option.label;
+				if (option.editor == SourceCodeEditor::VisualStudio || option.editor == SourceCodeEditor::VisualStudioCode)
+				{
+					optionLabel += option.isAvailable ? " (Available)" : " (Not Found)";
+				}
+
+				const bool isSelected = option.editor == preferredEditor;
+				if (ImGui::Selectable(optionLabel.c_str(), isSelected))
+				{
+					if (SetPreferredSourceCodeEditor(option.editor))
+					{
+						statusMessage_ = "Updated source code editor preference.";
+						statusMessageIsError_ = false;
+					}
+					else
+					{
+						statusMessage_ = "Failed to update Config/EditorConfig.ini.";
+						statusMessageIsError_ = true;
+					}
+				}
+
+				if (isSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		ImGui::EndTable();
+	}
+
+	ImGui::Spacing();
+	ImGui::Text("%s", "Detected Editors");
+	ImGui::Separator();
+
+	if (ImGui::BeginTable("DetectedEditorsTable", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+	{
+		const SourceCodeEditor editorsToShow[] =
+		{
+			SourceCodeEditor::VisualStudio,
+			SourceCodeEditor::VisualStudioCode
+		};
+
+		for (SourceCodeEditor editor : editorsToShow)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("%s", GetSourceCodeEditorLabel(editor));
+
+			ImGui::TableSetColumnIndex(1);
+			const bool isAvailable = IsSourceCodeEditorAvailable(editor);
+			const ImVec4 color = isAvailable ? ImVec4(0.35f, 0.85f, 0.45f, 1.f) : ImVec4(0.95f, 0.35f, 0.35f, 1.f);
+			ImGui::TextColored(color, "%s", isAvailable ? "Available" : "Not Found");
+		}
+
+		ImGui::EndTable();
+	}
 }
 
 void ProjectSettingsPanel::DrawConfigDocument(ConfigDocument& document)

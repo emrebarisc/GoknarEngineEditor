@@ -444,7 +444,7 @@ namespace
 		{
 			Vector2 currentValue = std::get<Vector2>(value);
 			float components[2] = { currentValue.x, currentValue.y };
-			if (ImGui::DragFloat2(label, components, 0.01f))
+			if (ImGui::DragFloat2(label, components, 0.0001f, 0.f, 0.f, "%.6f"))
 			{
 				value = Vector2(components[0], components[1]);
 				return true;
@@ -455,7 +455,7 @@ namespace
 		{
 			Vector3 currentValue = std::get<Vector3>(value);
 			float components[3] = { currentValue.x, currentValue.y, currentValue.z };
-			if (ImGui::DragFloat3(label, components, 0.01f))
+			if (ImGui::DragFloat3(label, components, 0.0001f, 0.f, 0.f, "%.6f"))
 			{
 				value = Vector3(components[0], components[1], components[2]);
 				return true;
@@ -466,7 +466,7 @@ namespace
 		{
 			Vector4 currentValue = std::get<Vector4>(value);
 			float components[4] = { currentValue.x, currentValue.y, currentValue.z, currentValue.w };
-			if (ImGui::DragFloat4(label, components, 0.01f))
+			if (ImGui::DragFloat4(label, components, 0.0001f, 0.f, 0.f, "%.6f"))
 			{
 				value = Vector4(components[0], components[1], components[2], components[3]);
 				return true;
@@ -477,7 +477,7 @@ namespace
 		default:
 		{
 			float currentValue = std::get<float>(value);
-			if (ImGui::DragFloat(label, &currentValue, 0.01f))
+			if (ImGui::DragFloat(label, &currentValue, 0.0001f, 0.f, 0.f, "%.6f"))
 			{
 				value = currentValue;
 				return true;
@@ -2216,10 +2216,10 @@ void ShaderEditorPanel::DrawMaterialProperties()
 		shadingModel_ = (MaterialShadingModel)currentShadingModel;
 	}
 
-	ImGui::DragFloat("Translucency", &translucency_, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Ambient Occlusion", &ambientOcclusion_, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Metallic", &metallic_, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Roughness", &roughness_, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Translucency", &translucency_, 0.0001f, 0.0f, 1.0f, "%.6f");
+	ImGui::DragFloat("Ambient Occlusion", &ambientOcclusion_, 0.0001f, 0.0f, 1.0f, "%.6f");
+	ImGui::DragFloat("Metallic", &metallic_, 0.0001f, 0.0f, 1.0f, "%.6f");
+	ImGui::DragFloat("Roughness", &roughness_, 0.0001f, 0.0f, 1.0f, "%.6f");
 	ImGui::Checkbox("Uses Reflection Probe", &usesReflectionProbe_);
 
 	ImGui::Separator();
@@ -2595,7 +2595,7 @@ void ShaderEditorPanel::DrawNodeCanvas()
 			float val = 0.0f;
 			if (std::holds_alternative<float>(node.outputs[0].defaultValue)) val = std::get<float>(node.outputs[0].defaultValue);
 
-			if (ImGui::DragFloat((std::string("##out_val_") + std::to_string(node.id)).c_str(), &val, 0.01f))
+			if (ImGui::DragFloat((std::string("##out_val_") + std::to_string(node.id)).c_str(), &val, 0.0001f, 0.f, 0.f, "%.6f"))
 			{
 				node.outputs[0].defaultValue = val;
 			}
@@ -2626,7 +2626,7 @@ void ShaderEditorPanel::DrawNodeCanvas()
 				float val = 0.0f;
 				if (std::holds_alternative<float>(input.defaultValue)) val = std::get<float>(input.defaultValue);
 
-				if (ImGui::DragFloat((std::string("##in_val_") + std::to_string(input.id)).c_str(), &val, 0.01f))
+				if (ImGui::DragFloat((std::string("##in_val_") + std::to_string(input.id)).c_str(), &val, 0.0001f, 0.f, 0.f, "%.6f"))
 				{
 					input.defaultValue = val;
 				}
@@ -3370,7 +3370,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 				if (std::holds_alternative<float>(node->outputs[0].defaultValue))
 					val = std::get<float>(node->outputs[0].defaultValue);
 
-				if (ImGui::DragFloat("Value", &val, 0.01f))
+				if (ImGui::DragFloat("Value", &val, 0.0001f, 0.f, 0.f, "%.6f"))
 					node->outputs[0].defaultValue = val;
 			}
 
@@ -3399,28 +3399,6 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 					{
 						OpenMaterialFunctionFromNode(node->stringData);
 					}
-				}
-			}
-
-			if (node->typeCategory == "Flow" && node->name == "If Check")
-			{
-				ImGui::Separator();
-				ImGui::Text("If Check");
-
-				const char* operators[] = { ">", ">=", "<", "<=", "==", "!=" };
-				int operatorIndex = 0;
-				for (int index = 0; index < IM_ARRAYSIZE(operators); ++index)
-				{
-					if (node->stringData == operators[index])
-					{
-						operatorIndex = index;
-						break;
-					}
-				}
-
-				if (ImGui::Combo("Operator", &operatorIndex, operators, IM_ARRAYSIZE(operators)))
-				{
-					node->stringData = operators[operatorIndex];
 				}
 			}
 
@@ -3566,7 +3544,7 @@ void ShaderEditorPanel::DrawPropertiesSidebar()
 							if (std::holds_alternative<float>(pin.defaultValue))
 								val = std::get<float>(pin.defaultValue);
 
-							if (ImGui::DragFloat(pin.name.c_str(), &val, 0.01f))
+							if (ImGui::DragFloat(pin.name.c_str(), &val, 0.0001f, 0.f, 0.f, "%.6f"))
 								pin.defaultValue = val;
 						}
 					}
@@ -3919,23 +3897,6 @@ ShaderNode ShaderEditorPanel::SpawnNode(const std::string& category, const std::
 			node.inputs.push_back({ nextId_++, node.id, "A>B", ShaderPinType::Any, ShaderPinKind::Input, 0.0f });
 			node.outputs.push_back({ nextId_++, node.id, "Out", ShaderPinType::Any, ShaderPinKind::Output, 0.0f });
 			node.size = ImVec2(200, 195);
-		}
-		else if (name == "If Check")
-		{
-			node.stringData = ">";
-			node.inputs.push_back({ nextId_++, node.id, "A", ShaderPinType::Float, ShaderPinKind::Input, 0.0f });
-			node.inputs.push_back({ nextId_++, node.id, "B", ShaderPinType::Float, ShaderPinKind::Input, 0.0f });
-			node.inputs.push_back({ nextId_++, node.id, "True", ShaderPinType::Any, ShaderPinKind::Input, 0.0f });
-			node.inputs.push_back({ nextId_++, node.id, "False", ShaderPinType::Any, ShaderPinKind::Input, 0.0f });
-			node.outputs.push_back({ nextId_++, node.id, "Out", ShaderPinType::Any, ShaderPinKind::Output, 0.0f });
-			node.size = ImVec2(200, 145);
-		}
-		else if (name == "For Iteration")
-		{
-			node.inputs.push_back({ nextId_++, node.id, "Iteration", ShaderPinType::Float, ShaderPinKind::Input, 0.0f });
-			node.inputs.push_back({ nextId_++, node.id, "Count", ShaderPinType::Float, ShaderPinKind::Input, 1.0f });
-			node.outputs.push_back({ nextId_++, node.id, "Index", ShaderPinType::Float, ShaderPinKind::Output, 0.0f });
-			node.size = ImVec2(190, 95);
 		}
 	}
 	else
@@ -4722,7 +4683,7 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 			functionBody += "\tfloat " + equalVar + " = ((" + valueA + ") == (" + valueB + ")) ? 1.0f : 0.0f;\n";
 			functionBody += "\tfloat " + lessVar + " = ((" + valueA + ") < (" + valueB + ")) ? 1.0f : 0.0f;\n";
 		}
-		else if (node->typeCategory == "Flow" && node->name == "If Check" && node->inputs.size() >= 4 && !node->outputs.empty())
+		else if (node->typeCategory == "Flow" && node->inputs.size() >= 4 && !node->outputs.empty())
 		{
 			auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
 			auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
