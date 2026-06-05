@@ -180,7 +180,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<SystemFileBrowserPanel>();
 	AddPanel<ToolBarPanel>();
 
-	if(engine->GetRenderer()->GetMainRenderType() == RenderPassType::Deferred)
+	if((unsigned char)engine->GetRenderer()->GetMainRenderType() & (unsigned char)RenderPassType::Deferred)
 	{
 		AddPanel<GeometryBuffersPanel>();
 	}

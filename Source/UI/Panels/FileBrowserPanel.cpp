@@ -67,6 +67,15 @@ namespace
 		return NormalizePath((std::filesystem::path(EditorAssetPathUtils::GetProjectRootPath()) / relativePath).generic_string());
 	}
 
+	ImVec2 RemapTextureUV(const Texture* texture, const ImVec2& uv)
+	{
+		return texture ?
+			ImVec2(
+				texture->GetAtlasUOffset() + uv.x * texture->GetAtlasUScale(),
+				texture->GetAtlasVOffset() + uv.y * texture->GetAtlasVScale()) :
+			uv;
+	}
+
 	bool IsContentDirectory(const std::string& path)
 	{
 		return StartsWith(NormalizePath(path), NormalizePath(EditorAssetPathUtils::GetContentRootPath()));
@@ -491,16 +500,17 @@ void FileBrowserPanel::DrawGrid()
 	const float atlasSize = 1024.0f;
 	const float spriteSize = 128.0f;
 
-	auto GetUV0 = [&](float x, float y) { return ImVec2(x / atlasSize, y / atlasSize); };
-	auto GetUV1 = [&](float x, float y) { return ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize); };
-
 	Image* uiImage = EditorUtils::GetEditorContent<Image>("Textures/UI/T_UI.png");
-	if (!uiImage || !uiImage->GetGeneratedTexture())
+	Texture* uiTexture = uiImage ? uiImage->GetGeneratedTexture() : nullptr;
+	if (!uiTexture)
 	{
 		return;
 	}
 
-	ImTextureID atlasID = (ImTextureID)(intptr_t)uiImage->GetGeneratedTexture()->GetRendererTextureId();
+	ImTextureID atlasID = (ImTextureID)(intptr_t)uiTexture->GetRendererTextureId();
+
+	auto GetUV0 = [&](float x, float y) { return RemapTextureUV(uiTexture, ImVec2(x / atlasSize, y / atlasSize)); };
+	auto GetUV1 = [&](float x, float y) { return RemapTextureUV(uiTexture, ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize)); };
 
 	if (ImGui::BeginTable("FileGrid", columns))
 	{

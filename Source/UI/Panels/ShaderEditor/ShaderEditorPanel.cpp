@@ -955,6 +955,7 @@ ShaderEditorPanel::ShaderEditorSnapshot ShaderEditorPanel::CaptureSnapshot() con
 	snapshot.nextId = nextId_;
 	snapshot.blendModel = blendModel_;
 	snapshot.shadingModel = shadingModel_;
+	snapshot.shadingType = shadingType_;
 	return snapshot;
 }
 
@@ -981,6 +982,7 @@ void ShaderEditorPanel::RestoreSnapshot(const ShaderEditorSnapshot& snapshot)
 	nextId_ = snapshot.nextId;
 	blendModel_ = snapshot.blendModel;
 	shadingModel_ = snapshot.shadingModel;
+	shadingType_ = snapshot.shadingType;
 	selectedNodeIds_ = snapshot.selectedNodeIds;
 	selectedNodeId_ = snapshot.selectedNodeId;
 	selectedLinkId_ = snapshot.selectedLinkId;
@@ -1234,6 +1236,7 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	roughness_ = 0.5f;
 	blendModel_ = MaterialBlendModel::Opaque;
 	shadingModel_ = MaterialShadingModel::Default;
+	shadingType_ = MaterialShadingType::Default;
 	translucency_ = 0.0f;
 	usesReflectionProbe_ = false;
 
@@ -1250,6 +1253,10 @@ void ShaderEditorPanel::OnMaterialOpened(const std::string& path)
 	std::string shadeStr = GetText("ShadingModel");
 	if (shadeStr == "TwoSided") shadingModel_ = MaterialShadingModel::TwoSided;
 	else shadingModel_ = MaterialShadingModel::Default;
+
+	std::string shadeTypeStr = GetText("ShadingType");
+	if (shadeTypeStr == "Unlit") shadingType_ = MaterialShadingType::Unlit;
+	else shadingType_ = MaterialShadingType::Default;
 
 	std::string transStr = GetText("Translucency");
 	if (!transStr.empty()) translucency_ = std::stof(transStr);
@@ -1637,6 +1644,7 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 
 	activeMaterial_->SetBlendModel(blendModel_);
 	activeMaterial_->SetShadingModel(shadingModel_);
+	activeMaterial_->SetShadingType(shadingType_);
 	activeMaterial_->SetTranslucency(translucency_);
 	activeMaterial_->SetAmbientOcclusion(ambientOcclusion_);
 	activeMaterial_->SetMetallic(metallic_);
@@ -2214,6 +2222,13 @@ void ShaderEditorPanel::DrawMaterialProperties()
 	if (ImGui::Combo("Shading Model", &currentShadingModel, shadingModels, IM_ARRAYSIZE(shadingModels)))
 	{
 		shadingModel_ = (MaterialShadingModel)currentShadingModel;
+	}
+
+	const char* shadingTypes[] = { "Default", "Unlit" };
+	int currentShadingType = (int)shadingType_;
+	if (ImGui::Combo("Shading Type", &currentShadingType, shadingTypes, IM_ARRAYSIZE(shadingTypes)))
+	{
+		shadingType_ = (MaterialShadingType)currentShadingType;
 	}
 
 	ImGui::DragFloat("Translucency", &translucency_, 0.0001f, 0.0f, 1.0f, "%.6f");

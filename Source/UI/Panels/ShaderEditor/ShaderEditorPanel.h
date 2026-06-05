@@ -68,6 +68,7 @@ private:
         int nextId{ 1 };
         MaterialBlendModel blendModel{ MaterialBlendModel::Opaque };
         MaterialShadingModel shadingModel{ MaterialShadingModel::Default };
+        MaterialShadingType shadingType{ MaterialShadingType::Default };
     };
 
     void ResetEditorGraph(const ImVec2& masterNodePos);
@@ -172,6 +173,7 @@ private:
     bool isDraggingLink_{ false };
 
     MaterialBlendModel blendModel_{ MaterialBlendModel::Opaque };
+    MaterialShadingType shadingType_{ MaterialShadingType::Default };
 
     MaterialShadingModel shadingModel_{ MaterialShadingModel::Default };
 };

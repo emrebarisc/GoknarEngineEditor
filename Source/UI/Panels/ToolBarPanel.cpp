@@ -31,6 +31,15 @@ namespace
 	{
 		return "\"" + path + "\"";
 	}
+
+	ImVec2 RemapTextureUV(const Texture* texture, const ImVec2& uv)
+	{
+		return texture ?
+			ImVec2(
+				texture->GetAtlasUOffset() + uv.x * texture->GetAtlasUScale(),
+				texture->GetAtlasVOffset() + uv.y * texture->GetAtlasVScale()) :
+			uv;
+	}
 }
 
 void ToolBarPanel::Draw()
@@ -59,15 +68,16 @@ void ToolBarPanel::Draw()
 	if (ImGui::Begin("##ToolBar", nullptr, window_flags))
 	{
 		Image* uiImage = EditorUtils::GetEditorContent<Image>("Textures/UI/T_UI.png");
-		if (uiImage && uiImage->GetGeneratedTexture())
+		Texture* uiTexture = uiImage ? uiImage->GetGeneratedTexture() : nullptr;
+		if (uiTexture)
 		{
-			ImTextureID atlasID = (ImTextureID)(intptr_t)uiImage->GetGeneratedTexture()->GetRendererTextureId();
+			ImTextureID atlasID = (ImTextureID)(intptr_t)uiTexture->GetRendererTextureId();
 
 			const float atlasSize = 1024.0f;
 			const float spriteSize = 128.0f;
 
-			auto GetUV0 = [&](float x, float y) { return ImVec2(x / atlasSize, y / atlasSize); };
-			auto GetUV1 = [&](float x, float y) { return ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize); };
+			auto GetUV0 = [&](float x, float y) { return RemapTextureUV(uiTexture, ImVec2(x / atlasSize, y / atlasSize)); };
+			auto GetUV1 = [&](float x, float y) { return RemapTextureUV(uiTexture, ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize)); };
 
 			ImVec2 compileUv0 = GetUV0(768.0f, 896.0f);
 			ImVec2 compileUv1 = GetUV1(768.0f, 896.0f);
