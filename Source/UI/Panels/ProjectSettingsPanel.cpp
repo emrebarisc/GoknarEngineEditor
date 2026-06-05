@@ -15,6 +15,36 @@
 namespace
 {
 	constexpr size_t kProjectSettingsBufferSize = 1024;
+
+	std::string ToLower(std::string value)
+	{
+		std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character)
+			{
+				return static_cast<char>(std::tolower(character));
+			});
+		return value;
+	}
+
+	std::string TrimValue(const std::string& value)
+	{
+		const size_t firstNonWhitespace = value.find_first_not_of(" \t\r\n");
+		if (firstNonWhitespace == std::string::npos)
+		{
+			return "";
+		}
+
+		const size_t lastNonWhitespace = value.find_last_not_of(" \t\r\n");
+		return value.substr(firstNonWhitespace, lastNonWhitespace - firstNonWhitespace + 1);
+	}
+
+	bool IsTruthyConfigValue(const std::string& value)
+	{
+		const std::string normalizedValue = ToLower(TrimValue(value));
+		return normalizedValue == "true" ||
+			normalizedValue == "1" ||
+			normalizedValue == "yes" ||
+			normalizedValue == "on";
+	}
 }
 
 ProjectSettingsPanel::ProjectSettingsPanel(EditorHUD* hud) :
@@ -285,21 +315,68 @@ void ProjectSettingsPanel::DrawConfigField(const std::string& configId, const st
 
 	ImGui::TableSetColumnIndex(1);
 	ImGui::SetNextItemWidth(-FLT_MIN);
+
+	auto writeFieldValue = [this, &document, &field](const std::string& newValue)
+		{
+			if (WriteFieldValue(document, field, newValue))
+			{
+				statusMessage_.clear();
+				statusMessageIsError_ = false;
+			}
+			else
+			{
+				statusMessage_ = "Failed to update " + field.key + " in " + document.filePath + ".";
+				statusMessageIsError_ = true;
+				field.editBuffer = CreateEditBuffer(field.value);
+			}
+		};
+
+	const bool isGameGraphicsField = document.filePath == gameConfigPath_ && sectionName == "Graphics";
+	if (isGameGraphicsField && field.key == "MainRenderType")
+	{
+		const char* renderModes[] = { "Deferred", "Forward" };
+		const int selectedRenderMode = ToLower(field.value) == "forward" ? 1 : 0;
+
+		if (ImGui::BeginCombo("##Value", renderModes[selectedRenderMode]))
+		{
+			for (int renderModeIndex = 0; renderModeIndex < IM_ARRAYSIZE(renderModes); ++renderModeIndex)
+			{
+				const bool isSelected = renderModeIndex == selectedRenderMode;
+				if (ImGui::Selectable(renderModes[renderModeIndex], isSelected))
+				{
+					writeFieldValue(renderModes[renderModeIndex]);
+				}
+
+				if (isSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		ImGui::PopID();
+		return;
+	}
+
+	if (isGameGraphicsField && field.key == "Fullscreen")
+	{
+		bool isFullscreen = IsTruthyConfigValue(field.value);
+		if (ImGui::Checkbox("##Value", &isFullscreen))
+		{
+			writeFieldValue(isFullscreen ? "true" : "false");
+		}
+
+		ImGui::PopID();
+		return;
+	}
+
 	ImGui::InputText("##Value", field.editBuffer.data(), field.editBuffer.size());
 	if (ImGui::IsItemDeactivatedAfterEdit())
 	{
 		const std::string newValue = Trim(field.editBuffer.data());
-		if (WriteFieldValue(document, field, newValue))
-		{
-			statusMessage_.clear();
-			statusMessageIsError_ = false;
-		}
-		else
-		{
-			statusMessage_ = "Failed to update " + field.key + " in " + document.filePath + ".";
-			statusMessageIsError_ = true;
-			field.editBuffer = CreateEditBuffer(field.value);
-		}
+		writeFieldValue(newValue);
 	}
 
 	ImGui::PopID();
