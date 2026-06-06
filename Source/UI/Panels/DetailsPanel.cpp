@@ -702,6 +702,17 @@ void DetailsPanel::DrawReflectionProbeObjectDetails(ReflectionProbeObject* refle
 		reflectionProbeObject->SetSize(probeSize);
 		MarkSceneDirty("Reflection probe size changed");
 	}
+
+	float captureDistance = reflectionProbeObject->GetCaptureDistance();
+	const std::string captureDistanceFieldName = "##ReflectionProbeCaptureDistance_" + std::to_string(reflectionProbeObject->GetGUID());
+
+	ImGui::Text("Capture Distance: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputFloat(captureDistanceFieldName.c_str(), captureDistance))
+	{
+		reflectionProbeObject->SetCaptureDistance(captureDistance);
+		MarkSceneDirty("Reflection probe capture distance changed");
+	}
 }
 
 void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
