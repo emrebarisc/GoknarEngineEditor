@@ -30,6 +30,12 @@ enum class EditorTransformGizmoMode
 	Scale
 };
 
+enum class EditorTransformGizmoPivotMode
+{
+	CollectiveWorldCenter,
+	LocalCenter
+};
+
 struct EditorCollisionGameObjectPair
 {
 	ObjectBase* gameObject{ nullptr };
@@ -89,6 +95,8 @@ private:
 	float GetTransformGizmoScale(const Vector3& origin) const;
 	Vector3 GetTransformGizmoAxisVector(EditorTransformGizmoAxis axis) const;
 	void SetTransformGizmoMode(EditorTransformGizmoMode mode);
+	void SetTransformGizmoPivotMode(EditorTransformGizmoPivotMode mode);
+	bool ShouldUseCollectiveTransformPivot() const;
 	void UpdateTransformGizmoModeShortcuts();
 	void DrawTransformGizmoModeToolbar();
 	void DrawTransformGizmo(Camera* camera) const;
@@ -98,6 +106,7 @@ private:
 	DebugPanel* debugPanel_{ nullptr };
 	StaticMesh* transformGizmoMesh_{ nullptr };
 	EditorTransformGizmoMode transformGizmoMode_{ EditorTransformGizmoMode::Translate };
+	EditorTransformGizmoPivotMode transformGizmoPivotMode_{ EditorTransformGizmoPivotMode::CollectiveWorldCenter };
 	EditorTransformGizmoAxis selectedTransformGizmoAxis_{ EditorTransformGizmoAxis::None };
 	bool isTransformGizmoModeToolbarHovered_{ false };
 	bool isDraggingTransformGizmo_{ false };

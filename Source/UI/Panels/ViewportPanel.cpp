@@ -847,12 +847,11 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 		return;
 	}
 
-	const bool hasMatchingTranslateStarts = draggedTransformGizmoObjects_.size() == dragStartObjectPositions_.size();
-	const bool hasMatchingRotationStarts = draggedTransformGizmoObjects_.size() == dragStartObjectRotations_.size();
-	const bool hasMatchingScaleStarts = draggedTransformGizmoObjects_.size() == dragStartObjectScalings_.size();
-	if ((transformGizmoMode_ == EditorTransformGizmoMode::Translate && !hasMatchingTranslateStarts) ||
-		(transformGizmoMode_ == EditorTransformGizmoMode::Rotate && !hasMatchingRotationStarts) ||
-		(transformGizmoMode_ == EditorTransformGizmoMode::Scale && !hasMatchingScaleStarts))
+	const bool hasMatchingStarts =
+		draggedTransformGizmoObjects_.size() == dragStartObjectPositions_.size() &&
+		draggedTransformGizmoObjects_.size() == dragStartObjectRotations_.size() &&
+		draggedTransformGizmoObjects_.size() == dragStartObjectScalings_.size();
+	if (!hasMatchingStarts)
 	{
 		EndTransformGizmoDrag(false);
 		return;
@@ -869,6 +868,8 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 
 		const Vector2 cursorDelta = currentCursorPosition - dragStartCursorPosition_;
 		const float scaleDelta = (cursorDelta.x - cursorDelta.y) * TransformGizmoUniformScaleScreenSensitivity;
+		const float positionScale = GoknarMath::Max(TransformGizmoMinimumObjectScale, 1.f + scaleDelta);
+		const bool useCollectivePivot = ShouldUseCollectiveTransformPivot();
 		for (size_t objectIndex = 0; objectIndex < draggedTransformGizmoObjects_.size(); ++objectIndex)
 		{
 			ObjectBase* draggedObject = draggedTransformGizmoObjects_[objectIndex];
@@ -878,6 +879,12 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 				newScaling.x = GoknarMath::Max(TransformGizmoMinimumObjectScale, newScaling.x);
 				newScaling.y = GoknarMath::Max(TransformGizmoMinimumObjectScale, newScaling.y);
 				newScaling.z = GoknarMath::Max(TransformGizmoMinimumObjectScale, newScaling.z);
+				if (useCollectivePivot)
+				{
+					const Vector3 objectOffset = dragStartObjectPositions_[objectIndex] - dragStartGizmoOrigin_;
+					draggedObject->SetWorldPosition(dragStartGizmoOrigin_ + objectOffset * positionScale);
+				}
+
 				draggedObject->SetWorldScaling(newScaling);
 			}
 		}
@@ -909,11 +916,18 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 
 		const float rotationDelta = GetSignedAngleAroundAxis(dragStartRotationDirection_, currentRotationDirection, axisDirection);
 		const Quaternion rotationDeltaQuaternion = Quaternion::FromAxisAngle(axisDirection, rotationDelta);
+		const bool useCollectivePivot = ShouldUseCollectiveTransformPivot();
 		for (size_t objectIndex = 0; objectIndex < draggedTransformGizmoObjects_.size(); ++objectIndex)
 		{
 			ObjectBase* draggedObject = draggedTransformGizmoObjects_[objectIndex];
 			if (draggedObject)
 			{
+				if (useCollectivePivot)
+				{
+					const Vector3 objectOffset = dragStartObjectPositions_[objectIndex] - dragStartGizmoOrigin_;
+					draggedObject->SetWorldPosition(dragStartGizmoOrigin_ + rotationDeltaQuaternion * objectOffset);
+				}
+
 				draggedObject->SetWorldRotation((rotationDeltaQuaternion * dragStartObjectRotations_[objectIndex]).GetNormalized());
 			}
 		}
@@ -932,6 +946,9 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 		const unsigned axisIndex = GetTransformGizmoAxisIndex(selectedTransformGizmoAxis_);
 		const float scaleDelta = ((currentAxisParameter - dragStartAxisParameter_) * TransformGizmoScaleSensitivity) /
 			GoknarMath::Max(transformGizmoScale_, SMALLER_EPSILON);
+		Vector3 positionScale(1.f);
+		positionScale[axisIndex] = GoknarMath::Max(TransformGizmoMinimumObjectScale, 1.f + scaleDelta);
+		const bool useCollectivePivot = ShouldUseCollectiveTransformPivot();
 		for (size_t objectIndex = 0; objectIndex < draggedTransformGizmoObjects_.size(); ++objectIndex)
 		{
 			ObjectBase* draggedObject = draggedTransformGizmoObjects_[objectIndex];
@@ -941,6 +958,13 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 				newScaling[axisIndex] = GoknarMath::Max(
 					TransformGizmoMinimumObjectScale,
 					dragStartObjectScalings_[objectIndex][axisIndex] + scaleDelta);
+				if (useCollectivePivot)
+				{
+					Vector3 objectOffset = dragStartObjectPositions_[objectIndex] - dragStartGizmoOrigin_;
+					objectOffset *= positionScale;
+					draggedObject->SetWorldPosition(dragStartGizmoOrigin_ + objectOffset);
+				}
+
 				draggedObject->SetWorldScaling(newScaling);
 			}
 		}
@@ -1211,6 +1235,25 @@ void ViewportPanel::SetTransformGizmoMode(EditorTransformGizmoMode mode)
 	transformGizmoMode_ = mode;
 }
 
+void ViewportPanel::SetTransformGizmoPivotMode(EditorTransformGizmoPivotMode mode)
+{
+	if (transformGizmoPivotMode_ == mode)
+	{
+		return;
+	}
+
+	EndTransformGizmoDrag(false);
+	transformGizmoPivotMode_ = mode;
+}
+
+bool ViewportPanel::ShouldUseCollectiveTransformPivot() const
+{
+	return transformGizmoPivotMode_ == EditorTransformGizmoPivotMode::CollectiveWorldCenter &&
+		draggedTransformGizmoObjects_.size() > 1 &&
+		(transformGizmoMode_ == EditorTransformGizmoMode::Rotate ||
+			transformGizmoMode_ == EditorTransformGizmoMode::Scale);
+}
+
 void ViewportPanel::UpdateTransformGizmoModeShortcuts()
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -1223,17 +1266,17 @@ void ViewportPanel::UpdateTransformGizmoModeShortcuts()
 		return;
 	}
 
-	if (ImGui::IsKeyPressed(ImGuiKey_W, false))
+	if (ImGui::IsKeyPressed(ImGuiKey_Q, false))
 	{
 		SetTransformGizmoMode(EditorTransformGizmoMode::Translate);
+	}
+	else if (ImGui::IsKeyPressed(ImGuiKey_W, false))
+	{
+		SetTransformGizmoMode(EditorTransformGizmoMode::Rotate);
 	}
 	else if (ImGui::IsKeyPressed(ImGuiKey_E, false))
 	{
 		SetTransformGizmoMode(EditorTransformGizmoMode::Scale);
-	}
-	else if (ImGui::IsKeyPressed(ImGuiKey_R, false))
-	{
-		SetTransformGizmoMode(EditorTransformGizmoMode::Rotate);
 	}
 }
 
@@ -1274,6 +1317,40 @@ void ViewportPanel::DrawTransformGizmoModeToolbar()
 	drawModeButton("Rotate", EditorTransformGizmoMode::Rotate);
 	ImGui::SameLine();
 	drawModeButton("Scale", EditorTransformGizmoMode::Scale);
+
+	EditorContext* context = EditorContext::Get();
+	const bool shouldDrawPivotMode = context &&
+		context->selectedObjectType == EditorSelectionType::Object &&
+		context->GetSelectedObjects().size() > 1 &&
+		transformGizmoMode_ != EditorTransformGizmoMode::Translate;
+	if (shouldDrawPivotMode)
+	{
+		auto drawPivotButton = [this](const char* label, EditorTransformGizmoPivotMode mode)
+			{
+				const bool isSelected = transformGizmoPivotMode_ == mode;
+				if (isSelected)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.16f, 0.36f, 0.62f, 1.f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.44f, 0.72f, 1.f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.12f, 0.28f, 0.52f, 1.f));
+				}
+
+				if (ImGui::Button(label))
+				{
+					SetTransformGizmoPivotMode(mode);
+				}
+
+				if (isSelected)
+				{
+					ImGui::PopStyleColor(3);
+				}
+			};
+
+		ImGui::Spacing();
+		drawPivotButton("World Center", EditorTransformGizmoPivotMode::CollectiveWorldCenter);
+		ImGui::SameLine();
+		drawPivotButton("Local Center", EditorTransformGizmoPivotMode::LocalCenter);
+	}
 
 	ImGui::EndGroup();
 	const ImVec2 toolbarMin = ImGui::GetItemRectMin();
