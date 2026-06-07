@@ -2,7 +2,10 @@
 
 #include "imgui.h"
 
+#include <algorithm>
+#include <filesystem>
 #include <string>
+#include <vector>
 
 #include "Goknar/Camera.h"
 #include "Goknar/Engine.h"
@@ -40,6 +43,37 @@ namespace
 
 namespace EditorUtils
 {
+	static inline void AddUniqueEditorContentPath(std::vector<std::string>& paths, const std::filesystem::path& path)
+	{
+		const std::string normalizedPath = path.lexically_normal().generic_string();
+		if (std::find(paths.begin(), paths.end(), normalizedPath) == paths.end())
+		{
+			paths.push_back(normalizedPath);
+		}
+	}
+
+	static inline std::vector<std::string> GetEditorContentCandidatePaths(const std::string& path)
+	{
+		std::vector<std::string> paths;
+		AddUniqueEditorContentPath(paths, std::filesystem::path(EditorContentDir) / path);
+
+		std::filesystem::path currentPath = std::filesystem::current_path();
+		while (!currentPath.empty())
+		{
+			AddUniqueEditorContentPath(paths, currentPath / EditorContentDir / path);
+
+			const std::filesystem::path parentPath = currentPath.parent_path();
+			if (parentPath == currentPath)
+			{
+				break;
+			}
+
+			currentPath = parentPath;
+		}
+
+		return paths;
+	}
+
 	static inline Vector2 ToVector2(const ImVec2& value)
 	{
 		return {value.x, value.y};
@@ -122,15 +156,29 @@ static inline void EditorUtils::DrawWorldAxis(Camera* camera, float padding/* = 
 template<typename T>
 static T* EditorUtils::GetEditorContent(const std::string& path)
 {
-	std::string fullpath = EditorContentDir + path;
+	const std::vector<std::string> candidatePaths = GetEditorContentCandidatePaths(path);
 
-	T* result = engine->GetResourceManager()->GetResourceContainer()->GetContent<T>(fullpath);
-
-	if (!result)
+	for (const std::string& candidatePath : candidatePaths)
 	{
-		auto loadContentPtr = StolenMember<ResourceManager_LoadContent>::ptr;
-		result = dynamic_cast<T*>((engine->GetResourceManager()->*loadContentPtr)(fullpath));
+		if (T* result = engine->GetResourceManager()->GetResourceContainer()->GetContent<T>(candidatePath))
+		{
+			return result;
+		}
 	}
 
-	return result;
+	auto loadContentPtr = StolenMember<ResourceManager_LoadContent>::ptr;
+	for (const std::string& candidatePath : candidatePaths)
+	{
+		if (!std::filesystem::exists(candidatePath))
+		{
+			continue;
+		}
+
+		if (T* result = dynamic_cast<T*>((engine->GetResourceManager()->*loadContentPtr)(candidatePath)))
+		{
+			return result;
+		}
+	}
+
+	return nullptr;
 }

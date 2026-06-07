@@ -35,15 +35,14 @@ EditorFreeCameraController::EditorFreeCameraController(EditorFreeCameraObject* f
 	onMouseMiddleClickPressedDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::OnMouseMiddleClickPressed>(this);
 	onMouseMiddleClickReleasedDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::OnMouseMiddleClickReleased>(this);
 
-	moveLeftDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveLeftListener>(this);
-	moveRightDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveRightListener>(this);
-	moveForwardDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveForwardListener>(this);
-	moveBackwardDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveBackwardListener>(this);
 	moveUpDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveUpListener>(this);
 	moveDownDelegate_ = KeyboardDelegate::Create<EditorFreeCameraController, &EditorFreeCameraController::MoveDownListener>(this);
 
+	keyboardInputDelegate_ = Delegate<void(int, int, int, int)>::Create<EditorFreeCameraController, &EditorFreeCameraController::KeyboardInputListener>(this);
 	onScrollMoveDelegate_ = Delegate<void(double, double)>::Create<EditorFreeCameraController, &EditorFreeCameraController::ScrollListener>(this);
 	onCursorMoveDelegate_ = Delegate<void(double, double)>::Create<EditorFreeCameraController, &EditorFreeCameraController::CursorMovement>(this);
+
+	SetIsTickable(true);
 }
 
 EditorFreeCameraController::~EditorFreeCameraController()
@@ -63,6 +62,35 @@ void EditorFreeCameraController::SetupInputDelegates()
 {
 }
 
+void EditorFreeCameraController::Tick(float deltaTime)
+{
+	if (!GetIsActive())
+	{
+		return;
+	}
+
+	const float movementMultiplier = movementSpeed_ * 20.f * deltaTime;
+	if (isMoveForwardPressed_)
+	{
+		MoveForward(movementMultiplier);
+	}
+
+	if (isMoveBackwardPressed_)
+	{
+		MoveForward(-movementMultiplier);
+	}
+
+	if (isMoveLeftPressed_)
+	{
+		MoveLeft(movementMultiplier);
+	}
+
+	if (isMoveRightPressed_)
+	{
+		MoveLeft(-movementMultiplier);
+	}
+}
+
 void EditorFreeCameraController::SetIsActive(bool isActive)
 {
 	if (GetIsActive() == isActive)
@@ -79,6 +107,27 @@ void EditorFreeCameraController::SetIsActive(bool isActive)
 	else
 	{
 		UnbindInputDelegates();
+	}
+}
+
+void EditorFreeCameraController::KeyboardInputListener(int key, int, int action, int)
+{
+	const bool isPressed = action != GLFW_RELEASE;
+	if (key == static_cast<int>(KEY_MAP::UP))
+	{
+		isMoveForwardPressed_ = isPressed;
+	}
+	else if (key == static_cast<int>(KEY_MAP::DOWN))
+	{
+		isMoveBackwardPressed_ = isPressed;
+	}
+	else if (key == static_cast<int>(KEY_MAP::LEFT))
+	{
+		isMoveLeftPressed_ = isPressed;
+	}
+	else if (key == static_cast<int>(KEY_MAP::RIGHT))
+	{
+		isMoveRightPressed_ = isPressed;
 	}
 }
 
@@ -160,6 +209,14 @@ void EditorFreeCameraController::MoveUp(float multiplier/* = 1.f*/)
 		freeCameraObject_->GetUpVector() * 0.025f * multiplier);
 }
 
+void EditorFreeCameraController::ResetMovementInput()
+{
+	isMoveForwardPressed_ = false;
+	isMoveBackwardPressed_ = false;
+	isMoveLeftPressed_ = false;
+	isMoveRightPressed_ = false;
+}
+
 void EditorFreeCameraController::BindInputDelegates()
 {
 	InputManager* inputManager = engine->GetInputManager();
@@ -169,10 +226,7 @@ void EditorFreeCameraController::BindInputDelegates()
 	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_MIDDLE, INPUT_ACTION::G_PRESS, onMouseMiddleClickPressedDelegate_);
 	inputManager->AddMouseInputDelegate(MOUSE_MAP::BUTTON_MIDDLE, INPUT_ACTION::G_RELEASE, onMouseMiddleClickReleasedDelegate_);
 
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::A, INPUT_ACTION::G_REPEAT, moveLeftDelegate_);
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::D, INPUT_ACTION::G_REPEAT, moveRightDelegate_);
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::W, INPUT_ACTION::G_REPEAT, moveForwardDelegate_);
-	inputManager->AddKeyboardInputDelegate(KEY_MAP::S, INPUT_ACTION::G_REPEAT, moveBackwardDelegate_);
+	inputManager->AddKeyboardListener(keyboardInputDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::SPACE, INPUT_ACTION::G_REPEAT, moveUpDelegate_);
 	inputManager->AddKeyboardInputDelegate(KEY_MAP::LEFT_CONTROL, INPUT_ACTION::G_REPEAT, moveDownDelegate_);
 
@@ -194,12 +248,10 @@ void EditorFreeCameraController::UnbindInputDelegates()
 	onMouseRightClickReleasedDelegate_();
 	onMouseMiddleClickReleasedDelegate_();
 
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::A, INPUT_ACTION::G_REPEAT, moveLeftDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::D, INPUT_ACTION::G_REPEAT, moveRightDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::W, INPUT_ACTION::G_REPEAT, moveForwardDelegate_);
-	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::S, INPUT_ACTION::G_REPEAT, moveBackwardDelegate_);
+	inputManager->RemoveKeyboardListener(keyboardInputDelegate_);
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::SPACE, INPUT_ACTION::G_REPEAT, moveUpDelegate_);
 	inputManager->RemoveKeyboardInputDelegate(KEY_MAP::LEFT_CONTROL, INPUT_ACTION::G_REPEAT, moveDownDelegate_);
+	ResetMovementInput();
 
 	inputManager->RemoveScrollDelegate(onScrollMoveDelegate_);
 	inputManager->RemoveCursorDelegate(onCursorMoveDelegate_);

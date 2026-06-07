@@ -6,6 +6,7 @@
 #include <functional>
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 class ObjectBase;
 class PhysicsObject;
@@ -43,6 +44,7 @@ public:
 private:
 	void DrawTransform();
 	void DrawObjectDetails();
+	void DrawMultipleObjectDetails();
 	void DrawPhysicsDetails();
 	void DrawReflectionProbeObjectDetails(ReflectionProbeObject* reflectionProbeObject);
 	void DrawDirectionalLightDetails();
@@ -67,6 +69,7 @@ private:
 	void OnAssetSelected(const std::string& path);
 
 	void* assetSelectionComponent_;
+	std::vector<void*> assetSelectionComponents_;
 	DetailsAssetSelectionTarget assetSelectionComponentType_{ DetailsAssetSelectionTarget::None };
 	int assetSelectionSubMeshIndex_{ -1 };
 

@@ -466,6 +466,15 @@ void EditorHUD::OnLeftClickPressed()
 	if (context_->objectToCreateType != EditorSelectionType::None)
 	{
 		OnPlaceObject();
+		return;
+	}
+
+	if (ViewportPanel* viewportPanel = GetPanel<ViewportPanel>())
+	{
+		if (viewportPanel->HandleViewportLeftClick())
+		{
+			return;
+		}
 	}
 }
 
@@ -480,6 +489,17 @@ void EditorHUD::OnRightClickPressed()
 	ImGuiIO& io = ImGui::GetIO();
 	io.AddMouseButtonEvent(ImGuiMouseButton_Right, true);
 	doubleClickController_.OnMouseButtonPressed(ImGuiMouseButton_Right, GetCursorPositionForUi());
+
+	if (io.KeyCtrl)
+	{
+		if (ViewportPanel* viewportPanel = GetPanel<ViewportPanel>())
+		{
+			if (viewportPanel->HandleViewportRightClick())
+			{
+				return;
+			}
+		}
+	}
 }
 
 void EditorHUD::OnRightClickReleased()
@@ -688,9 +708,20 @@ void EditorHUD::OnDeleteInputPressed()
 	switch (context_->selectedObjectType)
 	{
 	case EditorSelectionType::Object:
-		engine->GetApplication()->GetMainScene()->RemoveObject((ObjectBase*)context_->selectedObject);
-		((ObjectBase*)context_->selectedObject)->Destroy();
+	{
+		const std::vector<ObjectBase*> selectedObjects = context_->GetSelectedObjects();
+		if (selectedObjects.empty())
+		{
+			return;
+		}
+
+		for (ObjectBase* selectedObject : selectedObjects)
+		{
+			engine->GetApplication()->GetMainScene()->RemoveObject(selectedObject);
+			selectedObject->Destroy();
+		}
 		break;
+	}
 	case EditorSelectionType::DirectionalLight:
 		delete ((DirectionalLight*)context_->selectedObject);
 		break;
@@ -705,8 +736,7 @@ void EditorHUD::OnDeleteInputPressed()
 		return;
 	}
 
-	context_->selectedObjectType = EditorSelectionType::None;
-	context_->selectedObject = nullptr;
+	context_->ClearSelection();
 	context_->MarkSceneDirty("Scene object deleted");
 }
 
@@ -858,8 +888,7 @@ DirectionalLight* EditorHUD::CreateDirectionalLight()
 {
 	DirectionalLight* newDirectionalLight = new DirectionalLight();
 	newDirectionalLight->SetIsShadowEnabled(true);
-	context_->selectedObjectType = EditorSelectionType::DirectionalLight;
-	context_->selectedObject = newDirectionalLight;
+	context_->SetSelection(newDirectionalLight, EditorSelectionType::DirectionalLight);
 	newDirectionalLight->PreInit();
 	return newDirectionalLight;
 }
@@ -868,8 +897,7 @@ PointLight* EditorHUD::CreatePointLight()
 {
 	PointLight* newPointLight = new PointLight();
 	newPointLight->SetIsShadowEnabled(true);
-	context_->selectedObjectType = EditorSelectionType::PointLight;
-	context_->selectedObject = newPointLight;
+	context_->SetSelection(newPointLight, EditorSelectionType::PointLight);
 	newPointLight->PreInit();
 	return newPointLight;
 }
@@ -878,8 +906,7 @@ SpotLight* EditorHUD::CreateSpotLight()
 {
 	SpotLight* newSpotLight = new SpotLight();
 	newSpotLight->SetIsShadowEnabled(true);
-	context_->selectedObjectType = EditorSelectionType::SpotLight;
-	context_->selectedObject = newSpotLight;
+	context_->SetSelection(newSpotLight, EditorSelectionType::SpotLight);
 	newSpotLight->PreInit();
 	return newSpotLight;
 }
@@ -894,8 +921,7 @@ ObjectBase* EditorHUD::CreateObject(const std::string& typeName)
 	}
 
 	newObjectBase->SetName(typeName);
-	context_->selectedObjectType = EditorSelectionType::Object;
-	context_->selectedObject = newObjectBase;
+	context_->SetSelection(newObjectBase, EditorSelectionType::Object);
 	engine->GetApplication()->GetMainScene()->AddObject(newObjectBase);
 
 	return newObjectBase;

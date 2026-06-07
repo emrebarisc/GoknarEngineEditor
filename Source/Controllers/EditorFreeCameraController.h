@@ -15,10 +15,12 @@ public:
 
 	void BeginGame() override;
 	void SetupInputDelegates() override;
+	void Tick(float deltaTime) override;
 
 	virtual void SetIsActive(bool isActive) override;
 
 private:
+	void KeyboardInputListener(int key, int scanCode, int action, int mod);
 	void CursorMovement(double x, double y);
 	void ScrollListener(double x, double y);
 
@@ -37,26 +39,6 @@ private:
 		isMovingCameraIn2D_ = false;
 	}
 
-	void MoveForwardListener()
-	{
-		MoveForward(movementSpeed_);
-	}
-
-	void MoveBackwardListener()
-	{
-		MoveForward(-movementSpeed_);
-	}
-
-	void MoveRightListener()
-	{
-		MoveLeft(-movementSpeed_);
-	}
-
-	void MoveLeftListener()
-	{
-		MoveLeft(movementSpeed_);
-	}
-
 	void MoveUpListener()
 	{
 		MoveUp(movementSpeed_);
@@ -70,6 +52,7 @@ private:
 	void MoveForward(float multiplier = 1.f);
 	void MoveLeft(float multiplier = 1.f);
 	void MoveUp(float multiplier = 1.f);
+	void ResetMovementInput();
 
 	void BindInputDelegates();
 	void UnbindInputDelegates();
@@ -79,13 +62,10 @@ private:
 	Delegate<void()> onMouseMiddleClickPressedDelegate_;
 	Delegate<void()> onMouseMiddleClickReleasedDelegate_;
 
-	Delegate<void()> moveLeftDelegate_;
-	Delegate<void()> moveRightDelegate_;
-	Delegate<void()> moveForwardDelegate_;
-	Delegate<void()> moveBackwardDelegate_;
 	Delegate<void()> moveUpDelegate_;
 	Delegate<void()> moveDownDelegate_;
 
+	Delegate<void(int, int, int, int)> keyboardInputDelegate_;
 	Delegate<void(double, double)> onScrollMoveDelegate_;
 	Delegate<void(double, double)> onCursorMoveDelegate_;
 
@@ -97,6 +77,10 @@ private:
 	EditorFreeCameraObject* freeCameraObject_;
 	bool isRotatingTheCamera_;
 	bool isMovingCameraIn2D_;
+	bool isMoveForwardPressed_{ false };
+	bool isMoveBackwardPressed_{ false };
+	bool isMoveLeftPressed_{ false };
+	bool isMoveRightPressed_{ false };
 };
 
 #endif

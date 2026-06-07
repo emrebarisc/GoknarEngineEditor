@@ -217,7 +217,7 @@ void ScenePanel::DrawSceneObject(ObjectBase* object, bool allowHierarchyEditing)
     }
 
     EditorContext* context = EditorContext::Get();
-    ImGuiTreeNodeFlags flags = (context->selectedObject == object ? ImGuiTreeNodeFlags_Selected : 0) |
+    ImGuiTreeNodeFlags flags = (context->IsObjectSelected(object) ? ImGuiTreeNodeFlags_Selected : 0) |
         ImGuiTreeNodeFlags_OpenOnArrow |
         ImGuiTreeNodeFlags_SpanAvailWidth;
     
@@ -241,7 +241,19 @@ void ScenePanel::DrawSceneObject(ObjectBase* object, bool allowHierarchyEditing)
     
     if (ImGui::IsItemClicked())
     {
-        context->SetSelection(object, EditorSelectionType::Object);
+        if (ImGui::GetIO().KeyCtrl)
+        {
+            context->RemoveObjectSelection(object);
+        }
+        else
+        {
+            context->SetObjectSelection(object, ImGui::GetIO().KeyShift);
+        }
+    }
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && ImGui::GetIO().KeyCtrl)
+    {
+        context->RemoveObjectSelection(object);
     }
 
     if (allowHierarchyEditing)

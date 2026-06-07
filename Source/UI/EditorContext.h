@@ -2,6 +2,7 @@
 
 #include "Goknar/Core.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
@@ -81,12 +82,79 @@ public:
 	{
 		selectedObject = obj;
 		selectedObjectType = type;
+		selectedObjects.clear();
+		if (type == EditorSelectionType::Object && obj)
+		{
+			selectedObjects.push_back(static_cast<ObjectBase*>(obj));
+		}
 	}
 
 	void ClearSelection()
 	{
 		selectedObject = nullptr;
 		selectedObjectType = EditorSelectionType::None;
+		selectedObjects.clear();
+	}
+
+	void SetObjectSelection(ObjectBase* object, bool additiveSelection = false)
+	{
+		if (!object)
+		{
+			if (!additiveSelection)
+			{
+				ClearSelection();
+			}
+			return;
+		}
+
+		if (!additiveSelection)
+		{
+			selectedObjects.clear();
+			selectedObjects.push_back(object);
+			selectedObject = object;
+			selectedObjectType = EditorSelectionType::Object;
+			return;
+		}
+
+		auto selectedObjectIterator = std::find(selectedObjects.begin(), selectedObjects.end(), object);
+		if (selectedObjectIterator != selectedObjects.end())
+		{
+			selectedObject = object;
+			selectedObjectType = EditorSelectionType::Object;
+			return;
+		}
+
+		selectedObjects.push_back(object);
+		selectedObject = object;
+		selectedObjectType = EditorSelectionType::Object;
+	}
+
+	void RemoveObjectSelection(ObjectBase* object)
+	{
+		if (!object)
+		{
+			return;
+		}
+
+		selectedObjects.erase(std::remove(selectedObjects.begin(), selectedObjects.end(), object), selectedObjects.end());
+		if (selectedObjects.empty())
+		{
+			ClearSelection();
+			return;
+		}
+
+		selectedObject = selectedObjects.back();
+		selectedObjectType = EditorSelectionType::Object;
+	}
+
+	bool IsObjectSelected(const ObjectBase* object) const
+	{
+		return object && std::find(selectedObjects.begin(), selectedObjects.end(), object) != selectedObjects.end();
+	}
+
+	const std::vector<ObjectBase*>& GetSelectedObjects() const
+	{
+		return selectedObjects;
 	}
 
 	void ClearCreateData()
@@ -124,6 +192,7 @@ public:
 	Vector2i buttonSize;
 
 	void* selectedObject = nullptr;
+	std::vector<ObjectBase*> selectedObjects{};
 
 	EditorFreeCameraObject* viewportCameraObject{ nullptr };
 	RenderTarget* viewportRenderTarget{ nullptr };

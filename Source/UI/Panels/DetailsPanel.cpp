@@ -16,6 +16,7 @@
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
 #include "Goknar/Physics/PhysicsWorld.h"
+#include "Goknar/Physics/OverlappingPhysicsObject.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
@@ -34,6 +35,13 @@
 #include "UI/EditorWidgets.h"
 #include "UI/Panels/AssetSelectorPanel.h"
 #include "UI/Panels/ParticleSystemPanel.h"
+
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <cstdint>
+#include <cstdio>
+#include <map>
 
 template <class T>
 void AddCollisionComponent(PhysicsObject* physicsObject)
@@ -86,6 +94,652 @@ namespace
 		}
 
 		return false;
+	}
+
+	enum class MultiObjectDetailsClass
+	{
+		Mixed,
+		ObjectBase,
+		PhysicsObject,
+		RigidBody,
+		OverlappingPhysicsObject
+	};
+
+	struct MultiComponentDetailsGroup
+	{
+		std::string typeName;
+		int occurrenceIndex{ 0 };
+		std::vector<Component*> components;
+	};
+
+	template <typename TEnum>
+	struct EnumDisplayValue
+	{
+		TEnum value;
+		const char* label;
+	};
+
+	const EnumDisplayValue<CollisionGroup> CollisionGroupValues[]{
+		{ CollisionGroup::Default, "Default" },
+		{ CollisionGroup::WorldStaticBlock, "WorldStaticBlock" },
+		{ CollisionGroup::WorldDynamicBlock, "WorldDynamicBlock" },
+		{ CollisionGroup::AllBlock, "AllBlock" },
+		{ CollisionGroup::WorldDynamicOverlap, "WorldDynamicOverlap" },
+		{ CollisionGroup::WorldStaticOverlap, "WorldStaticOverlap" },
+		{ CollisionGroup::AllOverlap, "AllOverlap" },
+		{ CollisionGroup::Character, "Character" },
+		{ CollisionGroup::All, "All" },
+		{ CollisionGroup::Custom0, "Custom0" },
+		{ CollisionGroup::Custom1, "Custom1" },
+		{ CollisionGroup::Custom2, "Custom2" },
+		{ CollisionGroup::Custom3, "Custom3" },
+		{ CollisionGroup::Custom4, "Custom4" },
+		{ CollisionGroup::Custom5, "Custom5" },
+		{ CollisionGroup::Custom6, "Custom6" },
+		{ CollisionGroup::Custom7, "Custom7" },
+		{ CollisionGroup::Custom8, "Custom8" },
+		{ CollisionGroup::Custom9, "Custom9" }
+	};
+
+	const EnumDisplayValue<CollisionMask> CollisionMaskValues[]{
+		{ CollisionMask::Default, "Default" },
+		{ CollisionMask::BlockWorldDynamic, "BlockWorldDynamic" },
+		{ CollisionMask::BlockWorldStatic, "BlockWorldStatic" },
+		{ CollisionMask::BlockCharacter, "BlockCharacter" },
+		{ CollisionMask::BlockAll, "BlockAll" },
+		{ CollisionMask::BlockAllExceptCharacter, "BlockAllExceptCharacter" },
+		{ CollisionMask::OverlapWorldDynamic, "OverlapWorldDynamic" },
+		{ CollisionMask::OverlapWorldStatic, "OverlapWorldStatic" },
+		{ CollisionMask::OverlapCharacter, "OverlapCharacter" },
+		{ CollisionMask::OverlapAll, "OverlapAll" },
+		{ CollisionMask::OverlapAllExceptCharacter, "OverlapAllExceptCharacter" },
+		{ CollisionMask::BlockAndOverlapAll, "BlockAndOverlapAll" },
+		{ CollisionMask::Custom0, "Custom0" },
+		{ CollisionMask::Custom1, "Custom1" },
+		{ CollisionMask::Custom2, "Custom2" },
+		{ CollisionMask::Custom3, "Custom3" },
+		{ CollisionMask::Custom4, "Custom4" },
+		{ CollisionMask::Custom5, "Custom5" },
+		{ CollisionMask::Custom6, "Custom6" },
+		{ CollisionMask::Custom7, "Custom7" },
+		{ CollisionMask::Custom8, "Custom8" },
+		{ CollisionMask::Custom9, "Custom9" }
+	};
+
+	const EnumDisplayValue<CollisionFlag> CollisionFlagValues[]{
+		{ CollisionFlag::None, "None" },
+		{ CollisionFlag::DynamicObject, "DynamicObject" },
+		{ CollisionFlag::StaticObject, "StaticObject" },
+		{ CollisionFlag::KinematicObject, "KinematicObject" },
+		{ CollisionFlag::NoContactResponse, "NoContactResponse" },
+		{ CollisionFlag::CustomMaterialCallback, "CustomMaterialCallback" },
+		{ CollisionFlag::CharacterObject, "CharacterObject" },
+		{ CollisionFlag::DisableVisualizeObject, "DisableVisualizeObject" },
+		{ CollisionFlag::DisableSpuCollisionProcessing, "DisableSpuCollisionProcessing" },
+		{ CollisionFlag::HasContactStiffnessDamping, "HasContactStiffnessDamping" },
+		{ CollisionFlag::HasCustomDebugRenderingColor, "HasCustomDebugRenderingColor" },
+		{ CollisionFlag::HasFrictionAnchor, "HasFrictionAnchor" },
+		{ CollisionFlag::HasCollisionSoundTrigger, "HasCollisionSoundTrigger" }
+	};
+
+	MultiObjectDetailsClass GetObjectDetailsClass(ObjectBase* object)
+	{
+		if (dynamic_cast<RigidBody*>(object))
+		{
+			return MultiObjectDetailsClass::RigidBody;
+		}
+
+		if (dynamic_cast<OverlappingPhysicsObject*>(object))
+		{
+			return MultiObjectDetailsClass::OverlappingPhysicsObject;
+		}
+
+		if (dynamic_cast<PhysicsObject*>(object))
+		{
+			return MultiObjectDetailsClass::PhysicsObject;
+		}
+
+		return MultiObjectDetailsClass::ObjectBase;
+	}
+
+	MultiObjectDetailsClass GetCommonObjectDetailsClass(const std::vector<ObjectBase*>& objects)
+	{
+		if (objects.empty())
+		{
+			return MultiObjectDetailsClass::Mixed;
+		}
+
+		const MultiObjectDetailsClass firstClass = GetObjectDetailsClass(objects.front());
+		for (ObjectBase* object : objects)
+		{
+			if (GetObjectDetailsClass(object) != firstClass)
+			{
+				return MultiObjectDetailsClass::Mixed;
+			}
+		}
+
+		return firstClass;
+	}
+
+	const char* GetObjectDetailsClassName(MultiObjectDetailsClass objectClass)
+	{
+		switch (objectClass)
+		{
+		case MultiObjectDetailsClass::ObjectBase:
+			return "ObjectBase";
+		case MultiObjectDetailsClass::PhysicsObject:
+			return "PhysicsObject";
+		case MultiObjectDetailsClass::RigidBody:
+			return "Rigidbody";
+		case MultiObjectDetailsClass::OverlappingPhysicsObject:
+			return "OverlappingPhysicsObject";
+		case MultiObjectDetailsClass::Mixed:
+		default:
+			return "Diff";
+		}
+	}
+
+	bool BatchValuesEqual(float left, float right)
+	{
+		return GoknarMath::Abs(left - right) <= SMALLER_EPSILON;
+	}
+
+	bool BatchValuesEqual(const Vector3& left, const Vector3& right)
+	{
+		return left.Equals(right, SMALLER_EPSILON);
+	}
+
+	template <typename TValue>
+	bool BatchValuesEqual(const TValue& left, const TValue& right)
+	{
+		return left == right;
+	}
+
+	template <typename TItem, typename TValue, typename Getter>
+	bool GetBatchValueAndDiff(const std::vector<TItem*>& items, Getter getter, TValue& outValue)
+	{
+		if (items.empty())
+		{
+			return false;
+		}
+
+		outValue = getter(items.front());
+		for (TItem* item : items)
+		{
+			if (!BatchValuesEqual(outValue, getter(item)))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void DrawBatchPropertyLabel(const char* label, bool hasDiff)
+	{
+		ImGui::Text("%s: ", label);
+		if (hasDiff)
+		{
+			ImGui::SameLine();
+			ImGui::TextDisabled("Diff");
+		}
+		ImGui::SameLine();
+	}
+
+	bool TryParseFloatInput(const char* buffer, float& outValue)
+	{
+		char* end = nullptr;
+		const float value = std::strtof(buffer, &end);
+		if (end == buffer)
+		{
+			return false;
+		}
+
+		while (end && *end && std::isspace(static_cast<unsigned char>(*end)))
+		{
+			++end;
+		}
+
+		if (end && *end != '\0')
+		{
+			return false;
+		}
+
+		outValue = value;
+		return true;
+	}
+
+	bool TryParseIntInput(const char* buffer, int& outValue)
+	{
+		char* end = nullptr;
+		const long value = std::strtol(buffer, &end, 10);
+		if (end == buffer)
+		{
+			return false;
+		}
+
+		while (end && *end && std::isspace(static_cast<unsigned char>(*end)))
+		{
+			++end;
+		}
+
+		if (end && *end != '\0')
+		{
+			return false;
+		}
+
+		outValue = static_cast<int>(value);
+		return true;
+	}
+
+	bool DrawBatchFloatInput(const std::string& id, float& value, bool hasDiff)
+	{
+		if (!hasDiff)
+		{
+			return EditorWidgets::DrawInputFloat(id, value);
+		}
+
+		char buffer[64]{};
+		if (ImGui::InputTextWithHint(id.c_str(), "Diff", buffer, sizeof(buffer)))
+		{
+			return TryParseFloatInput(buffer, value);
+		}
+
+		return false;
+	}
+
+	bool DrawBatchIntInput(const std::string& id, int& value, bool hasDiff)
+	{
+		if (!hasDiff)
+		{
+			return EditorWidgets::DrawInputInt(id, value);
+		}
+
+		char buffer[64]{};
+		if (ImGui::InputTextWithHint(id.c_str(), "Diff", buffer, sizeof(buffer)))
+		{
+			return TryParseIntInput(buffer, value);
+		}
+
+		return false;
+	}
+
+	template <typename TItem, typename Getter, typename Setter>
+	bool DrawBatchStringField(const char* label, const std::string& id, const std::vector<TItem*>& items, Getter getter, Setter setter)
+	{
+		std::string value;
+		const bool hasDiff = GetBatchValueAndDiff(items, getter, value);
+
+		char buffer[256]{};
+		if (!hasDiff)
+		{
+			const size_t copyLength = (std::min)(value.size(), sizeof(buffer) - 1);
+			std::copy_n(value.c_str(), copyLength, buffer);
+		}
+
+		DrawBatchPropertyLabel(label, hasDiff);
+		if (ImGui::InputTextWithHint(id.c_str(), hasDiff ? "Diff" : "", buffer, sizeof(buffer)))
+		{
+			const std::string newValue = buffer;
+			for (TItem* item : items)
+			{
+				setter(item, newValue);
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	template <typename TItem, typename Getter, typename Setter>
+	bool DrawBatchBoolField(const char* label, const std::string& id, const std::vector<TItem*>& items, Getter getter, Setter setter)
+	{
+		bool value = false;
+		const bool hasDiff = GetBatchValueAndDiff(items, getter, value);
+
+		ImGui::Text("%s: ", label);
+		ImGui::SameLine();
+		bool changed = false;
+		const char* previewValue = hasDiff ? "Diff" : (value ? "True" : "False");
+		if (ImGui::BeginCombo(id.c_str(), previewValue))
+		{
+			if (ImGui::Selectable("False", !hasDiff && !value))
+			{
+				for (TItem* item : items)
+				{
+					setter(item, false);
+				}
+				changed = true;
+			}
+
+			if (ImGui::Selectable("True", !hasDiff && value))
+			{
+				for (TItem* item : items)
+				{
+					setter(item, true);
+				}
+				changed = true;
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return changed;
+	}
+
+	template <typename TItem, typename Getter, typename Setter>
+	bool DrawBatchFloatField(const char* label, const std::string& id, const std::vector<TItem*>& items, Getter getter, Setter setter)
+	{
+		float value = 0.f;
+		const bool hasDiff = GetBatchValueAndDiff(items, getter, value);
+
+		DrawBatchPropertyLabel(label, hasDiff);
+		if (DrawBatchFloatInput(id, value, hasDiff))
+		{
+			for (TItem* item : items)
+			{
+				setter(item, value);
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	template <typename TItem, typename Getter, typename Setter>
+	bool DrawBatchIntField(const char* label, const std::string& id, const std::vector<TItem*>& items, Getter getter, Setter setter)
+	{
+		int value = 0;
+		const bool hasDiff = GetBatchValueAndDiff(items, getter, value);
+
+		DrawBatchPropertyLabel(label, hasDiff);
+		if (DrawBatchIntInput(id, value, hasDiff))
+		{
+			for (TItem* item : items)
+			{
+				setter(item, value);
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	template <typename TItem, typename Getter>
+	bool GetBatchVector3AxisValueAndDiff(const std::vector<TItem*>& items, Getter getter, int axis, float& outValue)
+	{
+		if (items.empty())
+		{
+			return false;
+		}
+
+		outValue = getter(items.front())[axis];
+		for (TItem* item : items)
+		{
+			if (!BatchValuesEqual(outValue, getter(item)[axis]))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	template <typename TItem, typename Getter, typename Setter>
+	bool DrawBatchVector3Field(const char* label, const std::string& id, const std::vector<TItem*>& items, Getter getter, Setter setter)
+	{
+		float axisValues[3]{ 0.f, 0.f, 0.f };
+		bool axisHasDiff[3]{
+			GetBatchVector3AxisValueAndDiff(items, getter, 0, axisValues[0]),
+			GetBatchVector3AxisValueAndDiff(items, getter, 1, axisValues[1]),
+			GetBatchVector3AxisValueAndDiff(items, getter, 2, axisValues[2])
+		};
+
+		DrawBatchPropertyLabel(label, axisHasDiff[0] || axisHasDiff[1] || axisHasDiff[2]);
+
+		bool changed = false;
+		const char* axisSuffixes[3]{ "X", "Y", "Z" };
+		for (int axis = 0; axis < 3; ++axis)
+		{
+			if (axis > 0)
+			{
+				ImGui::SameLine();
+			}
+
+			float newAxisValue = axisValues[axis];
+			if (DrawBatchFloatInput(id + axisSuffixes[axis], newAxisValue, axisHasDiff[axis]))
+			{
+				for (TItem* item : items)
+				{
+					Vector3 itemValue = getter(item);
+					itemValue[axis] = newAxisValue;
+					setter(item, itemValue);
+				}
+				changed = true;
+			}
+		}
+
+		return changed;
+	}
+
+	template <typename TItem, typename Getter>
+	void DrawBatchTextValue(const char* label, const std::vector<TItem*>& items, Getter getter)
+	{
+		std::string value;
+		const bool hasDiff = GetBatchValueAndDiff(items, getter, value);
+
+		ImGui::Text("%s: ", label);
+		ImGui::SameLine();
+		if (hasDiff)
+		{
+			ImGui::TextDisabled("Diff");
+		}
+		else
+		{
+			ImGui::TextWrapped("%s", value.c_str());
+		}
+	}
+
+	template <typename TEnum, size_t EntryCount>
+	int GetEnumEntryIndex(TEnum value, const EnumDisplayValue<TEnum>(&entries)[EntryCount])
+	{
+		for (int entryIndex = 0; entryIndex < static_cast<int>(EntryCount); ++entryIndex)
+		{
+			if (entries[entryIndex].value == value)
+			{
+				return entryIndex;
+			}
+		}
+
+		return 0;
+	}
+
+	template <typename TItem, typename TEnum, typename Getter, typename Setter, size_t EntryCount>
+	bool DrawBatchEnumComboField(
+		const char* label,
+		const std::string& id,
+		const std::vector<TItem*>& items,
+		Getter getter,
+		Setter setter,
+		const EnumDisplayValue<TEnum>(&entries)[EntryCount])
+	{
+		TEnum value{};
+		const bool hasDiff = GetBatchValueAndDiff(items, getter, value);
+		const int selectedEntryIndex = GetEnumEntryIndex(value, entries);
+
+		ImGui::Text("%s: ", label);
+		ImGui::SameLine();
+
+		bool changed = false;
+		const char* previewValue = hasDiff ? "Diff" : entries[selectedEntryIndex].label;
+		if (ImGui::BeginCombo(id.c_str(), previewValue))
+		{
+			for (int entryIndex = 0; entryIndex < static_cast<int>(EntryCount); ++entryIndex)
+			{
+				const bool isSelected = !hasDiff && entryIndex == selectedEntryIndex;
+				if (ImGui::Selectable(entries[entryIndex].label, isSelected))
+				{
+					for (TItem* item : items)
+					{
+						setter(item, entries[entryIndex].value);
+					}
+					changed = true;
+				}
+
+				if (isSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return changed;
+	}
+
+	std::string ToDisplayContentPath(const std::string& path)
+	{
+		if (path.rfind(ContentDir, 0) == 0)
+		{
+			return path.substr(ContentDir.size());
+		}
+
+		return path;
+	}
+
+	std::string GetComponentTypeName(Component* component)
+	{
+		if (dynamic_cast<StaticMeshParticleSystemComponent*>(component))
+		{
+			return "StaticMeshParticleSystemComponent";
+		}
+
+		if (dynamic_cast<BillboardParticleSystemComponent*>(component))
+		{
+			return "BillboardParticleSystemComponent";
+		}
+
+		if (dynamic_cast<StaticMeshComponent*>(component))
+		{
+			return "StaticMeshComponent";
+		}
+
+		if (dynamic_cast<SkeletalMeshComponent*>(component))
+		{
+			return "SkeletalMeshComponent";
+		}
+
+		if (dynamic_cast<BoxCollisionComponent*>(component))
+		{
+			return "BoxCollisionComponent";
+		}
+
+		if (dynamic_cast<SphereCollisionComponent*>(component))
+		{
+			return "SphereCollisionComponent";
+		}
+
+		if (dynamic_cast<CapsuleCollisionComponent*>(component))
+		{
+			return "CapsuleCollisionComponent";
+		}
+
+		if (dynamic_cast<MovingTriangleMeshCollisionComponent*>(component))
+		{
+			return "MovingTriangleMeshCollisionComponent";
+		}
+
+		if (dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component))
+		{
+			return "NonMovingTriangleMeshCollisionComponent";
+		}
+
+		if (dynamic_cast<NavigationTreeComponent*>(component))
+		{
+			return "NavigationTreeComponent";
+		}
+
+		return "Component";
+	}
+
+	std::vector<Component*> GetComponentsByTypeName(ObjectBase* object, const std::string& typeName)
+	{
+		std::vector<Component*> components;
+		if (!object)
+		{
+			return components;
+		}
+
+		for (Component* component : object->GetComponents())
+		{
+			if (GetComponentTypeName(component) == typeName)
+			{
+				components.push_back(component);
+			}
+		}
+
+		return components;
+	}
+
+	std::vector<MultiComponentDetailsGroup> GetMutualComponentDetailsGroups(const std::vector<ObjectBase*>& objects)
+	{
+		std::vector<MultiComponentDetailsGroup> groups;
+		if (objects.empty())
+		{
+			return groups;
+		}
+
+		std::map<std::string, int> occurrenceCountsByType;
+		for (Component* firstObjectComponent : objects.front()->GetComponents())
+		{
+			const std::string typeName = GetComponentTypeName(firstObjectComponent);
+			const int occurrenceIndex = occurrenceCountsByType[typeName]++;
+
+			MultiComponentDetailsGroup group;
+			group.typeName = typeName;
+			group.occurrenceIndex = occurrenceIndex;
+			group.components.push_back(firstObjectComponent);
+
+			bool isMutualComponent = true;
+			for (size_t objectIndex = 1; objectIndex < objects.size(); ++objectIndex)
+			{
+				const std::vector<Component*> matchingComponents = GetComponentsByTypeName(objects[objectIndex], typeName);
+				if (occurrenceIndex >= static_cast<int>(matchingComponents.size()))
+				{
+					isMutualComponent = false;
+					break;
+				}
+
+				group.components.push_back(matchingComponents[occurrenceIndex]);
+			}
+
+			if (isMutualComponent)
+			{
+				groups.push_back(group);
+			}
+		}
+
+		return groups;
+	}
+
+	template <typename TTarget, typename TSource>
+	std::vector<TTarget*> CastItems(const std::vector<TSource*>& items)
+	{
+		std::vector<TTarget*> castItems;
+		for (TSource* item : items)
+		{
+			TTarget* castItem = dynamic_cast<TTarget*>(item);
+			if (!castItem)
+			{
+				castItems.clear();
+				return castItems;
+			}
+
+			castItems.push_back(castItem);
+		}
+
+		return castItems;
 	}
 }
 
@@ -160,6 +814,11 @@ void DetailsPanel::SetupReflections()
 void DetailsPanel::OnAssetSelected(const std::string& path)
 {
 	std::string normalizedPath = EditorAssetPathUtils::ToContentRelativePath(path);
+	std::vector<void*> assetSelectionComponents = assetSelectionComponents_;
+	if (assetSelectionComponents.empty() && assetSelectionComponent_)
+	{
+		assetSelectionComponents.push_back(assetSelectionComponent_);
+	}
 
 	switch (assetSelectionComponentType_)
 	{
@@ -167,74 +826,97 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		break;
 	case DetailsAssetSelectionTarget::StaticMesh:
 	{
-		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
 		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(normalizedPath);
 		if (newStaticMesh)
 		{
-			staticMeshComponent->SetMesh(newStaticMesh);
+			for (void* assetSelectionComponent : assetSelectionComponents)
+			{
+				StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent;
+				if (staticMeshComponent)
+				{
+					staticMeshComponent->SetMesh(newStaticMesh);
+				}
+			}
 			MarkSceneDirty("Static mesh changed");
 		}
 		break;
 	}
 	case DetailsAssetSelectionTarget::Material:
 	{
-		StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent_;
-		std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
-
-		StaticMeshInstance* meshInstance = staticMeshComponent ? staticMeshComponent->GetMeshInstance() : nullptr;
-		StaticMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
-		const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
-
-		if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
+		for (void* assetSelectionComponent : assetSelectionComponents)
 		{
-			materialPaths.resize(subMeshCount);
-			materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
-			SceneParser::ApplyStaticMeshComponentMaterialPaths(staticMeshComponent, materialPaths);
-			MarkSceneDirty("Material changed");
+			StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent;
+			std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
+
+			StaticMeshInstance* meshInstance = staticMeshComponent ? staticMeshComponent->GetMeshInstance() : nullptr;
+			StaticMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+			const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
+
+			if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
+			{
+				materialPaths.resize(subMeshCount);
+				materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
+				SceneParser::ApplyStaticMeshComponentMaterialPaths(staticMeshComponent, materialPaths);
+				MarkSceneDirty("Material changed");
+			}
 		}
 		break;
 	}
 	case DetailsAssetSelectionTarget::SkeletalMesh:
 	{
-		SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent_;
 		SkeletalMesh* newSkeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(normalizedPath);
-		if (skeletalMeshComponent && newSkeletalMesh)
+		if (newSkeletalMesh)
 		{
-			skeletalMeshComponent->SetMesh(newSkeletalMesh);
+			for (void* assetSelectionComponent : assetSelectionComponents)
+			{
+				SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent;
+				if (skeletalMeshComponent)
+				{
+					skeletalMeshComponent->SetMesh(newSkeletalMesh);
+				}
+			}
 			MarkSceneDirty("Skeletal mesh changed");
 		}
 		break;
 	}
 	case DetailsAssetSelectionTarget::SkeletalMeshMaterial:
 	{
-		SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent_;
-		std::vector<std::string> materialPaths = SceneParser::GetSkeletalMeshComponentMaterialPaths(skeletalMeshComponent);
-
-		SkeletalMeshInstance* meshInstance = skeletalMeshComponent ? skeletalMeshComponent->GetMeshInstance() : nullptr;
-		SkeletalMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
-		const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
-
-		if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
+		for (void* assetSelectionComponent : assetSelectionComponents)
 		{
-			materialPaths.resize(subMeshCount);
-			materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
-			SceneParser::ApplySkeletalMeshComponentMaterialPaths(skeletalMeshComponent, materialPaths);
-			MarkSceneDirty("Skeletal mesh material changed");
+			SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent;
+			std::vector<std::string> materialPaths = SceneParser::GetSkeletalMeshComponentMaterialPaths(skeletalMeshComponent);
+
+			SkeletalMeshInstance* meshInstance = skeletalMeshComponent ? skeletalMeshComponent->GetMeshInstance() : nullptr;
+			SkeletalMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+			const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
+
+			if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
+			{
+				materialPaths.resize(subMeshCount);
+				materialPaths[assetSelectionSubMeshIndex_] = normalizedPath;
+				SceneParser::ApplySkeletalMeshComponentMaterialPaths(skeletalMeshComponent, materialPaths);
+				MarkSceneDirty("Skeletal mesh material changed");
+			}
 		}
 		break;
 	}
 	case DetailsAssetSelectionTarget::NavigationTree:
 	{
-		NavigationTreeComponent* navigationTreeComponent = (NavigationTreeComponent*)assetSelectionComponent_;
-		if (navigationTreeComponent)
+		bool changedNavigationTree = false;
+		for (void* assetSelectionComponent : assetSelectionComponents)
 		{
-			const std::string previousPath = navigationTreeComponent->GetNavigationTreePath();
-			const bool loadedNavigationTree = navigationTreeComponent->SetNavigationTreePath(normalizedPath);
-			if (loadedNavigationTree && previousPath != navigationTreeComponent->GetNavigationTreePath())
+			NavigationTreeComponent* navigationTreeComponent = (NavigationTreeComponent*)assetSelectionComponent;
+			if (navigationTreeComponent)
 			{
-				RebuildSceneNavigationMesh();
-				MarkSceneDirty("Navigation tree changed");
+				const std::string previousPath = navigationTreeComponent->GetNavigationTreePath();
+				const bool loadedNavigationTree = navigationTreeComponent->SetNavigationTreePath(normalizedPath);
+				changedNavigationTree |= loadedNavigationTree && previousPath != navigationTreeComponent->GetNavigationTreePath();
 			}
+		}
+		if (changedNavigationTree)
+		{
+			RebuildSceneNavigationMesh();
+			MarkSceneDirty("Navigation tree changed");
 		}
 		break;
 	}
@@ -247,6 +929,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 	}
 
 	assetSelectionComponent_ = nullptr;
+	assetSelectionComponents_.clear();
 	assetSelectionComponentType_ = DetailsAssetSelectionTarget::None;
 	assetSelectionSubMeshIndex_ = -1;
 	EditorContext::Get()->assetSelectorFilter = EditorAssetType::None;
@@ -261,7 +944,14 @@ void DetailsPanel::Draw()
 	case EditorSelectionType::None:
 		break;
 	case EditorSelectionType::Object:
-		DrawObjectDetails();
+		if (EditorContext::Get()->GetSelectedObjects().size() > 1)
+		{
+			DrawMultipleObjectDetails();
+		}
+		else
+		{
+			DrawObjectDetails();
+		}
 		break;
 	case EditorSelectionType::DirectionalLight:
 		DrawDirectionalLightDetails();
@@ -680,6 +1370,625 @@ void DetailsPanel::DrawObjectDetails()
 	{
 		DrawComponentDetails(object, component);
 		ImGui::Separator();
+	}
+
+	ImGui::PopItemWidth();
+}
+
+void DetailsPanel::DrawMultipleObjectDetails()
+{
+	const std::vector<ObjectBase*>& selectedObjects = EditorContext::Get()->GetSelectedObjects();
+	std::vector<ObjectBase*> objects;
+	for (ObjectBase* selectedObject : selectedObjects)
+	{
+		if (selectedObject)
+		{
+			objects.push_back(selectedObject);
+		}
+	}
+
+	if (objects.size() <= 1)
+	{
+		DrawObjectDetails();
+		return;
+	}
+
+	auto setBatchAssetSelection = [this](const std::vector<void*>& components, DetailsAssetSelectionTarget target, EditorAssetType filter)
+		{
+			if (components.empty())
+			{
+				return;
+			}
+
+			assetSelectionComponents_ = components;
+			assetSelectionComponent_ = components.front();
+			assetSelectionComponentType_ = target;
+			assetSelectionSubMeshIndex_ = -1;
+			EditorContext::Get()->assetSelectorFilter = filter;
+
+			AssetSelectorPanel::OnAssetSelected =
+				Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+			hud_->ShowPanel<AssetSelectorPanel>();
+		};
+
+	ImGui::Text("%d Objects Selected", static_cast<int>(objects.size()));
+	ImGui::Separator();
+
+	const MultiObjectDetailsClass objectClass = GetCommonObjectDetailsClass(objects);
+	ImGui::Text("Class: %s", GetObjectDetailsClassName(objectClass));
+
+	ImGui::PushItemWidth(50.f);
+
+	if (objectClass != MultiObjectDetailsClass::Mixed)
+	{
+		if (DrawBatchStringField(
+			"Name",
+			"##MultiObjectName",
+			objects,
+			[](ObjectBase* object) { return object->GetNameWithoutId(); },
+			[](ObjectBase* object, const std::string& value) { object->SetName(value); }))
+		{
+			MarkSceneDirty("Object name changed");
+		}
+
+		bool objectTransformChanged = false;
+		objectTransformChanged |= DrawBatchVector3Field(
+			"Position",
+			"##MultiObjectPosition",
+			objects,
+			[](ObjectBase* object) { return object->GetWorldPosition(); },
+			[](ObjectBase* object, const Vector3& value) { object->SetWorldPosition(value); });
+
+		objectTransformChanged |= DrawBatchVector3Field(
+			"Rotation",
+			"##MultiObjectRotation",
+			objects,
+			[](ObjectBase* object) { return object->GetWorldRotation().ToEulerDegrees(); },
+			[](ObjectBase* object, const Vector3& value) { object->SetWorldRotation(Quaternion::FromEulerDegrees(value)); });
+
+		objectTransformChanged |= DrawBatchVector3Field(
+			"Scaling",
+			"##MultiObjectScaling",
+			objects,
+			[](ObjectBase* object) { return object->GetWorldScaling(); },
+			[](ObjectBase* object, const Vector3& value) { object->SetWorldScaling(value); });
+
+		if (objectTransformChanged)
+		{
+			for (ObjectBase* object : objects)
+			{
+				if (ObjectHasNavigationTreeComponent(object))
+				{
+					RebuildSceneNavigationMesh();
+					break;
+				}
+			}
+
+			MarkSceneDirty("Object transform changed");
+		}
+
+		if (DrawBatchBoolField(
+			"Active",
+			"##MultiObjectActive",
+			objects,
+			[](ObjectBase* object) { return object->GetIsActive(); },
+			[](ObjectBase* object, bool value) { object->SetIsActive(value); }))
+		{
+			MarkSceneDirty("Object active state changed");
+		}
+
+		if (DrawBatchBoolField(
+			"Tickable",
+			"##MultiObjectTickable",
+			objects,
+			[](ObjectBase* object) { return object->GetIsTickable(); },
+			[](ObjectBase* object, bool value) { object->SetIsTickable(value); }))
+		{
+			MarkSceneDirty("Object tickable state changed");
+		}
+
+		if (DrawBatchBoolField(
+			"Tick Enabled",
+			"##MultiObjectTickEnabled",
+			objects,
+			[](ObjectBase* object) { return object->GetIsTickEnabled(); },
+			[](ObjectBase* object, bool value) { object->SetIsTickEnabled(value); }))
+		{
+			MarkSceneDirty("Object tick state changed");
+		}
+
+		if (objectClass == MultiObjectDetailsClass::PhysicsObject ||
+			objectClass == MultiObjectDetailsClass::RigidBody ||
+			objectClass == MultiObjectDetailsClass::OverlappingPhysicsObject)
+		{
+			const std::vector<PhysicsObject*> physicsObjects = CastItems<PhysicsObject>(objects);
+			ImGui::Separator();
+			ImGui::Text("PhysicsObject");
+
+			if (DrawBatchStringField(
+				"Tag",
+				"##MultiPhysicsObjectTag",
+				physicsObjects,
+				[](PhysicsObject* physicsObject) { return physicsObject->GetTag(); },
+				[](PhysicsObject* physicsObject, const std::string& value) { physicsObject->SetTag(value); }))
+			{
+				MarkSceneDirty("Physics object tag changed");
+			}
+
+			if (DrawBatchBoolField(
+				"Physics Tick Enabled",
+				"##MultiPhysicsTickEnabled",
+				physicsObjects,
+				[](PhysicsObject* physicsObject) { return physicsObject->GetPhysicsTickEnabled(); },
+				[](PhysicsObject* physicsObject, bool value) { physicsObject->SetPhysicsTickEnabled(value); }))
+			{
+				MarkSceneDirty("Physics tick state changed");
+			}
+
+			if (DrawBatchEnumComboField(
+				"CollisionGroup",
+				"##MultiPhysicsObjectCollisionGroup",
+				physicsObjects,
+				[](PhysicsObject* physicsObject) { return physicsObject->GetCollisionGroup(); },
+				[](PhysicsObject* physicsObject, CollisionGroup value) { physicsObject->SetCollisionGroup(value); },
+				CollisionGroupValues))
+			{
+				MarkSceneDirty("Physics object collision group changed");
+			}
+
+			if (DrawBatchEnumComboField(
+				"CollisionMask",
+				"##MultiPhysicsObjectCollisionMask",
+				physicsObjects,
+				[](PhysicsObject* physicsObject) { return physicsObject->GetCollisionMask(); },
+				[](PhysicsObject* physicsObject, CollisionMask value) { physicsObject->SetCollisionMask(value); },
+				CollisionMaskValues))
+			{
+				MarkSceneDirty("Physics object collision mask changed");
+			}
+
+			if (DrawBatchEnumComboField(
+				"CollisionFlag",
+				"##MultiPhysicsObjectCollisionFlag",
+				physicsObjects,
+				[](PhysicsObject* physicsObject) { return physicsObject->GetCollisionFlag(); },
+				[](PhysicsObject* physicsObject, CollisionFlag value) { physicsObject->SetCollisionFlag(value); },
+				CollisionFlagValues))
+			{
+				MarkSceneDirty("Physics object collision flag changed");
+			}
+		}
+
+		if (objectClass == MultiObjectDetailsClass::RigidBody)
+		{
+			const std::vector<RigidBody*> rigidBodies = CastItems<RigidBody>(objects);
+			ImGui::Separator();
+			ImGui::Text("Rigidbody");
+
+			if (DrawBatchFloatField(
+				"Mass",
+				"##MultiRigidBodyMass",
+				rigidBodies,
+				[](RigidBody* rigidBody) { return rigidBody->GetMass(); },
+				[](RigidBody* rigidBody, float value) { rigidBody->SetMass(value); }))
+			{
+				MarkSceneDirty("Rigid body mass changed");
+			}
+		}
+	}
+
+	ImGui::Separator();
+	ImGui::Text("Mutual Components");
+
+	const std::vector<MultiComponentDetailsGroup> componentGroups = GetMutualComponentDetailsGroups(objects);
+	if (componentGroups.empty())
+	{
+		ImGui::TextDisabled("No mutual components");
+		ImGui::PopItemWidth();
+		return;
+	}
+
+	for (size_t componentGroupIndex = 0; componentGroupIndex < componentGroups.size(); ++componentGroupIndex)
+	{
+		const MultiComponentDetailsGroup& componentGroup = componentGroups[componentGroupIndex];
+		ImGui::PushID(static_cast<int>(componentGroupIndex));
+
+		std::string componentTitle = componentGroup.typeName;
+		if (componentGroup.occurrenceIndex > 0)
+		{
+			componentTitle += " " + std::to_string(componentGroup.occurrenceIndex + 1);
+		}
+
+		bool firstIsRootComponent = false;
+		bool hasRootComponentDiff = false;
+		if (!componentGroup.components.empty())
+		{
+			Component* firstComponent = componentGroup.components.front();
+			firstIsRootComponent = firstComponent && firstComponent->GetOwner() && firstComponent->GetOwner()->GetRootComponent() == firstComponent;
+			for (Component* component : componentGroup.components)
+			{
+				const bool isRootComponent = component && component->GetOwner() && component->GetOwner()->GetRootComponent() == component;
+				if (isRootComponent != firstIsRootComponent)
+				{
+					hasRootComponentDiff = true;
+					break;
+				}
+			}
+		}
+
+		if (hasRootComponentDiff)
+		{
+			componentTitle += " (Root Diff)";
+		}
+		else if (firstIsRootComponent)
+		{
+			componentTitle += " (RootComponent)";
+		}
+
+		ImGui::Separator();
+		ImGui::Text("%s", componentTitle.c_str());
+
+		bool componentTransformChanged = false;
+		componentTransformChanged |= DrawBatchVector3Field(
+			"RelativePosition",
+			"##MultiComponentRelativePosition",
+			componentGroup.components,
+			[](Component* component) { return component->GetRelativePosition(); },
+			[](Component* component, const Vector3& value) { component->SetRelativePosition(value); });
+
+		componentTransformChanged |= DrawBatchVector3Field(
+			"RelativeRotation",
+			"##MultiComponentRelativeRotation",
+			componentGroup.components,
+			[](Component* component) { return component->GetRelativeRotation().ToEulerDegrees(); },
+			[](Component* component, const Vector3& value) { component->SetRelativeRotation(Quaternion::FromEulerDegrees(value)); });
+
+		componentTransformChanged |= DrawBatchVector3Field(
+			"RelativeScaling",
+			"##MultiComponentRelativeScaling",
+			componentGroup.components,
+			[](Component* component) { return component->GetRelativeScaling(); },
+			[](Component* component, const Vector3& value) { component->SetRelativeScaling(value); });
+
+		if (componentTransformChanged)
+		{
+			for (Component* component : componentGroup.components)
+			{
+				if (dynamic_cast<NavigationTreeComponent*>(component))
+				{
+					RebuildSceneNavigationMesh();
+					break;
+				}
+			}
+
+			MarkSceneDirty("Component transform changed");
+		}
+
+		if (DrawBatchBoolField(
+			"Active",
+			"##MultiComponentActive",
+			componentGroup.components,
+			[](Component* component) { return component->GetIsActive(); },
+			[](Component* component, bool value) { component->SetIsActive(value); }))
+		{
+			MarkSceneDirty("Component active state changed");
+		}
+
+		if (DrawBatchBoolField(
+			"Tick Enabled",
+			"##MultiComponentTickEnabled",
+			componentGroup.components,
+			[](Component* component) { return component->GetIsTickEnabled(); },
+			[](Component* component, bool value) { component->SetIsTickEnabled(value); }))
+		{
+			MarkSceneDirty("Component tick state changed");
+		}
+
+		const std::vector<CollisionComponent*> collisionComponents = CastItems<CollisionComponent>(componentGroup.components);
+		if (!collisionComponents.empty())
+		{
+			if (DrawBatchEnumComboField(
+				"CollisionGroup",
+				"##MultiCollisionComponentCollisionGroup",
+				collisionComponents,
+				[](CollisionComponent* collisionComponent) { return collisionComponent->GetCollisionGroup(); },
+				[](CollisionComponent* collisionComponent, CollisionGroup value) { collisionComponent->SetCollisionGroup(value); },
+				CollisionGroupValues))
+			{
+				MarkSceneDirty("Collision component collision group changed");
+			}
+
+			if (DrawBatchEnumComboField(
+				"CollisionMask",
+				"##MultiCollisionComponentCollisionMask",
+				collisionComponents,
+				[](CollisionComponent* collisionComponent) { return collisionComponent->GetCollisionMask(); },
+				[](CollisionComponent* collisionComponent, CollisionMask value) { collisionComponent->SetCollisionMask(value); },
+				CollisionMaskValues))
+			{
+				MarkSceneDirty("Collision component collision mask changed");
+			}
+		}
+
+		const std::vector<StaticMeshComponent*> staticMeshComponents = CastItems<StaticMeshComponent>(componentGroup.components);
+		if (!staticMeshComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Mesh",
+				staticMeshComponents,
+				[](StaticMeshComponent* staticMeshComponent)
+				{
+					StaticMeshInstance* meshInstance = staticMeshComponent->GetMeshInstance();
+					StaticMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
+				});
+
+			if (ImGui::Button("Select asset##MultiStaticMeshAsset"))
+			{
+				std::vector<void*> assetSelectionComponents;
+				for (StaticMeshComponent* staticMeshComponent : staticMeshComponents)
+				{
+					assetSelectionComponents.push_back(staticMeshComponent);
+				}
+				setBatchAssetSelection(assetSelectionComponents, DetailsAssetSelectionTarget::StaticMesh, EditorAssetType::StaticMesh);
+			}
+
+			if (DrawBatchIntField(
+				"Render mask",
+				"##MultiStaticMeshRenderMask",
+				staticMeshComponents,
+				[](StaticMeshComponent* staticMeshComponent)
+				{
+					StaticMeshInstance* meshInstance = staticMeshComponent->GetMeshInstance();
+					return meshInstance ? static_cast<int>(meshInstance->GetRenderMask()) : 0;
+				},
+				[](StaticMeshComponent* staticMeshComponent, int value)
+				{
+					StaticMeshInstance* meshInstance = staticMeshComponent->GetMeshInstance();
+					if (meshInstance)
+					{
+						meshInstance->SetRenderMask(value);
+					}
+				}))
+			{
+				MarkSceneDirty("Static mesh render mask changed");
+			}
+		}
+
+		const std::vector<SkeletalMeshComponent*> skeletalMeshComponents = CastItems<SkeletalMeshComponent>(componentGroup.components);
+		if (!skeletalMeshComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Mesh",
+				skeletalMeshComponents,
+				[](SkeletalMeshComponent* skeletalMeshComponent)
+				{
+					SkeletalMeshInstance* meshInstance = skeletalMeshComponent->GetMeshInstance();
+					SkeletalMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
+				});
+
+			if (ImGui::Button("Select asset##MultiSkeletalMeshAsset"))
+			{
+				std::vector<void*> assetSelectionComponents;
+				for (SkeletalMeshComponent* skeletalMeshComponent : skeletalMeshComponents)
+				{
+					assetSelectionComponents.push_back(skeletalMeshComponent);
+				}
+				setBatchAssetSelection(assetSelectionComponents, DetailsAssetSelectionTarget::SkeletalMesh, EditorAssetType::SkeletalMesh);
+			}
+
+			if (DrawBatchIntField(
+				"Render mask",
+				"##MultiSkeletalMeshRenderMask",
+				skeletalMeshComponents,
+				[](SkeletalMeshComponent* skeletalMeshComponent)
+				{
+					SkeletalMeshInstance* meshInstance = skeletalMeshComponent->GetMeshInstance();
+					return meshInstance ? static_cast<int>(meshInstance->GetRenderMask()) : 0;
+				},
+				[](SkeletalMeshComponent* skeletalMeshComponent, int value)
+				{
+					SkeletalMeshInstance* meshInstance = skeletalMeshComponent->GetMeshInstance();
+					if (meshInstance)
+					{
+						meshInstance->SetRenderMask(value);
+					}
+				}))
+			{
+				MarkSceneDirty("Skeletal mesh render mask changed");
+			}
+		}
+
+		const std::vector<ParticleSystemComponent*> particleSystemComponents = CastItems<ParticleSystemComponent>(componentGroup.components);
+		if (!particleSystemComponents.empty())
+		{
+			if (DrawBatchFloatField(
+				"Particle Size",
+				"##MultiParticleSystemParticleSize",
+				particleSystemComponents,
+				[](ParticleSystemComponent* particleSystemComponent) { return particleSystemComponent->GetParticleSize(); },
+				[](ParticleSystemComponent* particleSystemComponent, float value) { particleSystemComponent->SetParticleSize(value); }))
+			{
+				MarkSceneDirty("Particle size changed");
+			}
+
+			if (DrawBatchVector3Field(
+				"Gravity",
+				"##MultiParticleSystemGravity",
+				particleSystemComponents,
+				[](ParticleSystemComponent* particleSystemComponent) { return particleSystemComponent->GetGravity(); },
+				[](ParticleSystemComponent* particleSystemComponent, const Vector3& value) { particleSystemComponent->SetGravity(value); }))
+			{
+				MarkSceneDirty("Particle gravity changed");
+			}
+
+			if (DrawBatchIntField(
+				"Max Particle Count",
+				"##MultiParticleSystemMaxParticleCount",
+				particleSystemComponents,
+				[](ParticleSystemComponent* particleSystemComponent) { return static_cast<int>(particleSystemComponent->GetMaxParticleCount()); },
+				[](ParticleSystemComponent* particleSystemComponent, int value) { particleSystemComponent->SetMaxParticleCount(static_cast<std::uint32_t>((std::max)(value, 0))); }))
+			{
+				MarkSceneDirty("Particle max count changed");
+			}
+
+			if (DrawBatchIntField(
+				"Preview Burst Count",
+				"##MultiParticleSystemPreviewCount",
+				particleSystemComponents,
+				[](ParticleSystemComponent* particleSystemComponent) { return static_cast<int>(particleSystemComponent->GetPreviewParticleCount()); },
+				[](ParticleSystemComponent* particleSystemComponent, int value) { particleSystemComponent->SetPreviewParticleCount(static_cast<std::uint32_t>((std::max)(value, 0))); }))
+			{
+				MarkSceneDirty("Particle preview count changed");
+			}
+		}
+
+		const std::vector<StaticMeshParticleSystemComponent*> staticMeshParticleSystemComponents = CastItems<StaticMeshParticleSystemComponent>(componentGroup.components);
+		if (!staticMeshParticleSystemComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Static Mesh",
+				staticMeshParticleSystemComponents,
+				[](StaticMeshParticleSystemComponent* component) { return component->GetStaticMeshPath(); });
+		}
+
+		const std::vector<BillboardParticleSystemComponent*> billboardParticleSystemComponents = CastItems<BillboardParticleSystemComponent>(componentGroup.components);
+		if (!billboardParticleSystemComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Billboard Material",
+				billboardParticleSystemComponents,
+				[](BillboardParticleSystemComponent* component) { return component->GetBillboardMaterialPath(); });
+			DrawBatchTextValue(
+				"Billboard Texture",
+				billboardParticleSystemComponents,
+				[](BillboardParticleSystemComponent* component) { return component->GetBillboardTexturePath(); });
+		}
+
+		const std::vector<BoxCollisionComponent*> boxCollisionComponents = CastItems<BoxCollisionComponent>(componentGroup.components);
+		if (!boxCollisionComponents.empty())
+		{
+			if (DrawBatchVector3Field(
+				"HalfSize",
+				"##MultiBoxCollisionHalfSize",
+				boxCollisionComponents,
+				[](BoxCollisionComponent* boxCollisionComponent) { return boxCollisionComponent->GetHalfSize(); },
+				[](BoxCollisionComponent* boxCollisionComponent, const Vector3& value) { boxCollisionComponent->SetHalfSize(value); }))
+			{
+				MarkSceneDirty("Box collision half size changed");
+			}
+		}
+
+		const std::vector<SphereCollisionComponent*> sphereCollisionComponents = CastItems<SphereCollisionComponent>(componentGroup.components);
+		if (!sphereCollisionComponents.empty())
+		{
+			if (DrawBatchFloatField(
+				"Radius",
+				"##MultiSphereCollisionRadius",
+				sphereCollisionComponents,
+				[](SphereCollisionComponent* sphereCollisionComponent) { return sphereCollisionComponent->GetRadius(); },
+				[](SphereCollisionComponent* sphereCollisionComponent, float value) { sphereCollisionComponent->SetRadius(value); }))
+			{
+				MarkSceneDirty("Sphere collision radius changed");
+			}
+		}
+
+		const std::vector<CapsuleCollisionComponent*> capsuleCollisionComponents = CastItems<CapsuleCollisionComponent>(componentGroup.components);
+		if (!capsuleCollisionComponents.empty())
+		{
+			if (DrawBatchFloatField(
+				"Radius",
+				"##MultiCapsuleCollisionRadius",
+				capsuleCollisionComponents,
+				[](CapsuleCollisionComponent* capsuleCollisionComponent) { return capsuleCollisionComponent->GetRadius(); },
+				[](CapsuleCollisionComponent* capsuleCollisionComponent, float value) { capsuleCollisionComponent->SetRadius(value); }))
+			{
+				MarkSceneDirty("Capsule collision radius changed");
+			}
+
+			if (DrawBatchFloatField(
+				"Height",
+				"##MultiCapsuleCollisionHeight",
+				capsuleCollisionComponents,
+				[](CapsuleCollisionComponent* capsuleCollisionComponent) { return capsuleCollisionComponent->GetHeight(); },
+				[](CapsuleCollisionComponent* capsuleCollisionComponent, float value) { capsuleCollisionComponent->SetHeight(value); }))
+			{
+				MarkSceneDirty("Capsule collision height changed");
+			}
+		}
+
+		const std::vector<MovingTriangleMeshCollisionComponent*> movingTriangleMeshCollisionComponents = CastItems<MovingTriangleMeshCollisionComponent>(componentGroup.components);
+		if (!movingTriangleMeshCollisionComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Mesh",
+				movingTriangleMeshCollisionComponents,
+				[](MovingTriangleMeshCollisionComponent* component)
+				{
+					const StaticMesh* mesh = component->GetMesh();
+					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
+				});
+		}
+
+		const std::vector<NonMovingTriangleMeshCollisionComponent*> nonMovingTriangleMeshCollisionComponents = CastItems<NonMovingTriangleMeshCollisionComponent>(componentGroup.components);
+		if (!nonMovingTriangleMeshCollisionComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Mesh",
+				nonMovingTriangleMeshCollisionComponents,
+				[](NonMovingTriangleMeshCollisionComponent* component)
+				{
+					const StaticMesh* mesh = component->GetMesh();
+					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
+				});
+		}
+
+		const std::vector<NavigationTreeComponent*> navigationTreeComponents = CastItems<NavigationTreeComponent>(componentGroup.components);
+		if (!navigationTreeComponents.empty())
+		{
+			DrawBatchTextValue(
+				"Navigation Tree",
+				navigationTreeComponents,
+				[](NavigationTreeComponent* navigationTreeComponent) { return navigationTreeComponent->GetNavigationTreePath(); });
+
+			if (ImGui::Button("Select asset##MultiNavigationTreeAsset"))
+			{
+				std::vector<void*> assetSelectionComponents;
+				for (NavigationTreeComponent* navigationTreeComponent : navigationTreeComponents)
+				{
+					assetSelectionComponents.push_back(navigationTreeComponent);
+				}
+				setBatchAssetSelection(assetSelectionComponents, DetailsAssetSelectionTarget::NavigationTree, EditorAssetType::NavigationTree);
+			}
+
+			bool hasNavigationTreePath = false;
+			for (NavigationTreeComponent* navigationTreeComponent : navigationTreeComponents)
+			{
+				if (!navigationTreeComponent->GetNavigationTreePath().empty())
+				{
+					hasNavigationTreePath = true;
+					break;
+				}
+			}
+
+			if (hasNavigationTreePath)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Clear##MultiNavigationTreeAsset"))
+				{
+					for (NavigationTreeComponent* navigationTreeComponent : navigationTreeComponents)
+					{
+						navigationTreeComponent->SetNavigationTreePath("");
+					}
+					RebuildSceneNavigationMesh();
+					MarkSceneDirty("Navigation tree cleared");
+				}
+			}
+		}
+
+		ImGui::PopID();
 	}
 
 	ImGui::PopItemWidth();
