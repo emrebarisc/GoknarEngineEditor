@@ -31,5 +31,6 @@ namespace EditorSourceCodeUtils
 	SourceCodeEditor SourceCodeEditorFromConfigValue(const std::string& value);
 
 	bool OpenSourceFile(const std::string& filePath);
+	bool OpenSourceFile(const std::string& filePath, int lineNumber);
 	void ShowInFileExplorer(const std::string& path, bool selectPath);
 }

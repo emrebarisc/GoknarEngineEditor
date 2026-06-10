@@ -12,6 +12,7 @@
 #include "Goknar/Graphics/IGraphicsAPI.h"
 #include "Goknar/Helpers/ContentPathUtils.h"
 #include "Goknar/Helpers/SceneParser.h"
+#include "Goknar/Profiling/ProfileMacros.h"
 
 #include "Goknar/Contents/Image.h"
 
@@ -57,6 +58,9 @@
 #include "Panels/ObjectCreationPanel.h"
 #include "Panels/ObjectNameToCreatePanel.h"
 #include "Panels/ParticleSystemPanel.h"
+#ifdef GOKNAR_DEBUG
+#include "Panels/ProfilerPanel.h"
+#endif
 #include "Panels/ProjectSettingsPanel.h"
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
@@ -172,6 +176,9 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ObjectCreationPanel>();
 	AddPanel<ObjectNameToCreatePanel>();
 	AddPanel<ParticleSystemPanel>();
+#ifdef GOKNAR_DEBUG
+	AddPanel<ProfilerPanel>();
+#endif
 	AddPanel<ProjectSettingsPanel>();
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
@@ -323,6 +330,8 @@ void EditorHUD::BeginGame()
 
 void EditorHUD::UpdateHUD()
 {
+	GOKNAR_PROFILE_FUNCTION();
+
 	HUD::UpdateHUD();
 
 	if (!engine->GetRenderer()->GetDrawOnWindow())

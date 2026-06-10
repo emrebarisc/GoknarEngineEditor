@@ -10,6 +10,9 @@
 #include "UI/Panels/SaveScenePanel.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 #include "UI/Panels/ShaderEditor/ShaderEditorPanel.h"
+#ifdef GOKNAR_DEBUG
+#include "UI/Panels/ProfilerPanel.h"
+#endif
 
 #include "Editor.h"
 
@@ -591,6 +594,13 @@ void MenuBarPanel::Draw()
 				ImGui::MenuItem("Debug Overlay", nullptr, &showDebugOverlay);
 				viewportPanel->SetDebugOverlayEnabled(showDebugOverlay);
 			}
+
+#ifdef GOKNAR_DEBUG
+			if (ImGui::MenuItem("Profiler"))
+			{
+				hud_->ShowPanel<ProfilerPanel>();
+			}
+#endif
 
 			ImGui::EndMenu();
 		}

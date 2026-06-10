@@ -113,12 +113,34 @@ static GLuint       g_ShaderHandle = 0, g_VertHandle = 0, g_FragHandle = 0;
 static int          g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;
 static int          g_AttribLocationPosition = 0, g_AttribLocationUV = 0, g_AttribLocationColor = 0;
 static unsigned int g_VboHandle = 0, g_ElementsHandle = 0;
+static unsigned int g_GlVersion = 0;
 
 // Functions
 bool    EditorImGui_Init(const char* glsl_version)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_opengl3";
+
+#if !defined(IMGUI_IMPL_OPENGL_ES2) && !defined(IMGUI_IMPL_OPENGL_ES3)
+    GLint major = 0;
+    GLint minor = 0;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    if (major == 0 && minor == 0)
+    {
+        const char* gl_version_str = (const char*)glGetString(GL_VERSION);
+        if (gl_version_str)
+        {
+            sscanf(gl_version_str, "%d.%d", &major, &minor);
+        }
+    }
+
+    g_GlVersion = (unsigned int)(major * 100 + minor * 10);
+    if (g_GlVersion >= 320)
+    {
+        io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+    }
+#endif
 
     // Store GLSL version string so we can refer to it later in case we recreate shaders. Note: GLSL version is NOT the same as GL version. Leave this to NULL if unsure.
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -146,6 +168,8 @@ bool    EditorImGui_Init(const char* glsl_version)
 
 void    EditorImGui_Shutdown()
 {
+    ImGuiIO& io = ImGui::GetIO();
+    io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset;
     EditorImGui_DestroyDeviceObjects();
 }
 
@@ -255,7 +279,6 @@ void    EditorImGui_RenderDrawData(ImDrawData* draw_data)
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        size_t idx_buffer_offset = 0;
 
         glBindBuffer(GL_ARRAY_BUFFER, g_VboHandle);
         glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), (const GLvoid*)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
@@ -290,10 +313,28 @@ void    EditorImGui_RenderDrawData(ImDrawData* draw_data)
 
                     // BindGeometryBuffer textures_, Draw
                     glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
-                    glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void*)idx_buffer_offset);
+                    const void* indexBufferOffset = (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx));
+#if !defined(IMGUI_IMPL_OPENGL_ES2) && !defined(IMGUI_IMPL_OPENGL_ES3)
+                    if (g_GlVersion >= 320)
+                    {
+                        glDrawElementsBaseVertex(
+                            GL_TRIANGLES,
+                            (GLsizei)pcmd->ElemCount,
+                            sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
+                            indexBufferOffset,
+                            (GLint)pcmd->VtxOffset);
+                    }
+                    else
+#endif
+                    {
+                        glDrawElements(
+                            GL_TRIANGLES,
+                            (GLsizei)pcmd->ElemCount,
+                            sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
+                            indexBufferOffset);
+                    }
                 }
             }
-            idx_buffer_offset += pcmd->ElemCount * sizeof(ImDrawIdx);
         }
     }
 #ifndef IMGUI_IMPL_OPENGL_ES2

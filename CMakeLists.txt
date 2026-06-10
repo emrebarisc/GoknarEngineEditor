@@ -115,6 +115,7 @@ target_compile_definitions(${APP_NAME} PUBLIC
     GOKNAR_BUILD_DLL
     GLFW_INCLUDE_NONE
     "$<$<CONFIG:Debug>:GOKNAR_BUILD_DEBUG>"
+    "$<$<CONFIG:Debug>:GOKNAR_DEBUG>"
     "$<$<CONFIG:Debug>:GOKNAR_ENABLE_ASSERTS>"
     "$<$<CONFIG:Debug>:GOKNAR_ENABLE_LOGGING>"
     "$<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:GOKNAR_BUILD_RELEASE>"

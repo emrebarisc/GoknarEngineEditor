@@ -492,6 +492,16 @@ namespace
 		return succeeded;
 	}
 
+	bool InvokeMethodWithInt(IDispatch* dispatch, const wchar_t* methodName, int argument)
+	{
+		VARIANTARG methodArgument;
+		VariantInit(&methodArgument);
+		methodArgument.vt = VT_I4;
+		methodArgument.lVal = argument;
+
+		return InvokeMethod(dispatch, methodName, &methodArgument, 1);
+	}
+
 	void ActivateVisualStudio(IDispatch* dte)
 	{
 		IDispatch* mainWindow = GetDispatchProperty(dte, L"MainWindow");
@@ -581,7 +591,32 @@ namespace
 		return nullptr;
 	}
 
-	bool OpenFileInVisualStudio(IDispatch* dte, const std::wstring& sourceFilePath)
+	bool NavigateVisualStudioToLine(IDispatch* dte, int lineNumber)
+	{
+		if (!dte || lineNumber <= 0)
+		{
+			return true;
+		}
+
+		IDispatch* activeDocument = GetDispatchProperty(dte, L"ActiveDocument");
+		if (!activeDocument)
+		{
+			return false;
+		}
+
+		IDispatch* selection = GetDispatchProperty(activeDocument, L"Selection");
+		activeDocument->Release();
+		if (!selection)
+		{
+			return false;
+		}
+
+		const bool didNavigate = InvokeMethodWithInt(selection, L"GotoLine", lineNumber);
+		selection->Release();
+		return didNavigate;
+	}
+
+	bool OpenFileInVisualStudio(IDispatch* dte, const std::wstring& sourceFilePath, int lineNumber)
 	{
 		if (!dte)
 		{
@@ -608,11 +643,16 @@ namespace
 		}
 		VariantClear(&result);
 
+		if (didOpenFile)
+		{
+			NavigateVisualStudioToLine(dte, lineNumber);
+		}
+
 		ActivateVisualStudio(dte);
 		return didOpenFile;
 	}
 
-	bool TryOpenFileInRunningVisualStudio(const std::wstring& solutionPath, const std::wstring& sourceFilePath)
+	bool TryOpenFileInRunningVisualStudio(const std::wstring& solutionPath, const std::wstring& sourceFilePath, int lineNumber)
 	{
 		IRunningObjectTable* runningObjectTable = nullptr;
 		if (FAILED(GetRunningObjectTable(0, &runningObjectTable)))
@@ -653,7 +693,7 @@ namespace
 							const std::wstring runningSolutionPath = GetVisualStudioSolutionFullName(dte);
 							if (!runningSolutionPath.empty() && AreSamePath(runningSolutionPath, solutionPath))
 							{
-								didOpenFile = OpenFileInVisualStudio(dte, sourceFilePath);
+								didOpenFile = OpenFileInVisualStudio(dte, sourceFilePath, lineNumber);
 							}
 
 							dte->Release();
@@ -677,7 +717,7 @@ namespace
 		return didOpenFile;
 	}
 
-	bool OpenSolutionAndFileInNewVisualStudio(const std::wstring& solutionPath, const std::wstring& sourceFilePath)
+	bool OpenSolutionAndFileInNewVisualStudio(const std::wstring& solutionPath, const std::wstring& sourceFilePath, int lineNumber)
 	{
 		IDispatch* dte = CreateVisualStudioDte();
 		if (!dte)
@@ -696,12 +736,12 @@ namespace
 			solution->Release();
 		}
 
-		const bool didOpenFile = didOpenSolution && OpenFileInVisualStudio(dte, sourceFilePath);
+		const bool didOpenFile = didOpenSolution && OpenFileInVisualStudio(dte, sourceFilePath, lineNumber);
 		dte->Release();
 		return didOpenFile;
 	}
 
-	bool OpenSourceFileInVisualStudio(const std::string& filePath)
+	bool OpenSourceFileInVisualStudio(const std::string& filePath, int lineNumber)
 	{
 		const std::string solutionPath = FindProjectSolutionPath();
 		if (solutionPath.empty() || !HasVisualStudioProgId())
@@ -717,8 +757,8 @@ namespace
 
 		const std::wstring nativeSolutionPath = ToNativeWidePath(solutionPath);
 		const std::wstring nativeFilePath = ToNativeWidePath(filePath);
-		return TryOpenFileInRunningVisualStudio(nativeSolutionPath, nativeFilePath) ||
-			OpenSolutionAndFileInNewVisualStudio(nativeSolutionPath, nativeFilePath);
+		return TryOpenFileInRunningVisualStudio(nativeSolutionPath, nativeFilePath, lineNumber) ||
+			OpenSolutionAndFileInNewVisualStudio(nativeSolutionPath, nativeFilePath, lineNumber);
 	}
 
 	std::wstring GetEnvironmentVariableWide(const wchar_t* name)
@@ -787,7 +827,7 @@ namespace
 		return candidates.empty() ? L"" : candidates.front();
 	}
 
-	bool OpenSourceFileInVisualStudioCode(const std::string& filePath)
+	bool OpenSourceFileInVisualStudioCode(const std::string& filePath, int lineNumber)
 	{
 		const std::wstring executablePath = FindVisualStudioCodeExecutablePath();
 		if (executablePath.empty())
@@ -795,7 +835,13 @@ namespace
 			return false;
 		}
 
-		const std::wstring arguments = L"-r -g \"" + ToNativeWidePath(filePath) + L"\"";
+		std::wstring sourcePathArgument = ToNativeWidePath(filePath);
+		if (lineNumber > 0)
+		{
+			sourcePathArgument += L":" + std::to_wstring(lineNumber);
+		}
+
+		const std::wstring arguments = L"-r -g \"" + sourcePathArgument + L"\"";
 		return reinterpret_cast<intptr_t>(ShellExecuteW(nullptr, L"open", executablePath.c_str(), arguments.c_str(), nullptr, SW_SHOWNORMAL)) > 32;
 	}
 
@@ -830,13 +876,14 @@ namespace
 		return "";
 	}
 
-	bool OpenSourceFileInVisualStudio(const std::string& filePath)
+	bool OpenSourceFileInVisualStudio(const std::string& filePath, int lineNumber)
 	{
 		(void)filePath;
+		(void)lineNumber;
 		return false;
 	}
 
-	bool OpenSourceFileInVisualStudioCode(const std::string& filePath)
+	bool OpenSourceFileInVisualStudioCode(const std::string& filePath, int lineNumber)
 	{
 		const std::string commandName = GetVisualStudioCodeCommand();
 		if (commandName.empty())
@@ -844,7 +891,13 @@ namespace
 			return false;
 		}
 
-		const std::string command = commandName + " -r -g " + QuoteShellPath(NormalizeFilesystemPath(filePath).generic_string()) + " >/dev/null 2>&1 &";
+		std::string sourcePathArgument = NormalizeFilesystemPath(filePath).generic_string();
+		if (lineNumber > 0)
+		{
+			sourcePathArgument += ":" + std::to_string(lineNumber);
+		}
+
+		const std::string command = commandName + " -r -g " + QuoteShellPath(sourcePathArgument) + " >/dev/null 2>&1 &";
 		return std::system(command.c_str()) == 0;
 	}
 
@@ -859,14 +912,14 @@ namespace
 	}
 #endif
 
-	bool TryOpenSourceFile(EditorSourceCodeUtils::SourceCodeEditor editor, const std::string& filePath)
+	bool TryOpenSourceFile(EditorSourceCodeUtils::SourceCodeEditor editor, const std::string& filePath, int lineNumber)
 	{
 		switch (editor)
 		{
 		case EditorSourceCodeUtils::SourceCodeEditor::VisualStudio:
-			return OpenSourceFileInVisualStudio(filePath);
+			return OpenSourceFileInVisualStudio(filePath, lineNumber);
 		case EditorSourceCodeUtils::SourceCodeEditor::VisualStudioCode:
-			return OpenSourceFileInVisualStudioCode(filePath);
+			return OpenSourceFileInVisualStudioCode(filePath, lineNumber);
 		case EditorSourceCodeUtils::SourceCodeEditor::SystemDefault:
 			return OpenWithSystemDefault(filePath);
 		case EditorSourceCodeUtils::SourceCodeEditor::Auto:
@@ -999,9 +1052,14 @@ EditorSourceCodeUtils::SourceCodeEditor EditorSourceCodeUtils::SourceCodeEditorF
 
 bool EditorSourceCodeUtils::OpenSourceFile(const std::string& filePath)
 {
+	return OpenSourceFile(filePath, 0);
+}
+
+bool EditorSourceCodeUtils::OpenSourceFile(const std::string& filePath, int lineNumber)
+{
 	for (SourceCodeEditor editor : GetFallbackOrder(GetPreferredSourceCodeEditor()))
 	{
-		if (TryOpenSourceFile(editor, filePath))
+		if (TryOpenSourceFile(editor, filePath, lineNumber))
 		{
 			return true;
 		}
