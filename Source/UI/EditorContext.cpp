@@ -230,6 +230,7 @@ EditorContext::EditorContext()
 
 	viewportRenderTarget = new RenderTarget();
 	viewportRenderTarget->SetCamera(viewportCamera);
+	viewportRenderTarget->SetRequirePostProcessingEffects(true);
 }
 
 EditorContext::~EditorContext()

@@ -19,6 +19,7 @@ public:
 
 private:
 	void CaptureEvents();
+	void BeginFrameCapture(std::uint64_t frameCount);
 	void ClearEvents();
 	void DrawToolbar();
 	void DrawSummary() const;
@@ -52,10 +53,12 @@ private:
 	int selectedEventIndex_{ -1 };
 	float timelineScrollY_{ 0.0f };
 	float minVisibleDurationUs_{ 5.0f };
+	int frameCaptureCount_{ 1 };
 	bool autoCapture_{ true };
 	bool hasZoom_{ false };
 	bool isPanningTimeline_{ false };
-	bool isWaitingForOneFrameCapture_{ false };
+	bool isWaitingForFrameCapture_{ false };
+	std::uint64_t armedFrameCaptureCount_{ 1 };
 };
 
 #endif

@@ -90,6 +90,80 @@ namespace
 		return event.name ? event.name : "Unnamed Scope";
 	}
 
+	struct CapturedFrameStats
+	{
+		std::size_t frameCount{ 0 };
+		double averageFps{ 0.0 };
+		double onePercentLowFps{ 0.0 };
+		double zeroPointOnePercentLowFps{ 0.0 };
+	};
+
+	bool IsCapturedFrameEvent(const Goknar::Debug::ProfileEvent& event)
+	{
+		return event.durationNs > 0 &&
+			event.depth == 0 &&
+			std::strcmp(GetProfileEventName(event), "Engine Frame") == 0;
+	}
+
+	double CalculateFpsFromDurations(const std::vector<std::uint64_t>& durationsNs, std::size_t count)
+	{
+		if (count == 0)
+		{
+			return 0.0;
+		}
+
+		long double totalDurationNs = 0.0L;
+		for (std::size_t durationIndex = 0; durationIndex < count; ++durationIndex)
+		{
+			totalDurationNs += static_cast<long double>(durationsNs[durationIndex]);
+		}
+
+		return totalDurationNs > 0.0L ?
+			static_cast<double>(1000000000.0L * static_cast<long double>(count) / totalDurationNs) :
+			0.0;
+	}
+
+	CapturedFrameStats CalculateCapturedFrameStats(const std::vector<Goknar::Debug::ProfileEvent>& events)
+	{
+		std::vector<std::uint64_t> frameDurationsNs;
+		frameDurationsNs.reserve(events.size());
+
+		for (const Goknar::Debug::ProfileEvent& event : events)
+		{
+			if (IsCapturedFrameEvent(event))
+			{
+				frameDurationsNs.push_back(event.durationNs);
+			}
+		}
+
+		CapturedFrameStats stats;
+		stats.frameCount = frameDurationsNs.size();
+		if (stats.frameCount == 0)
+		{
+			return stats;
+		}
+
+		stats.averageFps = CalculateFpsFromDurations(frameDurationsNs, frameDurationsNs.size());
+
+		std::sort(
+			frameDurationsNs.begin(),
+			frameDurationsNs.end(),
+			[](std::uint64_t left, std::uint64_t right)
+			{
+				return left > right;
+			});
+		const std::size_t onePercentFrameCount = (std::max)(
+			static_cast<std::size_t>(1),
+			static_cast<std::size_t>(std::ceil(static_cast<double>(frameDurationsNs.size()) * 0.01)));
+		const std::size_t zeroPointOnePercentFrameCount = (std::max)(
+			static_cast<std::size_t>(1),
+			static_cast<std::size_t>(std::ceil(static_cast<double>(frameDurationsNs.size()) * 0.001)));
+
+		stats.onePercentLowFps = CalculateFpsFromDurations(frameDurationsNs, onePercentFrameCount);
+		stats.zeroPointOnePercentLowFps = CalculateFpsFromDurations(frameDurationsNs, zeroPointOnePercentFrameCount);
+		return stats;
+	}
+
 	std::string ToDisplayPath(std::filesystem::path path)
 	{
 		return path.make_preferred().string();
@@ -712,15 +786,17 @@ void ProfilerPanel::Draw()
 
 	DrawToolbar();
 
-	const bool isOneFrameCapturePending = Goknar::Debug::Profiler::IsCaptureOneFramePending();
-	const bool isCapturingOneFrame = Goknar::Debug::Profiler::IsCapturingOneFrame();
-	if (isWaitingForOneFrameCapture_ && !isOneFrameCapturePending && !isCapturingOneFrame && !Goknar::Debug::Profiler::IsEnabled())
+	const bool isFrameCapturePending = Goknar::Debug::Profiler::IsCaptureFramesPending();
+	const bool isCapturingFrames = Goknar::Debug::Profiler::IsCapturingFrames();
+	if (isWaitingForFrameCapture_ && !isFrameCapturePending && !isCapturingFrames && !Goknar::Debug::Profiler::IsEnabled())
 	{
 		CaptureEvents();
-		isWaitingForOneFrameCapture_ = false;
-		exportStatus_ = "Captured one frame";
+		isWaitingForFrameCapture_ = false;
+		exportStatus_ = armedFrameCaptureCount_ == 1 ?
+			"Captured one frame" :
+			"Captured " + std::to_string(armedFrameCaptureCount_) + " frames";
 	}
-	else if (autoCapture_ && Goknar::Debug::Profiler::IsEnabled() && !isCapturingOneFrame)
+	else if (autoCapture_ && Goknar::Debug::Profiler::IsEnabled() && !isCapturingFrames)
 	{
 		CaptureEvents();
 	}
@@ -744,6 +820,27 @@ void ProfilerPanel::CaptureEvents()
 	}
 }
 
+void ProfilerPanel::BeginFrameCapture(std::uint64_t frameCount)
+{
+	if (frameCount == 0)
+	{
+		frameCount = 1;
+	}
+
+	events_.clear();
+	threads_.clear();
+	importedEventNames_.clear();
+	importedEventFiles_.clear();
+	exportStatus_ = frameCount == 1 ?
+		"One-frame capture armed" :
+		"Capture " + std::to_string(frameCount) + " frames armed";
+	selectedEventIndex_ = -1;
+	isWaitingForFrameCapture_ = true;
+	armedFrameCaptureCount_ = frameCount;
+	ResetZoom();
+	Goknar::Debug::Profiler::CaptureFrames(frameCount);
+}
+
 void ProfilerPanel::ClearEvents()
 {
 	Goknar::Debug::Profiler::Clear();
@@ -753,7 +850,7 @@ void ProfilerPanel::ClearEvents()
 	importedEventFiles_.clear();
 	exportStatus_.clear();
 	selectedEventIndex_ = -1;
-	isWaitingForOneFrameCapture_ = false;
+	isWaitingForFrameCapture_ = false;
 	ResetZoom();
 }
 
@@ -777,15 +874,21 @@ void ProfilerPanel::DrawToolbar()
 	ImGui::SameLine();
 	if (ImGui::Button("Capture One Frame"))
 	{
-		events_.clear();
-		threads_.clear();
-		importedEventNames_.clear();
-		importedEventFiles_.clear();
-		exportStatus_ = "One-frame capture armed";
-		selectedEventIndex_ = -1;
-		isWaitingForOneFrameCapture_ = true;
-		ResetZoom();
-		Goknar::Debug::Profiler::CaptureOneFrame();
+		BeginFrameCapture(1);
+	}
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(88.0f);
+	if (ImGui::InputInt("Frames##ProfilerFrameCaptureCount", &frameCaptureCount_, 1, 10))
+	{
+		frameCaptureCount_ = (std::max)(1, (std::min)(10000, frameCaptureCount_));
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Capture Frames"))
+	{
+		frameCaptureCount_ = (std::max)(1, (std::min)(10000, frameCaptureCount_));
+		BeginFrameCapture(static_cast<std::uint64_t>(frameCaptureCount_));
 	}
 
 	ImGui::SameLine();
@@ -837,12 +940,22 @@ void ProfilerPanel::DrawToolbar()
 		ImGui::TextUnformatted(exportStatus_.c_str());
 	}
 
-	const bool isOneFrameCapturePending = Goknar::Debug::Profiler::IsCaptureOneFramePending();
-	const bool isCapturingOneFrame = Goknar::Debug::Profiler::IsCapturingOneFrame();
-	if (isOneFrameCapturePending || isCapturingOneFrame)
+	const bool isFrameCapturePending = Goknar::Debug::Profiler::IsCaptureFramesPending();
+	const bool isCapturingFrames = Goknar::Debug::Profiler::IsCapturingFrames();
+	if (isFrameCapturePending || isCapturingFrames)
 	{
 		ImGui::SameLine();
-		ImGui::TextDisabled("%s", isOneFrameCapturePending ? "Waiting for next frame" : "Capturing frame");
+		const std::uint64_t remainingFrameCount = Goknar::Debug::Profiler::GetRemainingCaptureFrameCount();
+		if (isFrameCapturePending)
+		{
+			ImGui::TextDisabled("Waiting for next frame (%llu queued)", static_cast<unsigned long long>(remainingFrameCount));
+		}
+		else
+		{
+			ImGui::TextDisabled("%llu capture frame%s remaining",
+				static_cast<unsigned long long>(remainingFrameCount),
+				remainingFrameCount == 1 ? "" : "s");
+		}
 	}
 }
 
@@ -876,6 +989,21 @@ void ProfilerPanel::DrawSummary() const
 		NsToMs(totalDurationNs),
 		NsToMs(maxDurationNs),
 		static_cast<unsigned long long>(lastFrameIndex));
+
+	const CapturedFrameStats frameStats = CalculateCapturedFrameStats(events_);
+	if (frameStats.frameCount > 0)
+	{
+		ImGui::Text(
+			"Frames: %zu | Average FPS: %.1f | 1%% Low FPS: %.1f | 0.1%% Low FPS: %.1f",
+			frameStats.frameCount,
+			frameStats.averageFps,
+			frameStats.onePercentLowFps,
+			frameStats.zeroPointOnePercentLowFps);
+	}
+	else
+	{
+		ImGui::TextDisabled("Frames: 0 | Average FPS: -- | 1%% Low FPS: -- | 0.1%% Low FPS: --");
+	}
 
 	if (firstTimestampNs != 0 && lastTimestampNs > firstTimestampNs)
 	{
@@ -1477,7 +1605,7 @@ void ProfilerPanel::ImportTraceFile(const std::string& path)
 	}
 
 	Goknar::Debug::Profiler::SetEnabled(false);
-	isWaitingForOneFrameCapture_ = false;
+	isWaitingForFrameCapture_ = false;
 	events_.clear();
 	threads_ = std::move(importedTraceData.threads);
 	importedEventNames_.clear();

@@ -212,7 +212,7 @@ EditorHUD::EditorHUD() : HUD()
 	uiImage_ = EditorUtils::GetEditorContent<Image>("Textures/UI/T_UI.png");
 	uiImage_->SetCanUseTextureAtlas(false);
 
-	engine->GetRenderer()->SetDrawOnWindow(true);
+	engine->GetRenderer()->SetDrawOnWindow(false);
 
 	context_ = EditorContext::Get();
 }
