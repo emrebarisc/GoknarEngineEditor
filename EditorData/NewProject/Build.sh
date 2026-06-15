@@ -199,12 +199,12 @@ else
     configName="Release"
 fi
 
-# Clean up binaries based on the exact gameName for the current OS
-rm -f "$directoryName/Output/$gameName"
-rm -f "$directoryName/$gameName"
-
 if [ "$cleanBuild" = true ]; then
     rm -rf "$directoryName"
+elif [ "$onlySyncFiles" = false ] && [ "$build" = true ]; then
+    # Clean up stale binaries only when a new build is about to produce one.
+    rm -f "$directoryName/Output/$gameName"
+    rm -f "$directoryName/$gameName"
 fi
 
 mkdir -p "$directoryName" && cd "$directoryName"

@@ -2,6 +2,8 @@
 
 #include "imgui.h"
 
+#include <filesystem>
+
 #include "UI/EditorContext.h"
 #include "UI/EditorUtils.h"
 
@@ -30,6 +32,38 @@ namespace
 	std::string QuoteForShell(const std::string& path)
 	{
 		return "\"" + path + "\"";
+	}
+
+	std::string GetProjectBuildConfigPath(const std::string& projectDir)
+	{
+		return projectDir + "/Config/Build.ini";
+	}
+
+	std::string GetProjectNameFromDirectory(const std::string& projectDir)
+	{
+		const std::filesystem::path projectPath(projectDir == "." ? std::filesystem::current_path() : std::filesystem::path(projectDir));
+		std::string projectName = projectPath.filename().string();
+		if (projectName.empty())
+		{
+			projectName = projectPath.parent_path().filename().string();
+		}
+
+		return projectName;
+	}
+
+	std::string GetProjectNameFromBuildConfig(const std::string& projectDir)
+	{
+		ConfigManager buildConfig;
+		if (buildConfig.ReadFile(GetProjectBuildConfigPath(projectDir)))
+		{
+			const std::string projectName = buildConfig.GetString("Default", "ProjectName", "");
+			if (!projectName.empty())
+			{
+				return projectName;
+			}
+		}
+
+		return GetProjectNameFromDirectory(projectDir);
 	}
 
 	ImVec2 RemapTextureUV(const Texture* texture, const ImVec2& uv)
@@ -88,15 +122,16 @@ void ToolBarPanel::Draw()
 			float iconSize = 32.0f;
 			float paddingBetween = 16.0f;
 			const std::string normalizedProjectDir = TrimTrailingDirectorySeparator(ProjectDir);
+			const std::string projectDirForCommand = normalizedProjectDir.empty() ? "." : normalizedProjectDir;
 
 			ImGui::SetCursorPosX((viewport->Size.x - iconSize - paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##CompileButton", atlasID, ImVec2(iconSize, iconSize), compileUv0, compileUv1))
 			{
 				std::string command;
 #if GOKNAR_PLATFORM_WINDOWS
-				command = "pushd " + QuoteForShell(normalizedProjectDir) + " && Build.sh debug";
+				command = "pushd " + QuoteForShell(projectDirForCommand) + " && Build.sh debug";
 #else
-				command = "cd " + QuoteForShell(normalizedProjectDir) + " && ./Build.sh debug";
+				command = "cd " + QuoteForShell(projectDirForCommand) + " && ./Build.sh debug";
 #endif
 
 				asyncCompileResult = std::async(std::launch::async,
@@ -116,24 +151,19 @@ void ToolBarPanel::Draw()
 			ImGui::SetCursorPosX((viewport->Size.x + iconSize + paddingBetween) * 0.5f);
 			if (ImGui::ImageButton("##PlayButton", atlasID, ImVec2(iconSize, iconSize), playUv0, playUv1))
 			{
-				ConfigManager editorConfig;
-				std::string currentProjectName = "";
-				if (editorConfig.ReadFile("Config/EditorConfig.ini"))
-				{
-					currentProjectName = editorConfig.GetString("Editor", "CurrentProject", "");
-				}
+				const std::string currentProjectName = GetProjectNameFromBuildConfig(projectDirForCommand);
 
 				std::string command;
 #if GOKNAR_PLATFORM_WINDOWS
-				command = "pushd " + QuoteForShell(normalizedProjectDir);
+				command = "pushd " + QuoteForShell(projectDirForCommand);
 				command += " && Build.sh onlySync";
 				command += " && pushd \"Build_Debug\\Output\"";
-				command += " && " + QuoteForShell(currentProjectName + ".exe");
+				command += " && " + QuoteForShell(".\\" + currentProjectName + ".exe");
 #else
-				command = "cd " + QuoteForShell(normalizedProjectDir);
+				command = "cd " + QuoteForShell(projectDirForCommand);
 				command += " && ./Build.sh onlySync";
 				command += " && cd \"Build_Debug/Output\"";
-				command += " && ./" + currentProjectName;
+				command += " && " + QuoteForShell("./" + currentProjectName);
 #endif
 				asyncCompileResult = std::async(std::launch::async,
 					[command]()
