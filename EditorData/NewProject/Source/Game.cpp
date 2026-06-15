@@ -15,10 +15,10 @@
 #include "Goknar/Managers/WindowManager.h"
 #include "Goknar/Physics/RigidBody.h"
 #include "Goknar/Renderer/Renderer.h"
+#include "Goknar/Helpers/AssetParser.h"
 
 #include "GameState.h"
 #include "Characters/DefaultCharacter.h"
-#include "Data/MaterialInitializer.h"
 #include "Objects/FreeCameraObject.h"
 #include "Controllers/FreeCameraController.h"
 #include "UI/MainHUD.h"
@@ -57,6 +57,8 @@ Game::Game() : Application()
 		std::string contentDir = config.GetString("Core", "ContentDir", "Content/");
 		ContentDir = contentDir;
 
+		AssetParser::ParseAssets("AssetContainer");
+
 		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
 		mainScene_->ReadSceneData(mainScenePath);
 	}
@@ -67,9 +69,7 @@ Game::Game() : Application()
 
 	std::chrono::steady_clock::time_point currentTimePoint = std::chrono::steady_clock::now();
 	float elapsedTime = std::chrono::duration_cast<std::chrono::duration<float>>(currentTimePoint - lastFrameTimePoint).count();
-	GOKNAR_CORE_WARN("Project is set up in %f seconds.", elapsedTime);
-
-	MaterialInitializer::Init();
+	GOKNAR_CORE_WARN("Project is set up in %f seconds.", elapsedTime);;
 
 	lastFrameTimePoint = currentTimePoint;
 	

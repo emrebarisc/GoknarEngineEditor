@@ -1,0 +1,132 @@
+<GameAsset FileType="MaterialEditorReflection">
+    <Canvas Scale="1" ScrollX="-173" ScrollY="10"/>
+    <Nodes>
+        <Node Id="1" Name="Material Output" Category="Master" PosX="400" PosY="80" SizeX="220" SizeY="245" IsUniform="1">
+            <StringData><![CDATA[]]></StringData>
+            <Inputs>
+                <Pin Id="2" NodeId="1" Name="Base Color" Type="Vector4" Kind="Input">
+                    <DefaultValue type="Vector4" x="1" y="1" z="1" w="1"/>
+                </Pin>
+                <Pin Id="3" NodeId="1" Name="Emissive" Type="Vector3" Kind="Input">
+                    <DefaultValue type="Vector3" x="0" y="0" z="0"/>
+                </Pin>
+                <Pin Id="4" NodeId="1" Name="Fragment Normal" Type="Vector3" Kind="Input">
+                    <DefaultValue type="Vector3" x="0" y="0" z="1"/>
+                </Pin>
+                <Pin Id="5" NodeId="1" Name="Vertex Normal" Type="Vector3" Kind="Input">
+                    <DefaultValue type="Vector3" x="0" y="0" z="1"/>
+                </Pin>
+                <Pin Id="6" NodeId="1" Name="Ambient Occlusion" Type="Float" Kind="Input">
+                    <DefaultValue type="Float" x="1"/>
+                </Pin>
+                <Pin Id="7" NodeId="1" Name="Metallic" Type="Float" Kind="Input">
+                    <DefaultValue type="Float" x="0"/>
+                </Pin>
+                <Pin Id="8" NodeId="1" Name="Roughness" Type="Float" Kind="Input">
+                    <DefaultValue type="Float" x="0.5"/>
+                </Pin>
+                <Pin Id="9" NodeId="1" Name="World Position Offset" Type="Vector3" Kind="Input">
+                    <DefaultValue type="Vector3" x="0" y="0" z="0"/>
+                </Pin>
+            </Inputs>
+            <Outputs/>
+        </Node>
+        <Node Id="10" Name="Custom GLSL" Category="Custom" PosX="120" PosY="80" SizeX="250" SizeY="80" IsUniform="1">
+            <StringData><![CDATA[
+mat4 cnodeModelMatrix = finalModelMatrix;
+
+vec3 cnodeObjectScale = vec3(
+    length(cnodeModelMatrix[0].xyz),
+    length(cnodeModelMatrix[1].xyz),
+    length(cnodeModelMatrix[2].xyz)
+);
+
+vec3 cnodeLocalPosition = (fragmentPositionWorldSpace * inverse(cnodeModelMatrix)).xyz;
+vec3 cnodeWorldSizedPosition = cnodeLocalPosition * cnodeObjectScale;
+
+vec3 cnodeAbsNormal = abs(normalize(vertexNormal));
+
+float cnodeMaxNormalComponent = max(
+    cnodeAbsNormal.x,
+    max(cnodeAbsNormal.y, cnodeAbsNormal.z)
+);
+
+vec2 cnodeGridUV;
+
+if (cnodeAbsNormal.x >= cnodeMaxNormalComponent)
+{
+    cnodeGridUV = cnodeWorldSizedPosition.zy;
+}
+else if (cnodeAbsNormal.y >= cnodeMaxNormalComponent)
+{
+    cnodeGridUV = cnodeWorldSizedPosition.xz;
+}
+else
+{
+    cnodeGridUV = cnodeWorldSizedPosition.xy;
+}
+
+float cnodeSmallGridScale = 5.0;
+float cnodeMajorLineEvery = 5.0;
+
+float cnodeMinorLineThickness = 0.00625;
+float cnodeMajorLineThickness = 0.00125;
+
+cnodeGridUV = cnodeGridUV * cnodeSmallGridScale;
+
+vec2 cnodeMinorFraction = fract(cnodeGridUV);
+vec2 cnodeMinorDistance = min(cnodeMinorFraction, vec2(1.0) - cnodeMinorFraction);
+vec2 cnodeMinorDerivative = max(fwidth(cnodeGridUV), vec2(0.0001));
+
+vec2 cnodeMinorMask2 = vec2(1.0) - smoothstep(
+    vec2(cnodeMinorLineThickness),
+    vec2(cnodeMinorLineThickness) + cnodeMinorDerivative,
+    cnodeMinorDistance
+);
+
+float cnodeMinorMask = max(cnodeMinorMask2.x, cnodeMinorMask2.y);
+
+vec2 cnodeMajorUV = cnodeGridUV / cnodeMajorLineEvery;
+vec2 cnodeMajorFraction = fract(cnodeMajorUV);
+vec2 cnodeMajorDistance = min(cnodeMajorFraction, vec2(1.0) - cnodeMajorFraction);
+vec2 cnodeMajorDerivative = max(fwidth(cnodeMajorUV), vec2(0.0001));
+
+vec2 cnodeMajorMask2 = vec2(1.0) - smoothstep(
+    vec2(cnodeMajorLineThickness),
+    vec2(cnodeMajorLineThickness) + cnodeMajorDerivative,
+    cnodeMajorDistance
+);
+
+float cnodeMajorMask = max(cnodeMajorMask2.x, cnodeMajorMask2.y);
+
+vec3 cnodeBackgroundColor = vec3(0.62, 0.59, 0.56);
+vec3 cnodeMinorLineColor = vec3(0.45, 0.42, 0.40);
+vec3 cnodeMajorLineColor = vec3(0.23, 0.21, 0.20);
+
+vec3 cnodeColor = mix(
+    cnodeBackgroundColor,
+    cnodeMinorLineColor,
+    cnodeMinorMask
+);
+
+cnodeColor = mix(
+    cnodeColor,
+    cnodeMajorLineColor,
+    cnodeMajorMask
+);
+
+vec4 cnodeResult = vec4(cnodeColor, 1.0);
+        
+RETURN_RESULT:cnodeResult;]]></StringData>
+            <Inputs/>
+            <Outputs>
+                <Pin Id="11" NodeId="10" Name="Out" Type="Any" Kind="Output">
+                    <DefaultValue type="Float" x="0"/>
+                </Pin>
+            </Outputs>
+        </Node>
+    </Nodes>
+    <Links>
+        <Link Id="12" StartPinId="11" EndPinId="2"/>
+    </Links>
+</GameAsset>
