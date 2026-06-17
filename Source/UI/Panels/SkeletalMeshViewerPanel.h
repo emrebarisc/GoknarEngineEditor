@@ -2,33 +2,37 @@
 
 #include "MeshAssetViewerPanelBase.h"
 
-class SkeletalMeshComponent;
-class SkeletalMesh;
 class MaterialInstance;
+class SkeletalMesh;
+class SkeletalMeshComponent;
+class SkeletalMeshUnit;
 
 class SkeletalMeshViewerPanel : public MeshAssetViewerPanelBase
 {
 public:
-	SkeletalMeshViewerPanel(EditorHUD* hud);
-	virtual ~SkeletalMeshViewerPanel();
+	explicit SkeletalMeshViewerPanel(EditorHUD* hud);
+	~SkeletalMeshViewerPanel() override;
 
 	void SetTargetSkeletalMesh(SkeletalMesh* skeletalMesh);
 
 private:
-	virtual bool HasCurrentMesh() const override;
-	virtual std::string GetCurrentMeshPath() const override;
-	virtual const Box* GetCurrentMeshBounds() const override;
-	virtual size_t GetSubMeshCount() const override;
-	virtual std::string GetSubMeshName(size_t subMeshIndex) const override;
-	virtual bool RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath) override;
-	virtual MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const override;
-	virtual void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
-	virtual const char* GetNoMeshSelectedText() const override;
-	virtual bool HasAdditionalSidePanelContent() const override;
-	virtual void DrawAdditionalSidePanelContent() override;
-	virtual float GetStackedSidePanelHeight() const override;
+	bool HasCurrentMesh() const override;
+	std::string GetCurrentMeshPath() const override;
+	const Box* GetCurrentMeshBounds() const override;
+	size_t GetSubMeshCount() const override;
+	std::string GetSubMeshName(size_t subMeshIndex) const override;
+	size_t GetSubMeshVertexCount(size_t subMeshIndex) const override;
+	size_t GetSubMeshFaceCount(size_t subMeshIndex) const override;
+	bool RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath) override;
+	MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const override;
+	void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
+	const char* GetNoMeshSelectedText() const override;
+	bool HasAdditionalSidePanelContent() const override;
+	void DrawAdditionalSidePanelContent() override;
 
-	SkeletalMesh* GetCurrentSkeletalMesh() const;
+	void ClearPreviewMaterialOverrides();
+	SkeletalMeshUnit* GetSubMesh(size_t subMeshIndex) const;
 
 	SkeletalMeshComponent* skeletalMeshComponent_{ nullptr };
+	SkeletalMesh* targetSkeletalMesh_{ nullptr };
 };

@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include "SkeletalMeshViewerPanel.h"
 
 #include "imgui.h"
@@ -8,125 +6,102 @@
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
 #include "Goknar/Materials/MaterialSerializer.h"
-#include "Model/SkeletalMesh.h"
-#include "Model/SkeletalMeshInstance.h"
+#include "Goknar/Model/SkeletalMesh.h"
+#include "Goknar/Model/SkeletalMeshInstance.h"
 
-constexpr unsigned int SKELETAL_MESH_VIEWER_RENDER_MASK = 0x40000000;
+namespace
+{
+	constexpr unsigned int SkeletalMeshViewerRenderMask = 0x40000000;
+}
 
 SkeletalMeshViewerPanel::SkeletalMeshViewerPanel(EditorHUD* hud) :
 	MeshAssetViewerPanelBase(
 		"Skeletal Mesh Viewer",
-		hud, 
-		"__Editor__SkeletalMeshViewerCamera", 
-		"__Editor__SkeletalMeshViewerTarget", 
-		SKELETAL_MESH_VIEWER_RENDER_MASK, 
-		"SkeletalMeshViewportArea", 
-		"SkeletalMeshSideArea")
+		hud,
+		"__Editor__SkeletalMeshViewerCamera",
+		"__Editor__SkeletalMeshViewerTarget",
+		SkeletalMeshViewerRenderMask,
+		"SkeletalMeshViewerViewport",
+		"SkeletalMeshViewerProperties")
 {
-	skeletalMeshComponent_ = viewedObject_->AddSubComponent<SkeletalMeshComponent>();
+	skeletalMeshComponent_ = GetViewedObject()->AddSubComponent<SkeletalMeshComponent>();
+	skeletalMeshComponent_->SetIsActive(false);
+	skeletalMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
+	skeletalMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
 }
 
-SkeletalMeshViewerPanel::~SkeletalMeshViewerPanel() = default;
-
-void SkeletalMeshViewerPanel::DrawAdditionalSidePanelContent()
+SkeletalMeshViewerPanel::~SkeletalMeshViewerPanel()
 {
-	ImGui::Text("Available Animations");
-	ImGui::Separator();
-
-	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
-	if (meshInstance && meshInstance->GetMesh())
-	{
-		SkeletalMesh* skeletalMesh = meshInstance->GetMesh();
-		const auto& animationsMap = skeletalMesh->GetAnimationsMap();
-
-		if (animationsMap.empty())
-		{
-			ImGui::TextDisabled("No animations found.");
-		}
-		else
-		{
-			for (const auto& pair : animationsMap)
-			{
-				const std::string& animName = pair.first;
-
-				// Check if this animation is the currently playing one
-				bool isSelected = false;
-				const auto& currentAnimData = meshInstance->GetSkeletalMeshAnimation();
-				if (currentAnimData.skeletalAnimation && currentAnimData.skeletalAnimation->name == animName)
-				{
-					isSelected = true;
-				}
-
-				if (ImGui::Selectable(animName.c_str(), isSelected))
-				{
-					meshInstance->PlayAnimation(animName);
-				}
-			}
-		}
-	}
-	else
-	{
-		ImGui::TextDisabled("No Skeletal Mesh selected.");
-	}
+	ClearPreviewMaterialOverrides();
 }
 
 void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMesh* skeletalMesh)
 {
-	skeletalMeshComponent_->SetMesh(skeletalMesh);
-	skeletalMeshComponent_->SetIsActive(skeletalMesh != nullptr);
+	ClearPreviewMaterialOverrides();
+	targetSkeletalMesh_ = nullptr;
 
-	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
-	if (meshInstance)
+	if (!skeletalMesh)
 	{
-		meshInstance->SetRenderMask(SKELETAL_MESH_VIEWER_RENDER_MASK);
+		skeletalMeshComponent_->SetIsActive(false);
+		OnTargetMeshChanged();
+		return;
 	}
+
+	skeletalMeshComponent_->SetMesh(skeletalMesh);
+	skeletalMeshComponent_->SetIsActive(true);
+	skeletalMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
+	skeletalMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
+	targetSkeletalMesh_ = skeletalMesh;
+
 	OnTargetMeshChanged();
 }
 
 bool SkeletalMeshViewerPanel::HasCurrentMesh() const
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	return skeletalMesh && !skeletalMesh->GetSubMeshes().empty();
+	return targetSkeletalMesh_ && !targetSkeletalMesh_->GetSubMeshes().empty();
 }
 
 std::string SkeletalMeshViewerPanel::GetCurrentMeshPath() const
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	return skeletalMesh ? skeletalMesh->GetPath() : "";
+	return targetSkeletalMesh_ ? targetSkeletalMesh_->GetPath() : "";
 }
 
 const Box* SkeletalMeshViewerPanel::GetCurrentMeshBounds() const
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	return skeletalMesh ? &skeletalMesh->GetAABB() : nullptr;
+	return targetSkeletalMesh_ ? &targetSkeletalMesh_->GetAABB() : nullptr;
 }
 
 size_t SkeletalMeshViewerPanel::GetSubMeshCount() const
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	return skeletalMesh ? skeletalMesh->GetSubMeshes().size() : 0;
+	return targetSkeletalMesh_ ? targetSkeletalMesh_->GetSubMeshes().size() : 0;
 }
 
 std::string SkeletalMeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	if (!skeletalMesh || subMeshIndex >= skeletalMesh->GetSubMeshes().size())
-	{
-		return "";
-	}
+	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	return subMesh ? subMesh->GetName() : "";
+}
 
-	return skeletalMesh->GetSubMeshes()[subMeshIndex]->GetName();
+size_t SkeletalMeshViewerPanel::GetSubMeshVertexCount(size_t subMeshIndex) const
+{
+	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	return subMesh ? subMesh->GetVertexCount() : 0;
+}
+
+size_t SkeletalMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
+{
+	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	return subMesh ? subMesh->GetFaceCount() : 0;
 }
 
 bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	if (!skeletalMesh || subMeshIndex >= skeletalMesh->GetSubMeshes().size())
+	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	if (!subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
 	}
 
-	auto* subMesh = skeletalMesh->GetSubMeshes()[subMeshIndex];
 	Material* material = subMesh->GetMaterial();
 	if (!material)
 	{
@@ -149,19 +124,33 @@ bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const 
 
 MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
 {
-	SkeletalMesh* skeletalMesh = GetCurrentSkeletalMesh();
-	if (!skeletalMesh || subMeshIndex >= skeletalMesh->GetSubMeshes().size())
-	{
-		return nullptr;
-	}
-
-	Material* material = skeletalMesh->GetSubMeshes()[subMeshIndex]->GetMaterial();
+	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
 	return material ? MaterialInstance::Create(material) : nullptr;
 }
 
 void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
 {
-	skeletalMeshComponent_->GetMeshInstance()->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
+	if (!skeletalMeshComponent_ || !targetSkeletalMesh_)
+	{
+		if (materialInstance)
+		{
+			materialInstance->Destroy();
+		}
+		return;
+	}
+
+	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
+	if (!meshInstance || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
+	{
+		if (materialInstance)
+		{
+			materialInstance->Destroy();
+		}
+		return;
+	}
+
+	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
 }
 
 const char* SkeletalMeshViewerPanel::GetNoMeshSelectedText() const
@@ -174,13 +163,72 @@ bool SkeletalMeshViewerPanel::HasAdditionalSidePanelContent() const
 	return true;
 }
 
-float SkeletalMeshViewerPanel::GetStackedSidePanelHeight() const
+void SkeletalMeshViewerPanel::DrawAdditionalSidePanelContent()
 {
-	return 340.f;
+	ImGui::Text("Animations");
+
+	if (!targetSkeletalMesh_)
+	{
+		ImGui::TextDisabled("No skeletal mesh selected.");
+		return;
+	}
+
+	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_ ? skeletalMeshComponent_->GetMeshInstance() : nullptr;
+	if (!meshInstance)
+	{
+		ImGui::TextDisabled("Animation preview is not ready.");
+		return;
+	}
+
+	const auto& animationsMap = targetSkeletalMesh_->GetAnimationsMap();
+	if (animationsMap.empty())
+	{
+		ImGui::TextDisabled("No animations found.");
+		return;
+	}
+
+	const auto& currentAnimation = meshInstance->GetSkeletalMeshAnimation();
+	for (const auto& animationPair : animationsMap)
+	{
+		const std::string& animationName = animationPair.first;
+		const bool isSelected =
+			currentAnimation.skeletalAnimation &&
+			currentAnimation.skeletalAnimation->name == animationName;
+
+		if (ImGui::Selectable(animationName.c_str(), isSelected))
+		{
+			meshInstance->PlayAnimation(animationName);
+		}
+	}
 }
 
-SkeletalMesh* SkeletalMeshViewerPanel::GetCurrentSkeletalMesh() const
+void SkeletalMeshViewerPanel::ClearPreviewMaterialOverrides()
 {
-	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_ ? skeletalMeshComponent_->GetMeshInstance() : nullptr;
-	return meshInstance ? meshInstance->GetMesh() : nullptr;
+	if (!skeletalMeshComponent_)
+	{
+		return;
+	}
+
+	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
+	SkeletalMesh* currentMesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+	if (!meshInstance || !currentMesh)
+	{
+		return;
+	}
+
+	const size_t subMeshCount = currentMesh->GetSubMeshes().size();
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	{
+		meshInstance->SetMaterial(static_cast<int>(subMeshIndex), nullptr);
+	}
+}
+
+SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
+{
+	if (!targetSkeletalMesh_ || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
+	{
+		return nullptr;
+	}
+
+	return targetSkeletalMesh_->GetSubMeshes()[subMeshIndex];
 }

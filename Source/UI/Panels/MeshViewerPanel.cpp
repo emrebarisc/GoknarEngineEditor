@@ -1,146 +1,189 @@
 #include "MeshViewerPanel.h"
 
-#include <filesystem>
-
 #include "Goknar/Components/StaticMeshComponent.h"
-#include "Goknar/Helpers/ContentPathUtils.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
 #include "Goknar/Materials/MaterialSerializer.h"
+#include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
 
-constexpr unsigned int MESH_VIEWER_RENDER_MASK = 0x10000000;
-
 namespace
 {
-bool DoesMaterialAssetExist(const std::string& materialPath)
-{
-    const std::string relativeMaterialPath = ContentPathUtils::ToContentRelativePath(materialPath);
-    if (relativeMaterialPath.empty())
-    {
-        return false;
-    }
-
-    return std::filesystem::exists(ContentPathUtils::ToAbsoluteContentPath(relativeMaterialPath));
-}
+	constexpr unsigned int MeshViewerRenderMask = 0x10000000;
 }
 
 MeshViewerPanel::MeshViewerPanel(EditorHUD* hud) :
-    MeshAssetViewerPanelBase("Mesh Viewer", hud, "__Editor__MeshViewerCamera", "__Editor__MeshViewerTarget", MESH_VIEWER_RENDER_MASK, "MeshViewerViewportArea", "MeshViewerPropertiesArea")
+	MeshAssetViewerPanelBase(
+		"Mesh Viewer",
+		hud,
+		"__Editor__StaticMeshViewerCamera",
+		"__Editor__StaticMeshViewerTarget",
+		MeshViewerRenderMask,
+		"StaticMeshViewerViewport",
+		"StaticMeshViewerProperties")
 {
-    staticMeshComponent_ = viewedObject_->AddSubComponent<StaticMeshComponent>();
-    staticMeshComponent_->GetMeshInstance()->SetRenderMask(MESH_VIEWER_RENDER_MASK);
+	staticMeshComponent_ = GetViewedObject()->AddSubComponent<StaticMeshComponent>();
+	staticMeshComponent_->SetIsActive(false);
+	staticMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
+	staticMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
 }
 
-MeshViewerPanel::~MeshViewerPanel() = default;
+MeshViewerPanel::~MeshViewerPanel()
+{
+	ClearPreviewMaterialOverrides();
+}
 
 void MeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
 {
-    staticMeshComponent_->SetMesh(staticMesh);
-    staticMeshComponent_->SetIsActive(staticMesh != nullptr);
-    StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance();
-    if (meshInstance)
-    {
-        meshInstance->SetRenderMask(MESH_VIEWER_RENDER_MASK);
-    }
+	ClearPreviewMaterialOverrides();
+	targetStaticMesh_ = nullptr;
 
-    OnTargetMeshChanged();
+	if (!staticMesh)
+	{
+		staticMeshComponent_->SetIsActive(false);
+		OnTargetMeshChanged();
+		return;
+	}
+
+	staticMeshComponent_->SetMesh(staticMesh);
+	staticMeshComponent_->SetIsActive(true);
+	staticMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
+	staticMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
+	targetStaticMesh_ = staticMesh;
+
+	OnTargetMeshChanged();
 }
 
 bool MeshViewerPanel::HasCurrentMesh() const
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    return staticMesh && !staticMesh->GetSubMeshes().empty();
+	return targetStaticMesh_ && !targetStaticMesh_->GetSubMeshes().empty();
 }
 
 std::string MeshViewerPanel::GetCurrentMeshPath() const
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    return staticMesh ? staticMesh->GetPath() : "";
+	return targetStaticMesh_ ? targetStaticMesh_->GetPath() : "";
 }
 
 const Box* MeshViewerPanel::GetCurrentMeshBounds() const
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    return staticMesh ? &staticMesh->GetAABB() : nullptr;
+	return targetStaticMesh_ ? &targetStaticMesh_->GetAABB() : nullptr;
 }
 
 size_t MeshViewerPanel::GetSubMeshCount() const
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    return staticMesh ? staticMesh->GetSubMeshes().size() : 0;
+	return targetStaticMesh_ ? targetStaticMesh_->GetSubMeshes().size() : 0;
 }
 
 std::string MeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    if (!staticMesh || subMeshIndex >= staticMesh->GetSubMeshes().size())
-    {
-        return "";
-    }
+	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	return subMesh ? subMesh->GetName() : "";
+}
 
-    return staticMesh->GetSubMeshes()[subMeshIndex]->GetName();
+size_t MeshViewerPanel::GetSubMeshVertexCount(size_t subMeshIndex) const
+{
+	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	return subMesh ? subMesh->GetVertexCount() : 0;
+}
+
+size_t MeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
+{
+	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	return subMesh ? subMesh->GetFaceCount() : 0;
 }
 
 bool MeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    if (!staticMesh || subMeshIndex >= staticMesh->GetSubMeshes().size())
-    {
-        return false;
-    }
+	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	if (!subMesh || !DoesMaterialAssetExist(materialPath))
+	{
+		return false;
+	}
 
-    auto* subMesh = staticMesh->GetSubMeshes()[subMeshIndex];
-    Material* material = subMesh->GetMaterial();
+	Material* material = subMesh->GetMaterial();
+	if (!material)
+	{
+		return false;
+	}
 
-    if (!material)
-    {
-        return false;
-    }
+	material->ResetForRebuild();
+	MaterialSerializer::Deserialize(materialPath, material);
+	material->Build(subMesh);
 
-    if (!DoesMaterialAssetExist(materialPath))
-    {
-        return false;
-    }
+	if (subMesh->GetIsInitialized())
+	{
+		material->PreInit();
+		material->Init();
+		material->PostInit();
+	}
 
-    material->ResetForRebuild();
-    MaterialSerializer::Deserialize(materialPath, material);
-    material->Build(subMesh);
-
-    if (subMesh->GetIsInitialized())
-    {
-        material->PreInit();
-        material->Init();
-        material->PostInit();
-    }
-
-    return true;
+	return true;
 }
 
 MaterialInstance* MeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
 {
-    StaticMesh* staticMesh = GetCurrentStaticMesh();
-    if (!staticMesh || subMeshIndex >= staticMesh->GetSubMeshes().size())
-    {
-        return nullptr;
-    }
-
-    Material* material = staticMesh->GetSubMeshes()[subMeshIndex]->GetMaterial();
-    return material ? MaterialInstance::Create(material) : nullptr;
+	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
+	return material ? MaterialInstance::Create(material) : nullptr;
 }
 
 void MeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
 {
-    staticMeshComponent_->GetMeshInstance()->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
+	if (!staticMeshComponent_ || !targetStaticMesh_)
+	{
+		if (materialInstance)
+		{
+			materialInstance->Destroy();
+		}
+		return;
+	}
+
+	StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance();
+	if (!meshInstance || subMeshIndex >= targetStaticMesh_->GetSubMeshes().size())
+	{
+		if (materialInstance)
+		{
+			materialInstance->Destroy();
+		}
+		return;
+	}
+
+	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
 }
 
 const char* MeshViewerPanel::GetNoMeshSelectedText() const
 {
-    return "No mesh selected.";
+	return "No static mesh selected.";
 }
 
-StaticMesh* MeshViewerPanel::GetCurrentStaticMesh() const
+void MeshViewerPanel::ClearPreviewMaterialOverrides()
 {
-    return staticMeshComponent_ ? staticMeshComponent_->GetMeshInstance()->GetMesh() : nullptr;
+	if (!staticMeshComponent_)
+	{
+		return;
+	}
+
+	StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance();
+	StaticMesh* currentMesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+	if (!meshInstance || !currentMesh)
+	{
+		return;
+	}
+
+	const size_t subMeshCount = currentMesh->GetSubMeshes().size();
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	{
+		meshInstance->SetMaterial(static_cast<int>(subMeshIndex), nullptr);
+	}
+}
+
+MeshUnit* MeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
+{
+	if (!targetStaticMesh_ || subMeshIndex >= targetStaticMesh_->GetSubMeshes().size())
+	{
+		return nullptr;
+	}
+
+	return targetStaticMesh_->GetSubMeshes()[subMeshIndex];
 }
