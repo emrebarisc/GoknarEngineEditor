@@ -909,6 +909,7 @@ bool FileBrowserPanel::SaveCurrentScene()
 		return false;
 	}
 
+	hud_->PrepareSceneForSave();
 	SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + context->sceneSavePath);
 	context->ClearSceneDirty();
 	return true;

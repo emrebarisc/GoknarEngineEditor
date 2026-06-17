@@ -24,6 +24,7 @@ void SaveScenePanel::Draw()
 		ImGuiWindowFlags_NoResize))
 	{
 		EditorContext::Get()->sceneSavePath = resultText;
+		hud_->PrepareSceneForSave();
 		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + resultText);
 		EditorContext::Get()->ClearSceneDirty();
 

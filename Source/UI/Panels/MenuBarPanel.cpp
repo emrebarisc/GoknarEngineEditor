@@ -388,6 +388,7 @@ bool MenuBarPanel::SaveSceneToCurrentPath() const
 		return false;
 	}
 
+	hud_->PrepareSceneForSave();
 	SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + path);
 	EditorContext::Get()->ClearSceneDirty();
 	return true;

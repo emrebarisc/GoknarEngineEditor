@@ -87,6 +87,7 @@ public:
 	ObjectBase* CloneSelectedObject();
 	bool InsertSceneReference(const std::string& scenePath, const Vector3& position);
 	Vector3 RaycastWorld();
+	void PrepareSceneForSave();
 
 protected:
 

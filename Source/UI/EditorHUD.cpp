@@ -50,6 +50,7 @@
 #include "Panels/DebugPanel.h"
 #include "Panels/DetailsPanel.h"
 #include "Panels/FileBrowserPanel.h"
+#include "Panels/FoliagePanel.h"
 #include "Panels/GeometryBuffersPanel.h"
 #include "Panels/ImageViewerPanel.h"
 #include "Panels/MenuBarPanel.h"
@@ -169,6 +170,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<DebugPanel>();
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();
+	AddPanel<FoliagePanel>();
 	AddPanel<ImageViewerPanel>();
 	AddPanel<MenuBarPanel>();
 	AddPanel<MeshViewerPanel>();
@@ -464,6 +466,19 @@ void EditorHUD::OnLeftClickPressed()
 	io.AddMouseButtonEvent(ImGuiMouseButton_Left, true);
 	doubleClickController_.OnMouseButtonPressed(ImGuiMouseButton_Left, GetCursorPositionForUi());
 
+	if (FoliagePanel* foliagePanel = GetPanel<FoliagePanel>())
+	{
+		if (foliagePanel->IsItemHovered())
+		{
+			return;
+		}
+
+		if (foliagePanel->HandleViewportLeftPressed())
+		{
+			return;
+		}
+	}
+
 	if (NavigationPanel* navigationPanel = GetPanel<NavigationPanel>())
 	{
 		if (navigationPanel->HandleViewportLeftClick())
@@ -491,6 +506,11 @@ void EditorHUD::OnLeftClickReleased()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
+
+	if (FoliagePanel* foliagePanel = GetPanel<FoliagePanel>())
+	{
+		foliagePanel->HandleViewportLeftReleased();
+	}
 }
 
 void EditorHUD::OnRightClickPressed()
@@ -660,6 +680,14 @@ Vector3 EditorHUD::RaycastWorld()
 	engine->GetPhysicsWorld()->RaycastClosest(raycastData, raycastResult);
 
 	return raycastResult.hitPosition;
+}
+
+void EditorHUD::PrepareSceneForSave()
+{
+	if (FoliagePanel* foliagePanel = GetPanel<FoliagePanel>())
+	{
+		foliagePanel->PrepareSceneForSave();
+	}
 }
 
 bool EditorHUD::InsertSceneReference(const std::string& scenePath, const Vector3& position)
