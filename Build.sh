@@ -9,8 +9,8 @@ onlySyncFiles=false
 publishBuild=false
 publishOutputDir=""
 
-syncedDirectories=("Content" "Config")
-outputDirectories=("Output/Content" "Output/Config")
+syncedDirectories=("EditorContent" "EditorData" "Config")
+outputDirectories=("Output/EditorContent" "Output/EditorData" "Output/Config")
 
 projectName=$(grep "^ProjectName=" Config/Build.ini | cut -d'=' -f2 | tr -d '\r' | tr -d ' ')
 if [ -z "$projectName" ]; then
