@@ -47,6 +47,7 @@
 
 #include "Panels/AnimationGraphPanel.h"
 #include "Panels/AssetSelectorPanel.h"
+#include "Panels/ClassCreationPanel.h"
 #include "Panels/DebugPanel.h"
 #include "Panels/DetailsPanel.h"
 #include "Panels/FileBrowserPanel.h"
@@ -167,6 +168,7 @@ EditorHUD::EditorHUD() : HUD()
 
 	AddPanel<AnimationGraphPanel>();
 	AddPanel<AssetSelectorPanel>();
+	AddPanel<ClassCreationPanel>();
 	AddPanel<DebugPanel>();
 	AddPanel<DetailsPanel>();
 	AddPanel<FileBrowserPanel>();

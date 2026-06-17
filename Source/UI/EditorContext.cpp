@@ -308,6 +308,7 @@ void EditorContext::BuildFileTree()
 	BuildFolderHierarchy(this, contentFolder, std::filesystem::path(EditorAssetPathUtils::GetContentRootPath()), contentFolder->path);
 	BuildSourceFileTree();
 	SortFolderEntries(rootFolder);
+	++fileTreeVersion_;
 }
 
 void EditorContext::BuildSourceFileTree()

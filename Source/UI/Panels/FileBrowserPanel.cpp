@@ -1,7 +1,9 @@
 #include "FileBrowserPanel.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cctype>
+#include <cstdlib>
 #include <filesystem>
 #include <cstring>
 
@@ -25,6 +27,7 @@
 #include "UI/EditorUtils.h"
 
 #include "AnimationGraphPanel.h"
+#include "ClassCreationPanel.h"
 #include "ImageViewerPanel.h"
 #include "MeshViewerPanel.h"
 #include "ShaderEditor/ShaderEditorPanel.h"
@@ -53,6 +56,11 @@ namespace
 		return path + "/";
 	}
 
+	std::string QuoteForShell(const std::string& path)
+	{
+		return "\"" + path + "\"";
+	}
+
 	std::string ToLower(std::string value)
 	{
 		std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character)
@@ -67,6 +75,51 @@ namespace
 		return NormalizePath((std::filesystem::path(EditorAssetPathUtils::GetProjectRootPath()) / relativePath).generic_string());
 	}
 
+	std::filesystem::path GetDuplicatePath(const std::filesystem::path& sourcePath)
+	{
+		const std::filesystem::path parentPath = sourcePath.parent_path();
+		const bool isDirectory = std::filesystem::is_directory(sourcePath);
+		const std::string extension = isDirectory ? "" : sourcePath.extension().generic_string();
+		const std::string filename = sourcePath.filename().generic_string();
+		const std::string stem = isDirectory ? filename : sourcePath.stem().generic_string();
+		const std::string duplicateBaseName = stem.empty() ? filename : stem;
+
+		std::filesystem::path duplicatePath = parentPath / (duplicateBaseName + "_Copy" + extension);
+		int duplicateIndex = 2;
+		while (std::filesystem::exists(duplicatePath))
+		{
+			duplicatePath = parentPath / (duplicateBaseName + "_Copy" + std::to_string(duplicateIndex) + extension);
+			++duplicateIndex;
+		}
+
+		return duplicatePath;
+	}
+
+	bool CopyFileSystemItem(const std::filesystem::path& sourcePath, const std::filesystem::path& destinationPath)
+	{
+		std::error_code errorCode;
+		if (std::filesystem::is_directory(sourcePath, errorCode))
+		{
+			std::filesystem::create_directories(destinationPath.parent_path(), errorCode);
+			if (errorCode)
+			{
+				return false;
+			}
+
+			std::filesystem::copy(sourcePath, destinationPath, std::filesystem::copy_options::recursive, errorCode);
+			return !errorCode;
+		}
+
+		std::filesystem::create_directories(destinationPath.parent_path(), errorCode);
+		if (errorCode)
+		{
+			return false;
+		}
+
+		std::filesystem::copy_file(sourcePath, destinationPath, std::filesystem::copy_options::none, errorCode);
+		return !errorCode;
+	}
+
 	ImVec2 RemapTextureUV(const Texture* texture, const ImVec2& uv)
 	{
 		return texture ?
@@ -79,6 +132,12 @@ namespace
 	bool IsContentDirectory(const std::string& path)
 	{
 		return StartsWith(NormalizePath(path), NormalizePath(EditorAssetPathUtils::GetContentRootPath()));
+	}
+
+	bool IsSourceDirectory(const std::string& path)
+	{
+		const std::string sourceRoot = EnsureTrailingSlash(NormalizePath((std::filesystem::path(EditorAssetPathUtils::GetProjectRootPath()) / "Source").generic_string()));
+		return StartsWith(EnsureTrailingSlash(NormalizePath(path)), sourceRoot);
 	}
 
 	std::string TryGetGameAssetFileType(const std::string& filePath)
@@ -207,17 +266,15 @@ namespace
 FileBrowserPanel::FileBrowserPanel(EditorHUD* hud) :
 	IEditorPanel("File Browser", hud)
 {
-	currentFolder_ = EditorContext::Get()->rootFolder;
+	SetCurrentFolder(EditorContext::Get()->rootFolder);
+	observedFileTreeVersion_ = EditorContext::Get()->GetFileTreeVersion();
 }
 
 void FileBrowserPanel::Draw()
 {
 	ImGui::Begin(title_.c_str(), &isOpen_);
 
-	if (!currentFolder_)
-	{
-		currentFolder_ = EditorContext::Get()->rootFolder;
-	}
+	SynchronizeCurrentFolder();
 
 	if (ImGui::BeginTable("BrowserSplitLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
@@ -248,16 +305,16 @@ void FileBrowserPanel::Draw()
 					EditorContext* context = EditorContext::Get();
 					if (context->folderMap.find(parentPath) != context->folderMap.end())
 					{
-						currentFolder_ = context->folderMap[parentPath];
+						SetCurrentFolder(context->folderMap[parentPath]);
 					}
 					else
 					{
-						currentFolder_ = context->rootFolder;
+						SetCurrentFolder(context->rootFolder);
 					}
 				}
 				else
 				{
-					currentFolder_ = EditorContext::Get()->rootFolder;
+					SetCurrentFolder(EditorContext::Get()->rootFolder);
 				}
 			}
 			ImGui::SameLine();
@@ -276,7 +333,7 @@ void FileBrowserPanel::Draw()
 			{
 				EditorSourceCodeUtils::ShowInFileExplorer(targetDirectory, false);
 			}
-			if (IsContentDirectory(targetDirectory))
+			if (!targetDirectory.empty())
 			{
 				ImGui::Separator();
 			}
@@ -429,6 +486,7 @@ void FileBrowserPanel::Draw()
 	}
 
 	DrawSaveChangesPrompt();
+	UpdateCMakeRebuildResult();
 
 	ImGui::End();
 
@@ -458,13 +516,13 @@ void FileBrowserPanel::DrawFolderTree(Folder* folder)
 
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		currentFolder_ = folder;
+		SetCurrentFolder(folder);
 	}
 
 	if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
 	{
 		folder->isOpen = !folder->isOpen;
-		currentFolder_ = folder;
+		SetCurrentFolder(folder);
 		isOpen = folder->isOpen;
 	}
 
@@ -525,7 +583,7 @@ void FileBrowserPanel::DrawGrid()
 			ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1);
 			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
 			{
-				currentFolder_ = sub;
+				SetCurrentFolder(sub);
 			}
 
 			// Interactions
@@ -682,7 +740,7 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 {
 	if (ImGui::BeginPopupContextItem(itemPath.c_str()))
 	{
-		if (isFolder && IsContentDirectory(itemPath))
+		if (isFolder)
 		{
 			DrawCreateContentMenu(itemPath);
 			ImGui::Separator();
@@ -701,11 +759,16 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 			strncpy(renameBuffer_, itemName.c_str(), sizeof(renameBuffer_) - 1);
 			renameBuffer_[sizeof(renameBuffer_) - 1] = '\0';
 		}
+		if (ImGui::MenuItem("Duplicate"))
+		{
+			DuplicateFileSystemItem(itemPath);
+		}
 		if (ImGui::MenuItem("Delete"))
 		{
 			try {
 				std::string cleanPath = itemPath;
 				if (!cleanPath.empty() && cleanPath.back() == '/') cleanPath.pop_back();
+				const bool shouldRebuildCMakeFiles = IsSourceDirectory(cleanPath);
 
 				// 1. Delete primary content
 				std::filesystem::remove_all(cleanPath);
@@ -718,6 +781,10 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 				}
 
 				needsRefresh_ = true;
+				if (shouldRebuildCMakeFiles)
+				{
+					RebuildCMakeFiles();
+				}
 			}
 			catch (...) {}
 		}
@@ -727,12 +794,9 @@ void FileBrowserPanel::HandleContextMenu(const std::string& itemPath, const std:
 
 void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 {
-	if (!IsContentDirectory(targetDirectory))
-	{
-		return;
-	}
+	const bool isContentDirectory = IsContentDirectory(targetDirectory);
 
-	if (ImGui::MenuItem("Create Folder"))
+	if (isContentDirectory && ImGui::MenuItem("Create Folder"))
 	{
 		isCreatingFolder_ = true;
 		isCreatingAsset_ = false;
@@ -741,7 +805,7 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 		creationNameBuffer_[0] = '\0';
 	}
 
-	if (ImGui::BeginMenu("Create Asset"))
+	if (isContentDirectory && ImGui::BeginMenu("Create Asset"))
 	{
 		if (ImGui::MenuItem("Material"))
 		{
@@ -784,6 +848,28 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 		}
 
 		ImGui::EndMenu();
+	}
+
+	if (!targetDirectory.empty())
+	{
+		if (isContentDirectory)
+		{
+			ImGui::Separator();
+		}
+
+		if (ImGui::MenuItem("Create a class"))
+		{
+			OpenClassCreationPanel(IsSourceDirectory(targetDirectory) ? targetDirectory : "");
+		}
+	}
+}
+
+void FileBrowserPanel::OpenClassCreationPanel(const std::string& initialDirectory)
+{
+	if (ClassCreationPanel* classCreationPanel = hud_->GetPanel<ClassCreationPanel>())
+	{
+		classCreationPanel->Open(initialDirectory);
+		hud_->ShowPanel<ClassCreationPanel>();
 	}
 }
 
@@ -915,6 +1001,144 @@ bool FileBrowserPanel::SaveCurrentScene()
 	return true;
 }
 
+void FileBrowserPanel::SetCurrentFolder(Folder* folder)
+{
+	currentFolder_ = folder;
+	currentFolderPath_ = currentFolder_ ? currentFolder_->path : "";
+}
+
+void FileBrowserPanel::RestoreCurrentFolderFromPath()
+{
+	EditorContext* context = EditorContext::Get();
+	Folder* restoredFolder = context->rootFolder;
+
+	if (!currentFolderPath_.empty())
+	{
+		auto folderIterator = context->folderMap.find(currentFolderPath_);
+		if (folderIterator != context->folderMap.end())
+		{
+			restoredFolder = folderIterator->second;
+		}
+	}
+
+	SetCurrentFolder(restoredFolder);
+	observedFileTreeVersion_ = context->GetFileTreeVersion();
+}
+
+bool FileBrowserPanel::IsKnownFolder(Folder* folder) const
+{
+	const EditorContext* context = EditorContext::Get();
+	if (!folder)
+	{
+		return false;
+	}
+
+	if (folder == context->rootFolder)
+	{
+		return true;
+	}
+
+	for (const auto& folderPair : context->folderMap)
+	{
+		if (folderPair.second == folder)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FileBrowserPanel::SynchronizeCurrentFolder()
+{
+	const EditorContext* context = EditorContext::Get();
+	if (observedFileTreeVersion_ != context->GetFileTreeVersion() || !IsKnownFolder(currentFolder_))
+	{
+		RestoreCurrentFolderFromPath();
+	}
+
+	if (!currentFolder_)
+	{
+		SetCurrentFolder(EditorContext::Get()->rootFolder);
+	}
+}
+
+void FileBrowserPanel::UpdateCMakeRebuildResult()
+{
+	if (asyncCMakeRebuildResult_.valid() &&
+		asyncCMakeRebuildResult_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+	{
+		asyncCMakeRebuildResult_.get();
+	}
+}
+
+void FileBrowserPanel::RebuildCMakeFiles()
+{
+	UpdateCMakeRebuildResult();
+	if (asyncCMakeRebuildResult_.valid())
+	{
+		return;
+	}
+
+	const std::string projectRoot = EditorAssetPathUtils::GetProjectRootPath();
+	std::string command;
+#ifdef GOKNAR_PLATFORM_WINDOWS
+	command = "pushd " + QuoteForShell(projectRoot) + " && Build.sh nobuild";
+#else
+	command = "cd " + QuoteForShell(projectRoot) + " && ./Build.sh nobuild";
+#endif
+
+	asyncCMakeRebuildResult_ = std::async(std::launch::async,
+		[command]()
+		{
+			std::system(command.c_str());
+		});
+}
+
+void FileBrowserPanel::DuplicateFileSystemItem(const std::string& source)
+{
+	try
+	{
+		std::string cleanSource = source;
+		if (!cleanSource.empty() && cleanSource.back() == '/')
+		{
+			cleanSource.pop_back();
+		}
+
+		const std::filesystem::path sourcePath(cleanSource);
+		if (!std::filesystem::exists(sourcePath))
+		{
+			return;
+		}
+
+		const std::filesystem::path destinationPath = GetDuplicatePath(sourcePath);
+		if (!CopyFileSystemItem(sourcePath, destinationPath))
+		{
+			return;
+		}
+
+		const std::string sourceReflection = EditorAssetPathUtils::ToEditorReflectionPath(sourcePath.generic_string());
+		if (std::filesystem::exists(sourceReflection))
+		{
+			const std::string destinationReflection = EditorAssetPathUtils::ToEditorReflectionPath(destinationPath.generic_string());
+			const std::filesystem::path destinationReflectionPath(destinationReflection);
+			if (!std::filesystem::exists(destinationReflectionPath))
+			{
+				CopyFileSystemItem(sourceReflection, destinationReflectionPath);
+			}
+		}
+
+		needsRefresh_ = true;
+		if (IsSourceDirectory(sourcePath.generic_string()))
+		{
+			RebuildCMakeFiles();
+		}
+	}
+	catch (...)
+	{
+	}
+}
+
 void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::string& targetFolder)
 {
 	try {
@@ -951,7 +1175,7 @@ void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::
 
 void FileBrowserPanel::RefreshAndRestore()
 {
-	std::string currentPathToRestore = currentFolder_ ? currentFolder_->path : "";
+	const std::string currentPathToRestore = currentFolderPath_;
 
 	EditorContext::Get()->BuildFileTree();
 
@@ -960,11 +1184,13 @@ void FileBrowserPanel::RefreshAndRestore()
 		auto it = EditorContext::Get()->folderMap.find(currentPathToRestore);
 		if (it != EditorContext::Get()->folderMap.end())
 		{
-			currentFolder_ = it->second;
+			SetCurrentFolder(it->second);
+			observedFileTreeVersion_ = EditorContext::Get()->GetFileTreeVersion();
 			return;
 		}
 	}
-	currentFolder_ = EditorContext::Get()->rootFolder;
+	SetCurrentFolder(EditorContext::Get()->rootFolder);
+	observedFileTreeVersion_ = EditorContext::Get()->GetFileTreeVersion();
 }
 
 void FileBrowserPanel::FinalizeFolderCreation()

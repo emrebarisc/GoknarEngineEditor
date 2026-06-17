@@ -58,10 +58,18 @@ void SystemFileBrowserPanel::SetCurrentPath(const std::string& path)
 		if (!browsingRootPath_.empty() && !StartsWithPath(EnsureTrailingSlash(normalizedPathString), browsingRootPath_))
 		{
 			currentPath_ = browsingRootPath_;
+			if (mode_ == FileBrowserMode::OpenDirectory)
+			{
+				selectedItem_ = currentPath_;
+			}
 			return;
 		}
 
 		currentPath_ = normalizedPath.string();
+		if (mode_ == FileBrowserMode::OpenDirectory)
+		{
+			selectedItem_ = currentPath_;
+		}
 	}
 }
 
@@ -118,10 +126,20 @@ void SystemFileBrowserPanel::Draw()
 			{
 				currentPath_ = browsingRootPath_;
 			}
+
+			if (mode_ == FileBrowserMode::OpenDirectory)
+			{
+				selectedItem_ = currentPath_;
+			}
 		}
 	}
 
 	ImGui::Separator();
+
+	if (mode_ == FileBrowserMode::OpenDirectory)
+	{
+		selectedItem_ = currentPath_;
+	}
 
 	ImGui::BeginChild("FilesRegion", ImVec2(0, -30), true);
 
@@ -146,7 +164,7 @@ void SystemFileBrowserPanel::Draw()
 						if (browsingRootPath_.empty() || StartsWithPath(normalizedDirectoryPath, browsingRootPath_))
 						{
 							currentPath_ = path.string();
-							selectedItem_ = "";
+							selectedItem_ = currentPath_;
 							break;
 						}
 					}

@@ -28,6 +28,24 @@ public:
 		SetIsOpen(true);
 	}
 
+	void OpenDirectorySelector(const Delegate<void(const std::string&)>& callback, const std::string& initialDirectory)
+	{
+		ClearBrowsingRootPath();
+		mode_ = FileBrowserMode::OpenDirectory;
+		SetCurrentPath(initialDirectory);
+		onSelectionCallback_ = callback;
+		SetIsOpen(true);
+	}
+
+	void OpenDirectorySelector(const Delegate<void(const std::string&)>& callback, const std::string& initialDirectory, const std::string& browsingRootPath)
+	{
+		mode_ = FileBrowserMode::OpenDirectory;
+		SetBrowsingRootPath(browsingRootPath);
+		SetCurrentPath(initialDirectory);
+		onSelectionCallback_ = callback;
+		SetIsOpen(true);
+	}
+
 	void OpenFileSelector(const Delegate<void(const std::string&)>& callback)
 	{
 		ClearBrowsingRootPath();

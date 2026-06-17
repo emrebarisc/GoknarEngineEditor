@@ -77,6 +77,10 @@ public:
 	void BuildFileTree();
 	void BuildSourceFileTree();
 	EditorAssetType GetAssetType(const std::string& path) const;
+	unsigned int GetFileTreeVersion() const
+	{
+		return fileTreeVersion_;
+	}
 
 	void SetSelection(void* obj, EditorSelectionType type)
 	{
@@ -215,4 +219,5 @@ private:
 
 	bool isSceneDirty_{ false };
 	std::string sceneDirtyReason_;
+	unsigned int fileTreeVersion_{ 0 };
 };
