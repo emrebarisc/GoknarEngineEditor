@@ -1,15 +1,24 @@
 <AssetContainer>
     <Assets>
+        <AnimationGraph>
+            <Path>Animations/AG_DefaultCharacter</Path>
+        </AnimationGraph>
+        <Material>
+            <Path>Materials/Character/M_Character</Path>
+        </Material>
         <Material>
             <Path>Materials/M_DefaultMaterial</Path>
         </Material>
         <Mesh>
-            <Path>Meshes/SM_UnitCube.fbx</Path>
-            <MaterialPath>Materials/M_DefaultMaterial</MaterialPath>
-        </Mesh>
-        <Mesh>
             <Path>Meshes/Characters/SK_DefaultCharacter.fbx</Path>
             <MaterialPath>Materials/Character/M_Character</MaterialPath>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/Objects/SM_Weapon.fbx</Path>
+        </Mesh>
+        <Mesh>
+            <Path>Meshes/SM_UnitCube.fbx</Path>
+            <MaterialPath>Materials/M_DefaultMaterial</MaterialPath>
         </Mesh>
     </Assets>
 </AssetContainer>

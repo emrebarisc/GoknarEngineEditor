@@ -170,5 +170,9 @@
                 </StaticMeshComponent>
             </Components>
         </RigidBody>
+        <ObjectBase>
+            <Name>PlayerStart</Name>
+            <Components/>
+        </ObjectBase>
     </Objects>
 </Scene>

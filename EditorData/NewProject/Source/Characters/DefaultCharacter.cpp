@@ -12,6 +12,7 @@
 #include "Goknar/Components/SocketComponent.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Model/SkeletalMesh.h"
+#include "Goknar/Objects/PlayerStart.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
 
@@ -79,19 +80,29 @@ DefaultCharacter::~DefaultCharacter()
 
 void DefaultCharacter::BeginGame()
 {
-	RaycastData raycastData;
-	raycastData.from = Vector3{0.f, 0.f, 1000.f};
-	raycastData.to = Vector3{0.f, 0.f, -1000.f};
+	std::vector<PlayerStart*> playerStartObjects = engine->GetObjectsOfType<PlayerStart>();
+	if (!playerStartObjects.empty())
+	{
+		SetWorldPosition(playerStartObjects[0]->GetWorldPosition());
+		SetWorldRotation(playerStartObjects[0]->GetWorldRotation());
+	}
+	else
+	{
+		RaycastData raycastData;
+		raycastData.from = Vector3{ 0.f, 0.f, 1000.f };
+		raycastData.to = Vector3{ 0.f, 0.f, -1000.f };
 
-	RaycastSingleResult raycastResult;
+		RaycastSingleResult raycastResult;
 
-	engine->GetPhysicsWorld()->RaycastClosest(raycastData, raycastResult);
+		engine->GetPhysicsWorld()->RaycastClosest(raycastData, raycastResult);
 
-	SetWorldPosition(raycastResult.hitPosition + Vector3{0.f, 0.f, 1.f});
+		SetWorldPosition(raycastResult.hitPosition + Vector3{ 0.f, 0.f, 1.f });
 
-	Quaternion spawnRotation = Quaternion::FromEulerDegrees(Vector3{ 0.f, 0.f, 180.f });
-	SetWorldRotation(spawnRotation);
-	thirdPersonCameraComponent_->SetRelativeRotation(spawnRotation);
+		Quaternion spawnRotation = Quaternion::FromEulerDegrees(Vector3{ 0.f, 0.f, 180.f });
+		SetWorldRotation(spawnRotation);
+	}
+
+	thirdPersonCameraComponent_->SetRelativeRotation(GetWorldRotation());
 	thirdPersonCameraComponent_->GetCamera()->SetFOV(45);
 
 	Idle();
