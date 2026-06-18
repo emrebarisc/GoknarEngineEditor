@@ -340,7 +340,7 @@ foreach(REGISTRATION_ENTRY IN LISTS COMPONENT_REGISTRATION_ENTRIES)
 	string(APPEND SOURCE_CONTENT "\t\tfactory->RegisterComponentClass(\n\t\t\t\"${CLASS_NAME}\",\n\t\t\t[](Component* parentComponent) -> Component*\n\t\t\t{\n\t\t\t\treturn new EditorDynamicComponentPlaceholder<${PLACEHOLDER_BASE}>(parentComponent, \"${CLASS_NAME}\");\n\t\t\t},\n\t\t\t[](const Component* component) -> bool\n\t\t\t{\n\t\t\t\tconst auto* placeholder = dynamic_cast<const EditorDynamicComponentPlaceholder<${PLACEHOLDER_BASE}>*>(component);\n\t\t\t\treturn placeholder && placeholder->GetRegisteredClassName() == \"${CLASS_NAME}\";\n\t\t\t},\n\t\t\t${OWNER_REQUIREMENT});\n")
 endforeach()
 
-string(APPEND SOURCE_CONTENT "\n\t\tareProjectClassesRegistered = true;\n\t}\n}\n\nnamespace\n{\n\tstruct EditorDynamicObjectFactoryAutoRegistrar\n\t{\n\t\tEditorDynamicObjectFactoryAutoRegistrar()\n\t\t{\n\t\t\tEditorDynamicObjectFactoryRegistrar::Register();\n\t\t}\n\t};\n\n\tEditorDynamicObjectFactoryAutoRegistrar editorDynamicObjectFactoryAutoRegistrar;\n}\n")
+string(APPEND SOURCE_CONTENT "\n\t\tareProjectClassesRegistered = true;\n\t}\n}\n")
 
 get_filename_component(OUTPUT_DIRECTORY "${OUTPUT_HEADER}" DIRECTORY)
 file(MAKE_DIRECTORY "${OUTPUT_DIRECTORY}")

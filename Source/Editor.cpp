@@ -18,6 +18,7 @@
 
 #include "Objects/EditorFreeCameraObject.h"
 #include "UI/EditorContext.h"
+#include "UI/EditorRuntimeDynamicObjectFactoryRegistrar.h"
 #include "UI/EditorHUD.h"
 
 #include "Physics/RigidBody.h"
@@ -124,6 +125,7 @@ void Editor::LoadProject(const std::string& projectPath)
 
 		std::string contentDir = config.GetString("Core", "ContentDir", "Content/");
 		ContentDir = projectPath + contentDir;
+		EditorRuntimeDynamicObjectFactoryRegistrar::RegisterProjectClasses(projectPath);
 
 		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
 		EditorContext::Get()->sceneSavePath = mainScenePath;
