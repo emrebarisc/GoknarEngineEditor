@@ -788,33 +788,45 @@ void EditorHUD::OnCloneInputPressed()
 		return;
 	}
 
-	CloneSelectedObject();
+	CloneSelectedObjects();
 }
 
-ObjectBase* EditorHUD::CloneSelectedObject()
+std::vector<ObjectBase*> EditorHUD::CloneSelectedObjects()
 {
 	if (context_->selectedObjectType != EditorSelectionType::Object || !context_->selectedObject)
 	{
-		return nullptr;
+		return {};
 	}
 
-	ObjectBase* selectedObject = static_cast<ObjectBase*>(context_->selectedObject);
-	ObjectBase* clonedObject = selectedObject->Clone();
-	if (!clonedObject)
+	std::vector<ObjectBase*> clonedObjects{};
+
+	for (auto selectedObject : context_->selectedObjects)
 	{
-		return nullptr;
+		ObjectBase* clonedObject = selectedObject->Clone();
+		if (!clonedObject)
+		{
+			continue;
+		}
+
+		if (ObjectBase* parentObject = selectedObject->GetParent())
+		{
+			clonedObject->SetParent(parentObject, SnappingRule::KeepWorldAll, false);
+		}
+
+		engine->GetApplication()->GetMainScene()->AddObject(clonedObject);
+
+		clonedObjects.push_back(clonedObject);
 	}
 
-	if (ObjectBase* parentObject = selectedObject->GetParent())
+	context_->ClearSelection();
+
+	for (auto clonedObject : clonedObjects)
 	{
-		clonedObject->SetParent(parentObject, SnappingRule::KeepWorldAll, false);
+		context_->SetObjectSelection(clonedObject, true);
 	}
 
-	engine->GetApplication()->GetMainScene()->AddObject(clonedObject);
-	context_->SetSelection(clonedObject, EditorSelectionType::Object);
-	context_->MarkSceneDirty("Scene object duplicated");
-
-	return clonedObject;
+	context_->MarkSceneDirty("Scene objects duplicated");
+	return clonedObjects;
 }
 
 void EditorHUD::OnFocusInputPressed()

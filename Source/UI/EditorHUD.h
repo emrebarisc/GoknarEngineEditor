@@ -84,7 +84,7 @@ public:
 
 	bool WasMouseDoubleClicked(ImGuiMouseButton button) const;
 	bool WasLastItemDoubleClicked(ImGuiMouseButton button) const;
-	ObjectBase* CloneSelectedObject();
+	std::vector<ObjectBase*> CloneSelectedObjects();
 	bool InsertSceneReference(const std::string& scenePath, const Vector3& position);
 	Vector3 RaycastWorld();
 	void PrepareSceneForSave();
