@@ -400,11 +400,18 @@ void ViewportPanel::Draw()
 		debugPanel_->DrawOverlay(position_, size_);
 	}
 
+	isHovered_ = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
 	ImGui::End();
 }
 
 bool ViewportPanel::HandleViewportLeftClick()
 {
+	if (!isHovered_)
+	{
+		return false;
+	}
+
 	if (debugPanel_ && debugPanel_->IsItemHovered())
 	{
 		return false;

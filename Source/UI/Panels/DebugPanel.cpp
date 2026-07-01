@@ -55,8 +55,11 @@ void DebugPanel::DrawOverlay(const Vector2i& viewportPos, const Vector2i& viewpo
     position_ = Vector2(currentPos.x, currentPos.y);
     size_ = Vector2(currentSize.x, currentSize.y);
 
-    ImGui::Text("Draw call count: %d", engine->GetRenderer()->drawCallCount);
-    ImGui::Separator();
+    if (engine->GetRenderer()->GetDrawOnWindow())
+    {
+        ImGui::Text("Draw call count: %d", engine->GetRenderer()->drawCallCount);
+        ImGui::Separator();
+    }
 
     auto* cameraObj = EditorContext::Get()->viewportCameraObject;
     ImGui::Text("Position: %s", cameraObj->GetWorldPosition().ToString().c_str());

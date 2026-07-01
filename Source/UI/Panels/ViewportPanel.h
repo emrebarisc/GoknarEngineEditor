@@ -124,4 +124,5 @@ private:
 	EditorCollisionGameObjectPair selectedCollisionGameObjectPair_{};
 	bool hasSelectedCollisionGameObjectPair_{ false };
 	bool showDebugOverlay_{ true };
+	bool isHovered_{ false };
 };
