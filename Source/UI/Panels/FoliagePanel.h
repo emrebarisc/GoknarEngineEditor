@@ -77,6 +77,13 @@ private:
 		Vector3 worldPosition{ Vector3::ZeroVector };
 	};
 
+	struct FoliageSnapshot
+	{
+		std::vector<MeshEntry> meshEntries;
+		std::vector<PlacedInstance> instances;
+		float gridSize{ 100.f };
+	};
+
 	struct BrushHit
 	{
 		Vector3 position{ Vector3::ZeroVector };
@@ -98,6 +105,7 @@ private:
 	void DrawNotes();
 	void OpenMeshSelector();
 	void OnMeshAssetSelected(const std::string& path);
+	void RemoveMeshEntry(int meshIndex);
 
 	bool IsCursorInsideViewport() const;
 	bool GetViewportCursorRay(Vector3& outOrigin, Vector3& outDirection) const;
@@ -112,14 +120,19 @@ private:
 	void DestroyBrushPreview();
 
 	void BeginStroke();
+	void CancelStroke();
 	void EndStroke();
 	void ApplyBrushAtCursor(bool force);
 	bool PaintAtHit(const BrushHit& centerHit, CellSet& outAffectedCells);
 	bool EraseAtHit(const BrushHit& centerHit, CellSet& outAffectedCells);
+	bool RemoveInstancesForMeshPath(const std::string& meshPath, CellSet& outAffectedCells);
 	MeshEntry* ChooseMeshEntry();
+	MeshEntry* FindMeshEntry(const std::string& meshPath);
+	void EnsureMeshEntryForMeshPath(const std::string& meshPath);
 	bool IsFarEnoughFromExistingInstances(const Vector3& position) const;
 
 	void SynchronizeFromScene();
+	void RemoveInstancesForDeletedRuntimeCells();
 	void ClearRuntimeCells(bool destroySceneObjects);
 	void RebuildAllCells();
 	void RebuildCells(const CellSet& cells);
@@ -139,8 +152,10 @@ private:
 	std::size_t GetInstanceCount() const;
 	Scene* GetCurrentScene() const;
 
-	void PushUndoSnapshot();
-	void ApplySnapshot(const std::vector<PlacedInstance>& snapshot);
+	FoliageSnapshot CaptureSnapshot() const;
+	void ClearHistory();
+	void PushUndoSnapshot(const FoliageSnapshot& snapshot);
+	void ApplySnapshot(const FoliageSnapshot& snapshot);
 	void UndoStroke();
 	void RedoStroke();
 
@@ -148,9 +163,9 @@ private:
 	std::vector<PlacedInstance> instances_;
 	CellRuntimeMap runtimeCells_;
 
-	std::vector<std::vector<PlacedInstance>> undoStack_;
-	std::vector<std::vector<PlacedInstance>> redoStack_;
-	std::vector<PlacedInstance> strokeStartSnapshot_;
+	std::vector<FoliageSnapshot> undoStack_;
+	std::vector<FoliageSnapshot> redoStack_;
+	FoliageSnapshot strokeStartSnapshot_;
 
 	ObjectBase* brushPreviewObject_{ nullptr };
 	StaticMeshComponent* brushPreviewComponent_{ nullptr };

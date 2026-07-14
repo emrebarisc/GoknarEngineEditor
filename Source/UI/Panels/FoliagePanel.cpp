@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <limits>
 #include <sstream>
 
@@ -42,6 +43,112 @@ namespace
 	bool StartsWith(const std::string& value, const std::string& prefix)
 	{
 		return value.size() >= prefix.size() && value.compare(0, prefix.size(), prefix) == 0;
+	}
+
+	std::string ReadTokenValue(const std::string& value, const std::string& token)
+	{
+		const std::size_t tokenPosition = value.find(token);
+		if (tokenPosition == std::string::npos)
+		{
+			return "";
+		}
+
+		const std::size_t valueBegin = tokenPosition + token.size();
+		const std::size_t valueEnd = value.find('_', valueBegin);
+		return value.substr(
+			valueBegin,
+			valueEnd == std::string::npos ? std::string::npos : valueEnd - valueBegin);
+	}
+
+	bool ReadIntToken(const std::string& value, const std::string& token, int& outValue)
+	{
+		const std::string tokenValue = ReadTokenValue(value, token);
+		if (tokenValue.empty())
+		{
+			return false;
+		}
+
+		std::stringstream stream(tokenValue);
+		int parsedValue = 0;
+		char extraCharacter = '\0';
+		if (!(stream >> parsedValue) || (stream >> extraCharacter))
+		{
+			return false;
+		}
+
+		outValue = parsedValue;
+		return true;
+	}
+
+	bool ReadFloatToken(const std::string& value, const std::string& token, float& outValue)
+	{
+		const std::string tokenValue = ReadTokenValue(value, token);
+		if (tokenValue.empty())
+		{
+			return false;
+		}
+
+		std::stringstream stream(tokenValue);
+		float parsedValue = 0.f;
+		char extraCharacter = '\0';
+		if (!(stream >> parsedValue) || (stream >> extraCharacter))
+		{
+			return false;
+		}
+
+		outValue = parsedValue;
+		return true;
+	}
+
+	bool TryParseFoliageCellCoord(const std::string& objectName, FoliageCellCoord& outCoord)
+	{
+		if (!StartsWith(objectName, FoliageGridObjectPrefix))
+		{
+			return false;
+		}
+
+		return ReadIntToken(objectName, "_X", outCoord.x) &&
+			ReadIntToken(objectName, "_Y", outCoord.y) &&
+			ReadIntToken(objectName, "_Z", outCoord.z);
+	}
+
+	bool TryGetGridSizeFromAxis(float originValue, int coordValue, float& outGridSize)
+	{
+		if (coordValue == 0)
+		{
+			return false;
+		}
+
+		const float gridSize = std::abs(originValue / static_cast<float>(coordValue));
+		if (!std::isfinite(gridSize) || gridSize <= SMALLER_EPSILON)
+		{
+			return false;
+		}
+
+		outGridSize = gridSize;
+		return true;
+	}
+
+	bool TryGetGridSizeFromFoliageCell(ObjectBase* object, const FoliageCellCoord& coord, float& outGridSize)
+	{
+		if (!object)
+		{
+			return false;
+		}
+
+		float gridSizeFromName = 0.f;
+		if (ReadFloatToken(object->GetNameWithoutId(), "_G", gridSizeFromName) &&
+			std::isfinite(gridSizeFromName) &&
+			gridSizeFromName > SMALLER_EPSILON)
+		{
+			outGridSize = gridSizeFromName;
+			return true;
+		}
+
+		const Vector3 origin = object->GetWorldTransformationMatrix().GetTranslation();
+		return TryGetGridSizeFromAxis(origin.x, coord.x, outGridSize) ||
+			TryGetGridSizeFromAxis(origin.y, coord.y, outGridSize) ||
+			TryGetGridSizeFromAxis(origin.z, coord.z, outGridSize);
 	}
 
 	std::string StripInstancedMeshSuffix(const std::string& path)
@@ -176,6 +283,7 @@ void FoliagePanel::PrepareSceneForSave()
 		return;
 	}
 
+	RemoveInstancesForDeletedRuntimeCells();
 	RebuildAllCells();
 }
 
@@ -243,7 +351,7 @@ void FoliagePanel::DrawMeshList()
 		ImGui::SameLine();
 		if (ImGui::SmallButton("Remove"))
 		{
-			meshEntries_.erase(meshEntries_.begin() + meshIndex);
+			RemoveMeshEntry(meshIndex);
 			ImGui::PopID();
 			--meshIndex;
 			continue;
@@ -338,7 +446,37 @@ void FoliagePanel::OnMeshAssetSelected(const std::string& path)
 	MeshEntry entry;
 	entry.meshPath = meshPath;
 	entry.mesh = mesh;
+	if (MeshEntry* existingEntry = FindMeshEntry(meshPath))
+	{
+		existingEntry->mesh = mesh;
+		return;
+	}
+
 	meshEntries_.push_back(entry);
+}
+
+void FoliagePanel::RemoveMeshEntry(int meshIndex)
+{
+	if (meshIndex < 0 || static_cast<int>(meshEntries_.size()) <= meshIndex)
+	{
+		return;
+	}
+
+	const std::string meshPath = meshEntries_[meshIndex].meshPath;
+	const FoliageSnapshot undoSnapshot = CaptureSnapshot();
+
+	CellSet affectedCells;
+	const bool removedInstances = RemoveInstancesForMeshPath(meshPath, affectedCells);
+	meshEntries_.erase(meshEntries_.begin() + meshIndex);
+
+	if (!removedInstances)
+	{
+		return;
+	}
+
+	PushUndoSnapshot(undoSnapshot);
+	RebuildCells(affectedCells);
+	EditorContext::Get()->MarkSceneDirty("Foliage mesh removed");
 }
 
 bool FoliagePanel::IsCursorInsideViewport() const
@@ -434,8 +572,12 @@ void FoliagePanel::UpdateToolState()
 	Scene* currentScene = GetCurrentScene();
 	if (currentScene != synchronizedScene_)
 	{
+		CancelStroke();
+		ClearHistory();
 		ClearRuntimeCells(false);
 		instances_.clear();
+		meshEntries_.clear();
+		gridSize_ = 100.f;
 		synchronizedScene_ = currentScene;
 		hasSynchronizedScene_ = false;
 	}
@@ -546,10 +688,18 @@ void FoliagePanel::BeginStroke()
 		return;
 	}
 
-	strokeStartSnapshot_ = instances_;
+	strokeStartSnapshot_ = CaptureSnapshot();
 	strokeChangedInstances_ = false;
 	hasLastStrokePoint_ = false;
 	isStrokeInProgress_ = true;
+}
+
+void FoliagePanel::CancelStroke()
+{
+	isStrokeInProgress_ = false;
+	strokeChangedInstances_ = false;
+	hasLastStrokePoint_ = false;
+	strokeStartSnapshot_ = FoliageSnapshot{};
 }
 
 void FoliagePanel::EndStroke()
@@ -564,10 +714,10 @@ void FoliagePanel::EndStroke()
 
 	if (strokeChangedInstances_)
 	{
-		PushUndoSnapshot();
+		PushUndoSnapshot(strokeStartSnapshot_);
 	}
 
-	strokeStartSnapshot_.clear();
+	strokeStartSnapshot_ = FoliageSnapshot{};
 	strokeChangedInstances_ = false;
 }
 
@@ -712,6 +862,30 @@ bool FoliagePanel::EraseAtHit(const BrushHit& centerHit, CellSet& outAffectedCel
 	return instances_.size() != originalCount;
 }
 
+bool FoliagePanel::RemoveInstancesForMeshPath(const std::string& meshPath, CellSet& outAffectedCells)
+{
+	const std::string normalizedMeshPath = NormalizeMeshPath(meshPath);
+	const std::size_t originalCount = instances_.size();
+
+	instances_.erase(
+		std::remove_if(
+			instances_.begin(),
+			instances_.end(),
+			[&](const PlacedInstance& instance)
+			{
+				if (instance.meshPath != normalizedMeshPath)
+				{
+					return false;
+				}
+
+				outAffectedCells.insert(GetCellCoord(instance.worldPosition));
+				return true;
+			}),
+		instances_.end());
+
+	return instances_.size() != originalCount;
+}
+
 FoliagePanel::MeshEntry* FoliagePanel::ChooseMeshEntry()
 {
 	float totalWeight = 0.f;
@@ -757,6 +931,43 @@ FoliagePanel::MeshEntry* FoliagePanel::ChooseMeshEntry()
 	return nullptr;
 }
 
+FoliagePanel::MeshEntry* FoliagePanel::FindMeshEntry(const std::string& meshPath)
+{
+	const std::string normalizedMeshPath = NormalizeMeshPath(meshPath);
+	for (MeshEntry& entry : meshEntries_)
+	{
+		if (entry.meshPath == normalizedMeshPath)
+		{
+			return &entry;
+		}
+	}
+
+	return nullptr;
+}
+
+void FoliagePanel::EnsureMeshEntryForMeshPath(const std::string& meshPath)
+{
+	const std::string normalizedMeshPath = NormalizeMeshPath(meshPath);
+	if (normalizedMeshPath.empty())
+	{
+		return;
+	}
+
+	if (MeshEntry* entry = FindMeshEntry(normalizedMeshPath))
+	{
+		if (!entry->mesh)
+		{
+			entry->mesh = ResolveMesh(normalizedMeshPath);
+		}
+		return;
+	}
+
+	MeshEntry entry;
+	entry.meshPath = normalizedMeshPath;
+	entry.mesh = ResolveMesh(normalizedMeshPath);
+	meshEntries_.push_back(entry);
+}
+
 bool FoliagePanel::IsFarEnoughFromExistingInstances(const Vector3& position) const
 {
 	if (minimumSpacing_ <= 0.f)
@@ -789,6 +1000,7 @@ void FoliagePanel::SynchronizeFromScene()
 		return;
 	}
 
+	std::vector<ObjectBase*> foliageObjects;
 	for (ObjectBase* object : scene->GetObjects())
 	{
 		if (!object || !StartsWith(object->GetNameWithoutId(), FoliageGridObjectPrefix))
@@ -796,7 +1008,33 @@ void FoliagePanel::SynchronizeFromScene()
 			continue;
 		}
 
-		const FoliageCellCoord coord = GetCellCoord(object->GetWorldPosition());
+		foliageObjects.push_back(object);
+	}
+
+	for (ObjectBase* object : foliageObjects)
+	{
+		FoliageCellCoord coord;
+		if (!TryParseFoliageCellCoord(object->GetNameWithoutId(), coord))
+		{
+			continue;
+		}
+
+		float savedGridSize = 0.f;
+		if (TryGetGridSizeFromFoliageCell(object, coord, savedGridSize))
+		{
+			gridSize_ = GoknarMath::Max(1.f, savedGridSize);
+			break;
+		}
+	}
+
+	for (ObjectBase* object : foliageObjects)
+	{
+		FoliageCellCoord coord;
+		if (!TryParseFoliageCellCoord(object->GetNameWithoutId(), coord))
+		{
+			coord = GetCellCoord(object->GetWorldTransformationMatrix().GetTranslation());
+		}
+
 		CellRuntime& runtime = runtimeCells_[coord];
 		runtime.object = object;
 
@@ -825,10 +1063,11 @@ void FoliagePanel::SynchronizeFromScene()
 			}
 
 			runtime.componentsByMeshPath[meshPath] = component;
+			EnsureMeshEntryForMeshPath(meshPath);
 
 			for (const Matrix& localTransform : instancedMesh->GetInstanceTransformationMatrices())
 			{
-				Matrix worldTransform = localTransform * cellMatrix;
+				Matrix worldTransform = cellMatrix * localTransform;
 				Vector3 translation = Vector3::ZeroVector;
 				Vector3 scaling = Vector3(1.f);
 				Quaternion rotation = Quaternion::Identity;
@@ -841,6 +1080,47 @@ void FoliagePanel::SynchronizeFromScene()
 				instances_.push_back(instance);
 			}
 		}
+	}
+}
+
+void FoliagePanel::RemoveInstancesForDeletedRuntimeCells()
+{
+	Scene* scene = GetCurrentScene();
+	if (!scene || runtimeCells_.empty())
+	{
+		return;
+	}
+
+	const std::vector<ObjectBase*>& sceneObjects = scene->GetObjects();
+	CellSet deletedCells;
+	for (const auto& runtimePair : runtimeCells_)
+	{
+		ObjectBase* object = runtimePair.second.object;
+		if (!object ||
+			std::find(sceneObjects.begin(), sceneObjects.end(), object) == sceneObjects.end())
+		{
+			deletedCells.insert(runtimePair.first);
+		}
+	}
+
+	if (deletedCells.empty())
+	{
+		return;
+	}
+
+	instances_.erase(
+		std::remove_if(
+			instances_.begin(),
+			instances_.end(),
+			[&](const PlacedInstance& instance)
+			{
+				return deletedCells.find(GetCellCoord(instance.worldPosition)) != deletedCells.end();
+			}),
+		instances_.end());
+
+	for (const FoliageCellCoord& coord : deletedCells)
+	{
+		runtimeCells_.erase(coord);
 	}
 }
 
@@ -897,6 +1177,7 @@ void FoliagePanel::RebuildCell(const FoliageCellCoord& coord)
 {
 	std::unordered_map<std::string, std::vector<Matrix>> transformsByMeshPath;
 	const Vector3 cellOrigin = GetCellOrigin(coord);
+	const Matrix worldToCellMatrix = Matrix::GetPositionMatrix(-cellOrigin);
 
 	for (const PlacedInstance& instance : instances_)
 	{
@@ -905,18 +1186,32 @@ void FoliagePanel::RebuildCell(const FoliageCellCoord& coord)
 			continue;
 		}
 
-		Vector3 translation = Vector3::ZeroVector;
-		Vector3 scaling = Vector3(1.f);
-		Quaternion rotation = Quaternion::Identity;
-		instance.worldTransform.Decompose(translation, scaling, rotation);
-		transformsByMeshPath[instance.meshPath].push_back(
-			Matrix::GetTransformationMatrix(rotation, translation - cellOrigin, scaling));
+		transformsByMeshPath[instance.meshPath].push_back(worldToCellMatrix * instance.worldTransform);
 	}
 
 	if (transformsByMeshPath.empty())
 	{
 		RemoveRuntimeCellObject(coord);
 		return;
+	}
+
+	auto runtimeIterator = runtimeCells_.find(coord);
+	if (runtimeIterator != runtimeCells_.end())
+	{
+		bool hasStaleComponents = false;
+		for (const auto& componentPair : runtimeIterator->second.componentsByMeshPath)
+		{
+			if (transformsByMeshPath.find(componentPair.first) == transformsByMeshPath.end())
+			{
+				hasStaleComponents = true;
+				break;
+			}
+		}
+
+		if (hasStaleComponents)
+		{
+			RemoveRuntimeCellObject(coord);
+		}
 	}
 
 	CellRuntime& runtime = GetOrCreateRuntimeCell(coord);
@@ -989,17 +1284,28 @@ void FoliagePanel::RemoveRuntimeCellObject(const FoliageCellCoord& coord)
 
 	ObjectBase* object = runtimeIterator->second.object;
 	Scene* scene = GetCurrentScene();
-	if (scene && object)
+	const bool objectIsInCurrentScene = object && scene &&
+		std::find(scene->GetObjects().begin(), scene->GetObjects().end(), object) != scene->GetObjects().end();
+
+	if (objectIsInCurrentScene)
+	{
+		EditorContext* context = EditorContext::Get();
+		if (context && context->selectedObjectType == EditorSelectionType::Object && context->IsObjectSelected(object))
+		{
+			context->RemoveObjectSelection(object);
+		}
+	}
+	if (objectIsInCurrentScene)
 	{
 		scene->RemoveObject(object);
 	}
-	if (object)
+	if (objectIsInCurrentScene)
 	{
 		object->Destroy();
 	}
 
 	runtimeCells_.erase(runtimeIterator);
-	if (engine)
+	if (objectIsInCurrentScene && engine)
 	{
 		engine->FlushPendingDestroy();
 	}
@@ -1098,10 +1404,14 @@ Vector3 FoliagePanel::GetCellOrigin(const FoliageCellCoord& coord) const
 
 std::string FoliagePanel::GetCellObjectName(const FoliageCellCoord& coord) const
 {
-	return std::string(FoliageGridObjectPrefix) +
-		"_X" + std::to_string(coord.x) +
-		"_Y" + std::to_string(coord.y) +
-		"_Z" + std::to_string(coord.z);
+	const float safeGridSize = GoknarMath::Max(1.f, gridSize_);
+	std::ostringstream nameStream;
+	nameStream << std::setprecision(9) << FoliageGridObjectPrefix <<
+		"_G" << safeGridSize <<
+		"_X" << coord.x <<
+		"_Y" << coord.y <<
+		"_Z" << coord.z;
+	return nameStream.str();
 }
 
 std::string FoliagePanel::NormalizeMeshPath(const std::string& path) const
@@ -1130,9 +1440,24 @@ Scene* FoliagePanel::GetCurrentScene() const
 	return engine && engine->GetApplication() ? engine->GetApplication()->GetMainScene() : nullptr;
 }
 
-void FoliagePanel::PushUndoSnapshot()
+FoliagePanel::FoliageSnapshot FoliagePanel::CaptureSnapshot() const
 {
-	undoStack_.push_back(strokeStartSnapshot_);
+	FoliageSnapshot snapshot;
+	snapshot.meshEntries = meshEntries_;
+	snapshot.instances = instances_;
+	snapshot.gridSize = gridSize_;
+	return snapshot;
+}
+
+void FoliagePanel::ClearHistory()
+{
+	undoStack_.clear();
+	redoStack_.clear();
+}
+
+void FoliagePanel::PushUndoSnapshot(const FoliageSnapshot& snapshot)
+{
+	undoStack_.push_back(snapshot);
 	if (undoStack_.size() > MaxUndoSnapshots)
 	{
 		undoStack_.erase(undoStack_.begin());
@@ -1141,9 +1466,25 @@ void FoliagePanel::PushUndoSnapshot()
 	redoStack_.clear();
 }
 
-void FoliagePanel::ApplySnapshot(const std::vector<PlacedInstance>& snapshot)
+void FoliagePanel::ApplySnapshot(const FoliageSnapshot& snapshot)
 {
-	instances_ = snapshot;
+	meshEntries_ = snapshot.meshEntries;
+	instances_ = snapshot.instances;
+	gridSize_ = GoknarMath::Max(1.f, snapshot.gridSize);
+
+	for (MeshEntry& entry : meshEntries_)
+	{
+		if (!entry.mesh && !entry.meshPath.empty())
+		{
+			entry.mesh = ResolveMesh(entry.meshPath);
+		}
+	}
+
+	for (const PlacedInstance& instance : instances_)
+	{
+		EnsureMeshEntryForMeshPath(instance.meshPath);
+	}
+
 	RebuildAllCells();
 	EditorContext::Get()->MarkSceneDirty("Foliage changed");
 }
@@ -1155,8 +1496,13 @@ void FoliagePanel::UndoStroke()
 		return;
 	}
 
-	redoStack_.push_back(instances_);
-	const std::vector<PlacedInstance> snapshot = undoStack_.back();
+	redoStack_.push_back(CaptureSnapshot());
+	if (redoStack_.size() > MaxUndoSnapshots)
+	{
+		redoStack_.erase(redoStack_.begin());
+	}
+
+	const FoliageSnapshot snapshot = undoStack_.back();
 	undoStack_.pop_back();
 	ApplySnapshot(snapshot);
 }
@@ -1168,8 +1514,13 @@ void FoliagePanel::RedoStroke()
 		return;
 	}
 
-	undoStack_.push_back(instances_);
-	const std::vector<PlacedInstance> snapshot = redoStack_.back();
+	undoStack_.push_back(CaptureSnapshot());
+	if (undoStack_.size() > MaxUndoSnapshots)
+	{
+		undoStack_.erase(undoStack_.begin());
+	}
+
+	const FoliageSnapshot snapshot = redoStack_.back();
 	redoStack_.pop_back();
 	ApplySnapshot(snapshot);
 }
