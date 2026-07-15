@@ -44,14 +44,15 @@
 #include <map>
 
 template <class T>
-void AddCollisionComponent(PhysicsObject* physicsObject)
+T* AddCollisionComponent(PhysicsObject* physicsObject)
 {
-	if (physicsObject->GetFirstComponentOfType<CollisionComponent>())
+	T* existingComponent = physicsObject->GetFirstComponentOfType<T>();
+	if (existingComponent)
 	{
-		return;
+		return existingComponent;
 	}
 
-	physicsObject->AddSubComponent<T>();
+	return physicsObject->AddSubComponent<T>();
 }
 
 namespace
@@ -802,12 +803,24 @@ void DetailsPanel::SetupReflections()
 	physicsReflections_["MovingTriangleMeshCollisionComponent"] =
 		[](PhysicsObject* physicsObject)
 		{
-			AddCollisionComponent<MovingTriangleMeshCollisionComponent>(physicsObject);
+			MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent = AddCollisionComponent<MovingTriangleMeshCollisionComponent>(physicsObject);
+
+			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
+			if (staticMeshComponent)
+			{
+				movingTriangleMeshCollisionComponent->SetMesh(staticMeshComponent->GetMeshInstance()->GetMesh());
+			}
 		};
 	physicsReflections_["NonMovingTriangleMeshCollisionComponent"] =
 		[](PhysicsObject* physicsObject)
 		{
-			AddCollisionComponent<NonMovingTriangleMeshCollisionComponent>(physicsObject);
+			NonMovingTriangleMeshCollisionComponent* nonMovingTriangleMeshCollisionComponent = AddCollisionComponent<NonMovingTriangleMeshCollisionComponent>(physicsObject);
+
+			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
+			if (staticMeshComponent)
+			{
+				nonMovingTriangleMeshCollisionComponent->SetMesh(staticMeshComponent->GetMeshInstance()->GetMesh());
+			}
 		};
 }
 
