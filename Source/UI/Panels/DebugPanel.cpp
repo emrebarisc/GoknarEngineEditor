@@ -42,7 +42,6 @@ void DebugPanel::DrawOverlay(const Vector2i& viewportPos, const Vector2i& viewpo
         ImGuiWindowFlags_NoNav |
         ImGuiWindowFlags_NoMove;
 
-
     if (!ImGui::Begin("DebugOverlay", nullptr, overlayFlags))
     {
         ImGui::End();
@@ -62,7 +61,7 @@ void DebugPanel::DrawOverlay(const Vector2i& viewportPos, const Vector2i& viewpo
     }
 
     auto* cameraObj = EditorContext::Get()->viewportCameraObject;
-    ImGui::Text("Position: %s", cameraObj->GetWorldPosition().ToString().c_str());
+    ImGui::Text("Position: %s", cameraObj->GetWorldTransformationMatrix().GetTranslation().ToString().c_str());
     ImGui::Text("Rotation: %s", cameraObj->GetWorldRotation().ToEulerDegrees().ToString().c_str());
     ImGui::Text("Forward Vector: %s", cameraObj->GetForwardVector().ToString().c_str());
     ImGui::Text("Left Vector: %s", cameraObj->GetLeftVector().ToString().c_str());

@@ -8,9 +8,11 @@
 #include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Components/DynamicMeshComponent.h"
 #include "Goknar/Components/InstancedStaticMeshComponent.h"
+#include "Goknar/Components/RenderComponent.h"
 #include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Engine.h"
+#include "Goknar/Geometry/Box.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Model/InstancedStaticMesh.h"
 #include "Goknar/Model/MeshUnit.h"
@@ -46,6 +48,8 @@ namespace
 	constexpr float TransformGizmoUniformScaleScreenSensitivity = 0.01f;
 	constexpr float TransformGizmoMinimumObjectScale = 0.001f;
 	constexpr int TransformGizmoRingSegmentCount = 72;
+	constexpr float FocusViewPadding = 1.2f;
+	constexpr float FocusMinimumDistance = 0.1f;
 
 	bool ShouldSkipObject(const ObjectBase* object)
 	{
@@ -211,6 +215,216 @@ namespace
 		return Vector3(transformationMatrix * Vector4(point, 1.f));
 	}
 
+	bool IsValidAABB(const Box& aabb)
+	{
+		const Vector3& min = aabb.GetMin();
+		const Vector3& max = aabb.GetMax();
+		return min.x <= max.x &&
+			min.y <= max.y &&
+			min.z <= max.z;
+	}
+
+	void ExtendBoundsWithPoint(Box& bounds, bool& hasBounds, const Vector3& point)
+	{
+		if (!hasBounds)
+		{
+			bounds = Box(point, point);
+			hasBounds = true;
+			return;
+		}
+
+		bounds.ExtendWRTPoint(point);
+	}
+
+	void AddTransformedAABBToBounds(
+		const Box& localAABB,
+		const Matrix& transformationMatrix,
+		Box& bounds,
+		bool& hasBounds)
+	{
+		if (!IsValidAABB(localAABB))
+		{
+			return;
+		}
+
+		const Vector3& min = localAABB.GetMin();
+		const Vector3& max = localAABB.GetMax();
+		for (int xIndex = 0; xIndex < 2; ++xIndex)
+		{
+			for (int yIndex = 0; yIndex < 2; ++yIndex)
+			{
+				for (int zIndex = 0; zIndex < 2; ++zIndex)
+				{
+					const Vector3 corner(
+						xIndex == 0 ? min.x : max.x,
+						yIndex == 0 ? min.y : max.y,
+						zIndex == 0 ? min.z : max.z);
+					ExtendBoundsWithPoint(bounds, hasBounds, TransformPoint(transformationMatrix, corner));
+				}
+			}
+		}
+	}
+
+	template<typename MeshComponentType>
+	void AddMeshComponentRenderBounds(
+		ObjectBase* object,
+		unsigned int cameraRenderMask,
+		Box& bounds,
+		bool& hasBounds)
+	{
+		std::vector<MeshComponentType*> meshComponents = object->GetComponentsOfType<MeshComponentType>();
+		for (MeshComponentType* meshComponent : meshComponents)
+		{
+			if (!meshComponent || !meshComponent->GetIsActive())
+			{
+				continue;
+			}
+
+			auto* meshInstance = meshComponent->GetMeshInstance();
+			if (!meshInstance ||
+				!meshInstance->GetIsRendered() ||
+				!(cameraRenderMask & meshInstance->GetRenderMask()))
+			{
+				continue;
+			}
+
+			auto* mesh = meshInstance->GetMesh();
+			if (!mesh)
+			{
+				continue;
+			}
+
+			const Matrix& transformationMatrix = meshComponent->GetComponentToWorldTransformationMatrix();
+			const auto& subMeshes = mesh->GetSubMeshes();
+			for (const MeshUnit* subMesh : subMeshes)
+			{
+				if (subMesh)
+				{
+					AddTransformedAABBToBounds(subMesh->GetAABB(), transformationMatrix, bounds, hasBounds);
+				}
+			}
+		}
+	}
+
+	void AddInstancedStaticMeshRenderBounds(
+		ObjectBase* object,
+		unsigned int cameraRenderMask,
+		Box& bounds,
+		bool& hasBounds)
+	{
+		std::vector<InstancedStaticMeshComponent*> meshComponents = object->GetComponentsOfType<InstancedStaticMeshComponent>();
+		for (InstancedStaticMeshComponent* meshComponent : meshComponents)
+		{
+			if (!meshComponent || !meshComponent->GetIsActive())
+			{
+				continue;
+			}
+
+			auto* meshInstance = meshComponent->GetMeshInstance();
+			if (!meshInstance ||
+				!meshInstance->GetIsRendered() ||
+				!(cameraRenderMask & meshInstance->GetRenderMask()))
+			{
+				continue;
+			}
+
+			InstancedStaticMesh* mesh = meshInstance->GetMesh();
+			if (!mesh)
+			{
+				continue;
+			}
+
+			const Matrix& componentTransformationMatrix = meshComponent->GetComponentToWorldTransformationMatrix();
+			for (size_t instanceIndex = 0; instanceIndex < mesh->GetInstanceCount(); ++instanceIndex)
+			{
+				const Matrix transformationMatrix = mesh->GetInstanceTransformationAt(instanceIndex) * componentTransformationMatrix;
+				const auto& subMeshes = mesh->GetSubMeshes();
+				for (const MeshUnit* subMesh : subMeshes)
+				{
+					if (subMesh)
+					{
+						AddTransformedAABBToBounds(subMesh->GetAABB(), transformationMatrix, bounds, hasBounds);
+					}
+				}
+			}
+		}
+	}
+
+	bool GetObjectRenderBounds(ObjectBase* object, unsigned int cameraRenderMask, Box& outBounds)
+	{
+		if (ShouldSkipObject(object) ||
+			object->GetComponentsOfType<RenderComponent>().empty())
+		{
+			return false;
+		}
+
+		Box bounds;
+		bool hasBounds = false;
+		AddMeshComponentRenderBounds<StaticMeshComponent>(object, cameraRenderMask, bounds, hasBounds);
+		AddMeshComponentRenderBounds<SkeletalMeshComponent>(object, cameraRenderMask, bounds, hasBounds);
+		AddMeshComponentRenderBounds<DynamicMeshComponent>(object, cameraRenderMask, bounds, hasBounds);
+		AddInstancedStaticMeshRenderBounds(object, cameraRenderMask, bounds, hasBounds);
+
+		if (!hasBounds)
+		{
+			return false;
+		}
+
+		outBounds = bounds;
+		return true;
+	}
+
+	void CombineFocusBounds(Box& bounds, bool& hasBounds, const Box& boundsToAdd)
+	{
+		if (!hasBounds)
+		{
+			bounds = boundsToAdd;
+			hasBounds = true;
+			return;
+		}
+
+		bounds.Combine(boundsToAdd);
+	}
+
+	void RefreshObjectTransformHierarchy(ObjectBase* object)
+	{
+		if (!object)
+		{
+			return;
+		}
+
+		ObjectBase* rootObject = object;
+		while (rootObject->GetParent())
+		{
+			rootObject = rootObject->GetParent();
+		}
+
+		rootObject->SetWorldPosition(rootObject->GetWorldPosition());
+	}
+
+	void AddObjectAndChildRenderBounds(
+		ObjectBase* object,
+		unsigned int cameraRenderMask,
+		Box& bounds,
+		bool& hasBounds)
+	{
+		if (!object)
+		{
+			return;
+		}
+
+		Box objectBounds;
+		if (GetObjectRenderBounds(object, cameraRenderMask, objectBounds))
+		{
+			CombineFocusBounds(bounds, hasBounds, objectBounds);
+		}
+
+		for (ObjectBase* child : object->GetChildren())
+		{
+			AddObjectAndChildRenderBounds(child, cameraRenderMask, bounds, hasBounds);
+		}
+	}
+
 	float RaySegmentDistanceSquared(const Vector3& rayOrigin, const Vector3& rayDirection, const Vector3& segmentStart, const Vector3& segmentEnd)
 	{
 		const Vector3 segment = segmentEnd - segmentStart;
@@ -312,6 +526,28 @@ namespace
 		const float sinAngle = axisDirection.Dot(startDirection.Cross(currentDirection));
 		const float cosAngle = GoknarMath::Clamp(startDirection.Dot(currentDirection), -1.f, 1.f);
 		return std::atan2(sinAngle, cosAngle);
+	}
+
+	Vector3 GetObjectWorldPosition(const ObjectBase* object)
+	{
+		return object ? object->GetWorldTransformationMatrix().GetTranslation() : Vector3::ZeroVector;
+	}
+
+	void SetObjectWorldPosition(ObjectBase* object, const Vector3& worldPosition)
+	{
+		if (!object)
+		{
+			return;
+		}
+
+		ObjectBase* parent = object->GetParent();
+		if (parent)
+		{
+			object->SetWorldPosition(parent->GetWorldTransformationMatrix().GetInverse() * Vector4(worldPosition, 1.f));
+			return;
+		}
+
+		object->SetWorldPosition(worldPosition);
 	}
 }
 
@@ -889,7 +1125,7 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 				if (useCollectivePivot)
 				{
 					const Vector3 objectOffset = dragStartObjectPositions_[objectIndex] - dragStartGizmoOrigin_;
-					draggedObject->SetWorldPosition(dragStartGizmoOrigin_ + objectOffset * positionScale);
+					SetObjectWorldPosition(draggedObject, dragStartGizmoOrigin_ + objectOffset * positionScale);
 				}
 
 				draggedObject->SetWorldScaling(newScaling);
@@ -932,7 +1168,7 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 				if (useCollectivePivot)
 				{
 					const Vector3 objectOffset = dragStartObjectPositions_[objectIndex] - dragStartGizmoOrigin_;
-					draggedObject->SetWorldPosition(dragStartGizmoOrigin_ + rotationDeltaQuaternion * objectOffset);
+					SetObjectWorldPosition(draggedObject, dragStartGizmoOrigin_ + rotationDeltaQuaternion * objectOffset);
 				}
 
 				draggedObject->SetWorldRotation((rotationDeltaQuaternion * dragStartObjectRotations_[objectIndex]).GetNormalized());
@@ -969,7 +1205,7 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 				{
 					Vector3 objectOffset = dragStartObjectPositions_[objectIndex] - dragStartGizmoOrigin_;
 					objectOffset *= positionScale;
-					draggedObject->SetWorldPosition(dragStartGizmoOrigin_ + objectOffset);
+					SetObjectWorldPosition(draggedObject, dragStartGizmoOrigin_ + objectOffset);
 				}
 
 				draggedObject->SetWorldScaling(newScaling);
@@ -985,7 +1221,7 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 		ObjectBase* draggedObject = draggedTransformGizmoObjects_[objectIndex];
 		if (draggedObject)
 		{
-			draggedObject->SetWorldPosition(dragStartObjectPositions_[objectIndex] + dragDelta);
+			SetObjectWorldPosition(draggedObject, dragStartObjectPositions_[objectIndex] + dragDelta);
 		}
 	}
 }
@@ -1061,7 +1297,7 @@ bool ViewportPanel::TryHandleTransformGizmoClick()
 		if (selectedObject)
 		{
 			draggedTransformGizmoObjects_.push_back(selectedObject);
-			dragStartObjectPositions_.push_back(selectedObject->GetWorldPosition());
+			dragStartObjectPositions_.push_back(GetObjectWorldPosition(selectedObject));
 			dragStartObjectRotations_.push_back(selectedObject->GetWorldRotation());
 			dragStartObjectScalings_.push_back(selectedObject->GetWorldScaling());
 		}
@@ -1190,7 +1426,7 @@ Vector3 ViewportPanel::GetTransformGizmoOrigin() const
 	{
 		if (selectedObject)
 		{
-			origin += selectedObject->GetWorldPosition();
+			origin += GetObjectWorldPosition(selectedObject);
 			++selectedObjectCount;
 		}
 	}
@@ -1261,6 +1497,92 @@ bool ViewportPanel::ShouldUseCollectiveTransformPivot() const
 			transformGizmoMode_ == EditorTransformGizmoMode::Scale);
 }
 
+bool ViewportPanel::FocusSelectedRenderBounds()
+{
+	EditorContext* context = EditorContext::Get();
+	if (!context ||
+		context->selectedObjectType != EditorSelectionType::Object ||
+		context->GetSelectedObjects().empty() ||
+		!context->viewportCameraObject)
+	{
+		return false;
+	}
+
+	CameraComponent* cameraComponent = context->viewportCameraObject->GetCameraComponent();
+	Camera* camera = cameraComponent ? cameraComponent->GetCamera() : nullptr;
+	if (!camera)
+	{
+		return false;
+	}
+
+	Box focusBounds;
+	bool hasBounds = false;
+	for (ObjectBase* selectedObject : context->GetSelectedObjects())
+	{
+		RefreshObjectTransformHierarchy(selectedObject);
+	}
+
+	for (ObjectBase* selectedObject : context->GetSelectedObjects())
+	{
+		AddObjectAndChildRenderBounds(selectedObject, camera->GetRenderMask(), focusBounds, hasBounds);
+	}
+
+	if (!hasBounds)
+	{
+		return false;
+	}
+
+	Vector3 forward = context->viewportCameraObject->GetForwardVector().GetNormalized();
+	Vector3 left = context->viewportCameraObject->GetLeftVector().GetNormalized();
+	Vector3 up = context->viewportCameraObject->GetUpVector().GetNormalized();
+	if (forward.SquareLength() <= SMALLER_EPSILON ||
+		left.SquareLength() <= SMALLER_EPSILON ||
+		up.SquareLength() <= SMALLER_EPSILON)
+	{
+		return false;
+	}
+
+	const Vector3 focusCenter = (focusBounds.GetMin() + focusBounds.GetMax()) * 0.5f;
+	const Vector4& nearPlane = camera->GetNearPlane();
+	const float nearDistance = GoknarMath::Max(camera->GetNearDistance(), SMALLER_EPSILON);
+	const float tanHalfFovX = GoknarMath::Max(GoknarMath::Abs(nearPlane.x), GoknarMath::Abs(nearPlane.y)) / nearDistance;
+	const float tanHalfFovY = GoknarMath::Max(GoknarMath::Abs(nearPlane.z), GoknarMath::Abs(nearPlane.w)) / nearDistance;
+	if (tanHalfFovX <= SMALLER_EPSILON ||
+		tanHalfFovY <= SMALLER_EPSILON)
+	{
+		return false;
+	}
+
+	float distance = GoknarMath::Max(focusBounds.GetSize().Length() * 0.5f, FocusMinimumDistance);
+	const Vector3& min = focusBounds.GetMin();
+	const Vector3& max = focusBounds.GetMax();
+	for (int xIndex = 0; xIndex < 2; ++xIndex)
+	{
+		for (int yIndex = 0; yIndex < 2; ++yIndex)
+		{
+			for (int zIndex = 0; zIndex < 2; ++zIndex)
+			{
+				const Vector3 corner(
+					xIndex == 0 ? min.x : max.x,
+					yIndex == 0 ? min.y : max.y,
+					zIndex == 0 ? min.z : max.z);
+				const Vector3 offset = corner - focusCenter;
+				const float forwardOffset = offset.Dot(forward);
+				const float horizontalOffset = GoknarMath::Abs(offset.Dot(left));
+				const float verticalOffset = GoknarMath::Abs(offset.Dot(up));
+
+				distance = GoknarMath::Max(distance, horizontalOffset / tanHalfFovX - forwardOffset);
+				distance = GoknarMath::Max(distance, verticalOffset / tanHalfFovY - forwardOffset);
+				distance = GoknarMath::Max(distance, nearDistance - forwardOffset);
+			}
+		}
+	}
+
+	distance = GoknarMath::Max(distance * FocusViewPadding, FocusMinimumDistance);
+	context->viewportCameraObject->SetWorldPosition(focusCenter - forward * distance);
+	return true;
+}
+
 void ViewportPanel::UpdateTransformGizmoModeShortcuts()
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -1273,7 +1595,11 @@ void ViewportPanel::UpdateTransformGizmoModeShortcuts()
 		return;
 	}
 
-	if (ImGui::IsKeyPressed(ImGuiKey_Q, false))
+	if (ImGui::IsKeyPressed(ImGuiKey_F, false))
+	{
+		FocusSelectedRenderBounds();
+	}
+	else if (ImGui::IsKeyPressed(ImGuiKey_Q, false))
 	{
 		SetTransformGizmoMode(EditorTransformGizmoMode::Translate);
 	}

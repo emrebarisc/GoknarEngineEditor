@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "Goknar/Physics/RigidBody.h"
+#include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
 #include "Goknar/Physics/Components/SphereCollisionComponent.h"
@@ -265,6 +266,49 @@ namespace
 		}
 
 		return true;
+	}
+
+	void DrawPhysicsDebugMenu()
+	{
+		PhysicsWorld* physicsWorld = engine ? engine->GetPhysicsWorld() : nullptr;
+		if (!physicsWorld)
+		{
+			return;
+		}
+
+		int debugMode = physicsWorld->GetPhysicsDebugMode();
+		bool isPhysicsDebugEnabled = debugMode != btIDebugDraw::DBG_NoDebug;
+		if (ImGui::MenuItem("Physics Debug World", nullptr, isPhysicsDebugEnabled))
+		{
+			isPhysicsDebugEnabled = !isPhysicsDebugEnabled;
+			debugMode = isPhysicsDebugEnabled ?
+				btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints :
+				btIDebugDraw::DBG_NoDebug;
+			physicsWorld->SetPhysicsDebugMode(debugMode);
+		}
+
+		if (ImGui::BeginMenu("Physics Debug Options", isPhysicsDebugEnabled))
+		{
+			auto drawDebugModeFlag = [physicsWorld, &debugMode](const char* label, int flag)
+				{
+					const bool isEnabled = (debugMode & flag) != 0;
+					if (ImGui::MenuItem(label, nullptr, isEnabled))
+					{
+						debugMode = isEnabled ? (debugMode & ~flag) : (debugMode | flag);
+						physicsWorld->SetPhysicsDebugMode(debugMode);
+					}
+				};
+
+			drawDebugModeFlag("Wireframe", btIDebugDraw::DBG_DrawWireframe);
+			drawDebugModeFlag("AABBs", btIDebugDraw::DBG_DrawAabb);
+			drawDebugModeFlag("Contact Points", btIDebugDraw::DBG_DrawContactPoints);
+			drawDebugModeFlag("Constraints", btIDebugDraw::DBG_DrawConstraints);
+			drawDebugModeFlag("Constraint Limits", btIDebugDraw::DBG_DrawConstraintLimits);
+			drawDebugModeFlag("Normals", btIDebugDraw::DBG_DrawNormals);
+			drawDebugModeFlag("Frames", btIDebugDraw::DBG_DrawFrames);
+
+			ImGui::EndMenu();
+		}
 	}
 }
 
@@ -587,6 +631,8 @@ void MenuBarPanel::Draw()
 					}
 				}
 			}
+
+			DrawPhysicsDebugMenu();
 
 			ViewportPanel* viewportPanel = static_cast<ViewportPanel*>(hud_->GetPanel<ViewportPanel>());
 			if (viewportPanel)

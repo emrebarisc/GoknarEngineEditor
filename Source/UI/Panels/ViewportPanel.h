@@ -97,6 +97,7 @@ private:
 	void SetTransformGizmoMode(EditorTransformGizmoMode mode);
 	void SetTransformGizmoPivotMode(EditorTransformGizmoPivotMode mode);
 	bool ShouldUseCollectiveTransformPivot() const;
+	bool FocusSelectedRenderBounds();
 	void UpdateTransformGizmoModeShortcuts();
 	void DrawTransformGizmoModeToolbar();
 	void DrawTransformGizmo(Camera* camera) const;

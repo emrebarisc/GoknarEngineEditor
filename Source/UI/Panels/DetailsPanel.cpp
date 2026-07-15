@@ -980,17 +980,26 @@ void DetailsPanel::DrawTransform()
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", position);
-	object->SetWorldPosition(position);
+	if (positionChanged)
+	{
+		object->SetWorldPosition(position);
+	}
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
 	const bool rotationChanged = EditorWidgets::DrawInputVector3("##Rotation", rotation);
-	object->SetWorldRotation(Quaternion::FromEulerDegrees(rotation));
+	if (rotationChanged)
+	{
+		object->SetWorldRotation(Quaternion::FromEulerDegrees(rotation));
+	}
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
 	const bool scalingChanged = EditorWidgets::DrawInputVector3("##Scaling", scale);
-	object->SetWorldScaling(scale);
+	if (scalingChanged)
+	{
+		object->SetWorldScaling(scale);
+	}
 
 	if (positionChanged || rotationChanged || scalingChanged)
 	{
@@ -1030,17 +1039,26 @@ void DetailsPanel::DrawObjectDetails()
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", selectedObjectWorldPosition);
-	object->SetWorldPosition(selectedObjectWorldPosition);
+	if (positionChanged)
+	{
+		object->SetWorldPosition(selectedObjectWorldPosition);
+	}
 
 	ImGui::Text("Rotation: ");
 	ImGui::SameLine();
 	const bool rotationChanged = EditorWidgets::DrawInputVector3("##Rotation", selectedObjectWorldRotationEulerDegrees);
-	object->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
+	if(rotationChanged)
+	{
+		object->SetWorldRotation(Quaternion::FromEulerDegrees(selectedObjectWorldRotationEulerDegrees));
+	}
 
 	ImGui::Text("Scaling: ");
 	ImGui::SameLine();
 	const bool scalingChanged = EditorWidgets::DrawInputVector3("##Scaling", selectedObjectWorldScaling);
-	object->SetWorldScaling(selectedObjectWorldScaling);
+	if (scalingChanged)
+	{
+		object->SetWorldScaling(selectedObjectWorldScaling);
+	}
 
 	if (positionChanged || rotationChanged || scalingChanged)
 	{
@@ -2479,8 +2497,27 @@ void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* p
 	}
 }
 
-void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent*)
+void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCollisionComponent)
 {
+	Vector3 currentHalfSize = boxCollisionComponent->GetHalfSize();
+	if (EditorWidgets::DrawInputVector3(
+		"HalfSize",
+		currentHalfSize))
+	{
+		ObjectBase* owner = boxCollisionComponent->GetOwner();
+		ObjectBase* clone = owner->Clone();
+		engine->GetApplication()->GetMainScene()->AddObject(clone);
+
+		EditorContext::Get()->ClearSelection();
+		EditorContext::Get()->SetSelection(clone, EditorSelectionType::Object);
+
+		clone->GetFirstComponentOfType<BoxCollisionComponent>()->SetHalfSize(currentHalfSize);
+
+		owner->Destroy();
+		engine->GetApplication()->GetMainScene()->RemoveObject(owner);
+
+		MarkSceneDirty("Box collision half size changed");
+	}
 }
 
 void DetailsPanel::DrawSphereCollisionComponentDetails(SphereCollisionComponent* sphereCollisionComponent)

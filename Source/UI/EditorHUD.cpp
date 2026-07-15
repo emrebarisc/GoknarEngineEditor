@@ -1,5 +1,6 @@
 #include "EditorHUD.h"
 
+#include <chrono>
 #include <string>
 #include <unordered_map>
 
@@ -157,6 +158,28 @@ namespace
 		}
 
 		return context->GetAssetType(scenePath) == EditorAssetType::Scene;
+	}
+
+	float CalculateImGuiDeltaTime()
+	{
+		static std::chrono::steady_clock::time_point previousTime{};
+
+		const std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
+		if (previousTime.time_since_epoch().count() == 0)
+		{
+			previousTime = currentTime;
+			return 1.f / 60.f;
+		}
+
+		float deltaTime = std::chrono::duration<float>(currentTime - previousTime).count();
+		previousTime = currentTime;
+
+		if (deltaTime <= 0.f)
+		{
+			return 1.f / 60.f;
+		}
+
+		return deltaTime < 0.25f ? deltaTime : 0.25f;
 	}
 }
 
@@ -347,6 +370,7 @@ void EditorHUD::UpdateHUD()
 	WindowManager* windowManager = engine->GetWindowManager();
 	context_->windowSize = windowManager->GetWindowSize();
 	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = CalculateImGuiDeltaTime();
 	io.DisplaySize = EditorUtils::ToImVec2(context_->windowSize);
 	const Vector2i framebufferSize = windowManager->GetFramebufferSize();
 	if (0 < context_->windowSize.x && 0 < context_->windowSize.y)
@@ -433,8 +457,13 @@ void EditorHUD::DrawEditorHUD()
 
 void EditorHUD::OnKeyboardEvent(int key, int scanCode, int action, int mod)
 {
+	if (action != GLFW_PRESS && action != GLFW_RELEASE)
+	{
+		return;
+	}
+
 	ImGuiIO& io = ImGui::GetIO();
-	bool is_down = (action == GLFW_PRESS || action == GLFW_REPEAT);
+	bool is_down = (action == GLFW_PRESS);
 	ImGuiKey imgui_key = EditorImGui_ImplGlfw_KeyToImGuiKey(key, scanCode);
 	io.AddKeyEvent(imgui_key, is_down);
 
@@ -719,7 +748,7 @@ bool EditorHUD::InsertSceneReference(const std::string& scenePath, const Vector3
 
 	SceneReference sceneReference;
 	sceneReference.path = contentRelativeScenePath;
-	sceneReference.relativePosition = position;
+	sceneReference.position = position;
 
 	const SceneContentCounts counts = CaptureSceneContentCounts(currentScene);
 	if (!SceneParser::InsertSceneReference(currentScene, sceneReference))
@@ -842,7 +871,7 @@ void EditorHUD::OnFocusInputPressed()
 	switch (context_->selectedObjectType)
 	{
 	case EditorSelectionType::Object:
-		position = ((ObjectBase*)context_->selectedObject)->GetWorldPosition();
+		position = ((ObjectBase*)context_->selectedObject)->GetWorldTransformationMatrix().GetTranslation();
 		break;
 	case EditorSelectionType::DirectionalLight:
 	case EditorSelectionType::PointLight:
