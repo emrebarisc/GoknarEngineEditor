@@ -4,10 +4,10 @@
 
 #include "Goknar/Application.h"
 #include "Goknar/Engine.h"
-#include "Goknar/Helpers/SceneParser.h"
 
 #include "UI/EditorContext.h"
 #include "UI/EditorHUD.h"
+#include "UI/EditorSceneSerializer.h"
 #include "UI/EditorWidgets.h"
 
 void SaveScenePanel::Draw()
@@ -25,7 +25,7 @@ void SaveScenePanel::Draw()
 	{
 		EditorContext::Get()->sceneSavePath = resultText;
 		hud_->PrepareSceneForSave();
-		SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + resultText);
+		EditorSceneSerializer::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + resultText);
 		EditorContext::Get()->ClearSceneDirty();
 
 		hud_->HidePanel<SaveScenePanel>();

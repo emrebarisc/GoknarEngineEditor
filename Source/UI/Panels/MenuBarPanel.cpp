@@ -21,7 +21,6 @@
 #include "Goknar/Scene.h"
 #include "Goknar/Debug/DebugDrawer.h"
 #include "Goknar/Helpers/AssetParser.h"
-#include "Goknar/Helpers/SceneParser.h"
 
 #include <filesystem>
 #include <fstream>
@@ -35,6 +34,8 @@
 #include "Goknar/Physics/Components/SphereCollisionComponent.h"
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MultipleCollisionComponent.h"
+
+#include "UI/EditorSceneSerializer.h"
 
 #include <filesystem>
 #include <fstream>
@@ -433,7 +434,7 @@ bool MenuBarPanel::SaveSceneToCurrentPath() const
 	}
 
 	hud_->PrepareSceneForSave();
-	SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + path);
+	EditorSceneSerializer::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + path);
 	EditorContext::Get()->ClearSceneDirty();
 	return true;
 }

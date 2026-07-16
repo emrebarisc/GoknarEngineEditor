@@ -32,6 +32,7 @@
 
 #include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorHUD.h"
+#include "UI/EditorRuntimeDynamicObjectFactoryRegistrar.h"
 #include "UI/EditorWidgets.h"
 #include "UI/Panels/AssetSelectorPanel.h"
 #include "UI/Panels/ParticleSystemPanel.h"
@@ -831,6 +832,24 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 	if (assetSelectionComponents.empty() && assetSelectionComponent_)
 	{
 		assetSelectionComponents.push_back(assetSelectionComponent_);
+	}
+	assetSelectionComponents.erase(
+		std::remove_if(
+			assetSelectionComponents.begin(),
+			assetSelectionComponents.end(),
+			[](void* component)
+			{
+				return EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(static_cast<Component*>(component));
+			}),
+		assetSelectionComponents.end());
+	if (assetSelectionComponents.empty())
+	{
+		assetSelectionComponent_ = nullptr;
+		assetSelectionComponents_.clear();
+		assetSelectionComponentType_ = DetailsAssetSelectionTarget::None;
+		assetSelectionSubMeshIndex_ = -1;
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::None;
+		return;
 	}
 
 	switch (assetSelectionComponentType_)
@@ -1633,6 +1652,8 @@ void DetailsPanel::DrawMultipleObjectDetails()
 
 		bool firstIsRootComponent = false;
 		bool hasRootComponentDiff = false;
+		bool hasReflectedComponent = false;
+		bool allComponentsAreReflected = !componentGroup.components.empty();
 		if (!componentGroup.components.empty())
 		{
 			Component* firstComponent = componentGroup.components.front();
@@ -1643,8 +1664,11 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				if (isRootComponent != firstIsRootComponent)
 				{
 					hasRootComponentDiff = true;
-					break;
 				}
+
+				const bool isReflectedComponent = EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(component);
+				hasReflectedComponent |= isReflectedComponent;
+				allComponentsAreReflected &= isReflectedComponent;
 			}
 		}
 
@@ -1656,9 +1680,22 @@ void DetailsPanel::DrawMultipleObjectDetails()
 		{
 			componentTitle += " (RootComponent)";
 		}
+		if (allComponentsAreReflected)
+		{
+			componentTitle += " (Inherited)";
+		}
+		else if (hasReflectedComponent)
+		{
+			componentTitle += " (Mixed Inherited)";
+		}
 
 		ImGui::Separator();
 		ImGui::Text("%s", componentTitle.c_str());
+		if (hasReflectedComponent)
+		{
+			ImGui::TextDisabled("Defined by class reflection");
+		}
+		ImGui::BeginDisabled(hasReflectedComponent);
 
 		bool componentTransformChanged = false;
 		componentTransformChanged |= DrawBatchVector3Field(
@@ -2019,6 +2056,7 @@ void DetailsPanel::DrawMultipleObjectDetails()
 			}
 		}
 
+		ImGui::EndDisabled();
 		ImGui::PopID();
 	}
 
@@ -2127,14 +2165,24 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 		componentTypeString = "Component";
 	}
 
+	const bool isReflectedComponent = EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(component);
 	if (component->GetOwner()->GetRootComponent() == component)
 	{
 		componentTypeString += " (RootComponent)";
 	}
+	if (isReflectedComponent)
+	{
+		componentTypeString += " (Inherited)";
+	}
 
 	ImGui::Text(componentTypeString.c_str());
+	if (isReflectedComponent)
+	{
+		ImGui::TextDisabled("Defined by class reflection");
+	}
 
 	ImGui::Separator();
+	ImGui::BeginDisabled(isReflectedComponent);
 
 	Vector3 componentRelativePosition = component->GetRelativePosition();
 	Vector3 componentRelativeRotationEulerDegrees = component->GetRelativeRotation().ToEulerDegrees();
@@ -2213,6 +2261,8 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	{
 		DrawNavigationTreeComponentDetails(navigationTreeComponent);
 	}
+
+	ImGui::EndDisabled();
 }
 
 void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMeshComponent)

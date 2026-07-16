@@ -20,6 +20,7 @@
 #include "UI/EditorContext.h"
 #include "UI/EditorRuntimeDynamicObjectFactoryRegistrar.h"
 #include "UI/EditorHUD.h"
+#include "UI/EditorSceneSerializer.h"
 
 #include "Physics/RigidBody.h"
 #include "Goknar/Objects/ReflectionProbeObject.h"
@@ -72,7 +73,7 @@ Editor::Editor() : Application()
 
 			std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
 			EditorContext::Get()->sceneSavePath = mainScenePath;
-			OpenScene(mainScenePath);
+			EditorSceneSerializer::OpenScene(mainScenePath);
 			EditorContext::Get()->ClearSceneDirty();
 
 		}
@@ -129,7 +130,7 @@ void Editor::LoadProject(const std::string& projectPath)
 
 		std::string mainScenePath = config.GetString("Core", "MainScene", "Scenes/DefaultScene.xml");
 		EditorContext::Get()->sceneSavePath = mainScenePath;
-		OpenScene(mainScenePath);
+		EditorSceneSerializer::OpenScene(mainScenePath);
 		EditorContext::Get()->ClearSceneDirty();
 	}
 	else

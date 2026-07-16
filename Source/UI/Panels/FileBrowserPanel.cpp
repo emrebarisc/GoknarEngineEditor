@@ -13,7 +13,6 @@
 #include "Goknar/Engine.h"
 #include "Goknar/Application.h"
 #include "Goknar/Helpers/ContentPathUtils.h"
-#include "Goknar/Helpers/SceneParser.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Renderer/Texture.h"
@@ -23,6 +22,7 @@
 #include "Goknar/Materials/MaterialFunctionSerializer.h"
 
 #include "UI/EditorAssetPathUtils.h"
+#include "UI/EditorSceneSerializer.h"
 #include "UI/EditorSourceCodeUtils.h"
 #include "UI/EditorUtils.h"
 
@@ -976,7 +976,7 @@ void FileBrowserPanel::OpenPendingScene()
 		return;
 	}
 
-	if (engine->GetApplication()->OpenScene(pendingSceneToOpen_))
+	if (EditorSceneSerializer::OpenScene(pendingSceneToOpen_))
 	{
 		EditorContext* context = EditorContext::Get();
 		context->sceneSavePath = pendingSceneToOpen_;
@@ -996,7 +996,7 @@ bool FileBrowserPanel::SaveCurrentScene()
 	}
 
 	hud_->PrepareSceneForSave();
-	SceneParser::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + context->sceneSavePath);
+	EditorSceneSerializer::SaveScene(engine->GetApplication()->GetMainScene(), ContentDir + context->sceneSavePath);
 	context->ClearSceneDirty();
 	return true;
 }
