@@ -839,7 +839,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			assetSelectionComponents.end(),
 			[](void* component)
 			{
-				return EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(static_cast<Component*>(component));
+				return EditorRuntimeDynamicObjectFactoryRegistrar::IsConstructorOwnedComponent(static_cast<Component*>(component));
 			}),
 		assetSelectionComponents.end());
 	if (assetSelectionComponents.empty())
@@ -1652,8 +1652,8 @@ void DetailsPanel::DrawMultipleObjectDetails()
 
 		bool firstIsRootComponent = false;
 		bool hasRootComponentDiff = false;
-		bool hasReflectedComponent = false;
-		bool allComponentsAreReflected = !componentGroup.components.empty();
+		bool hasConstructorOwnedComponent = false;
+		bool allComponentsAreConstructorOwned = !componentGroup.components.empty();
 		if (!componentGroup.components.empty())
 		{
 			Component* firstComponent = componentGroup.components.front();
@@ -1666,9 +1666,9 @@ void DetailsPanel::DrawMultipleObjectDetails()
 					hasRootComponentDiff = true;
 				}
 
-				const bool isReflectedComponent = EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(component);
-				hasReflectedComponent |= isReflectedComponent;
-				allComponentsAreReflected &= isReflectedComponent;
+				const bool isConstructorOwnedComponent = EditorRuntimeDynamicObjectFactoryRegistrar::IsConstructorOwnedComponent(component);
+				hasConstructorOwnedComponent |= isConstructorOwnedComponent;
+				allComponentsAreConstructorOwned &= isConstructorOwnedComponent;
 			}
 		}
 
@@ -1680,22 +1680,22 @@ void DetailsPanel::DrawMultipleObjectDetails()
 		{
 			componentTitle += " (RootComponent)";
 		}
-		if (allComponentsAreReflected)
+		if (allComponentsAreConstructorOwned)
 		{
 			componentTitle += " (Inherited)";
 		}
-		else if (hasReflectedComponent)
+		else if (hasConstructorOwnedComponent)
 		{
 			componentTitle += " (Mixed Inherited)";
 		}
 
 		ImGui::Separator();
 		ImGui::Text("%s", componentTitle.c_str());
-		if (hasReflectedComponent)
+		if (hasConstructorOwnedComponent)
 		{
-			ImGui::TextDisabled("Defined by class reflection");
+			ImGui::TextDisabled("Defined by class constructor");
 		}
-		ImGui::BeginDisabled(hasReflectedComponent);
+		ImGui::BeginDisabled(hasConstructorOwnedComponent);
 
 		bool componentTransformChanged = false;
 		componentTransformChanged |= DrawBatchVector3Field(
@@ -2165,24 +2165,24 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 		componentTypeString = "Component";
 	}
 
-	const bool isReflectedComponent = EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(component);
+	const bool isConstructorOwnedComponent = EditorRuntimeDynamicObjectFactoryRegistrar::IsConstructorOwnedComponent(component);
 	if (component->GetOwner()->GetRootComponent() == component)
 	{
 		componentTypeString += " (RootComponent)";
 	}
-	if (isReflectedComponent)
+	if (isConstructorOwnedComponent)
 	{
 		componentTypeString += " (Inherited)";
 	}
 
 	ImGui::Text(componentTypeString.c_str());
-	if (isReflectedComponent)
+	if (isConstructorOwnedComponent)
 	{
-		ImGui::TextDisabled("Defined by class reflection");
+		ImGui::TextDisabled("Defined by class constructor");
 	}
 
 	ImGui::Separator();
-	ImGui::BeginDisabled(isReflectedComponent);
+	ImGui::BeginDisabled(isConstructorOwnedComponent);
 
 	Vector3 componentRelativePosition = component->GetRelativePosition();
 	Vector3 componentRelativeRotationEulerDegrees = component->GetRelativeRotation().ToEulerDegrees();

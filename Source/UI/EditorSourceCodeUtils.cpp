@@ -20,10 +20,10 @@
 
 #include "Goknar/Managers/ConfigManager.h"
 #include "UI/EditorAssetPathUtils.h"
+#include "UI/EditorGameProjectBuildUtils.h"
 
 namespace
 {
-	constexpr const char* kEditorConfigPath = "Config/EditorConfig.ini";
 	constexpr const char* kEditorConfigSection = "Editor";
 	constexpr const char* kSourceCodeEditorKey = "SourceCodeEditor";
 
@@ -960,7 +960,7 @@ std::vector<EditorSourceCodeUtils::SourceCodeEditorOption> EditorSourceCodeUtils
 EditorSourceCodeUtils::SourceCodeEditor EditorSourceCodeUtils::GetPreferredSourceCodeEditor()
 {
 	ConfigManager editorConfig;
-	if (editorConfig.ReadFile(kEditorConfigPath))
+	if (editorConfig.ReadFile(EditorGameProjectBuildUtils::GetEditorConfigPath()))
 	{
 		return SourceCodeEditorFromConfigValue(editorConfig.GetString(kEditorConfigSection, kSourceCodeEditorKey, "Auto"));
 	}
@@ -970,7 +970,7 @@ EditorSourceCodeUtils::SourceCodeEditor EditorSourceCodeUtils::GetPreferredSourc
 
 bool EditorSourceCodeUtils::SetPreferredSourceCodeEditor(SourceCodeEditor editor)
 {
-	return SetConfigValue(kEditorConfigPath, kEditorConfigSection, kSourceCodeEditorKey, GetSourceCodeEditorConfigValue(editor));
+	return SetConfigValue(EditorGameProjectBuildUtils::GetEditorConfigPath(), kEditorConfigSection, kSourceCodeEditorKey, GetSourceCodeEditorConfigValue(editor));
 }
 
 bool EditorSourceCodeUtils::IsSourceCodeEditorAvailable(SourceCodeEditor editor)

@@ -3,36 +3,28 @@
 #include "imgui.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cctype>
-#include <cstdlib>
-#include <cstring>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <iterator>
 #include <sstream>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "Goknar/Engine.h"
 #include "Goknar/Factories/DynamicObjectFactory.h"
-#include "Goknar/ObjectBase.h"
-#include "Goknar/Physics/Character.h"
-#include "Goknar/Physics/OverlappingPhysicsObject.h"
-#include "Goknar/Physics/PhysicsObject.h"
-#include "Goknar/Physics/RigidBody.h"
-#include "Goknar/UI/HUD.h"
-#include "Goknar/Components/Component.h"
-#include "Goknar/Physics/Components/PhysicsMovementComponent.h"
 
 #include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorContext.h"
+#include "UI/EditorGameClassRegistration.h"
+#include "UI/EditorGameProjectBuildUtils.h"
 #include "UI/EditorHUD.h"
 #include "UI/Panels/SystemFileBrowserPanel.h"
 
 namespace
 {
-	const ClassCreationPanel::BaseClassOption kBaseClassOptions[] =
+	const ClassCreationPanel::BaseClassOption kBuiltInBaseClassOptions[] =
 	{
 		{ "ObjectBase", "Goknar/ObjectBase.h", false },
 		{ "PhysicsObject", "Goknar/Physics/PhysicsObject.h", false },
@@ -42,45 +34,6 @@ namespace
 		{ "HUD", "Goknar/UI/HUD.h", false },
 		{ "Component", "Goknar/Components/Component.h", true },
 		{ "PhysicsMovementComponent", "Goknar/Physics/Components/PhysicsMovementComponent.h", true }
-	};
-
-	template <typename BaseType>
-	class CreatedObjectPlaceholder : public BaseType
-	{
-	public:
-		explicit CreatedObjectPlaceholder(std::string registeredClassName) :
-			BaseType(),
-			registeredClassName_(std::move(registeredClassName))
-		{
-			this->SetName(registeredClassName_);
-		}
-
-		const std::string& GetRegisteredClassName() const
-		{
-			return registeredClassName_;
-		}
-
-	private:
-		std::string registeredClassName_;
-	};
-
-	template <typename BaseType>
-	class CreatedComponentPlaceholder : public BaseType
-	{
-	public:
-		CreatedComponentPlaceholder(Component* parentComponent, std::string registeredClassName) :
-			BaseType(parentComponent),
-			registeredClassName_(std::move(registeredClassName))
-		{
-		}
-
-		const std::string& GetRegisteredClassName() const
-		{
-			return registeredClassName_;
-		}
-
-	private:
-		std::string registeredClassName_;
 	};
 
 	std::string Trim(const std::string& value)
@@ -127,38 +80,6 @@ namespace
 		return true;
 	}
 
-	template <typename BaseType>
-	void RegisterObjectPlaceholder(const std::string& className)
-	{
-		DynamicObjectFactory::GetInstance()->RegisterClass(
-			className,
-			[className]() -> ObjectBase*
-			{
-				return new CreatedObjectPlaceholder<BaseType>(className);
-			},
-			[className](const ObjectBase* object) -> bool
-			{
-				const auto* placeholder = dynamic_cast<const CreatedObjectPlaceholder<BaseType>*>(object);
-				return placeholder && placeholder->GetRegisteredClassName() == className;
-			});
-	}
-
-	template <typename BaseType>
-	void RegisterComponentPlaceholder(const std::string& className, DynamicComponentOwnerRequirement ownerRequirement)
-	{
-		DynamicObjectFactory::GetInstance()->RegisterComponentClass(
-			className,
-			[className](Component* parentComponent) -> Component*
-			{
-				return new CreatedComponentPlaceholder<BaseType>(parentComponent, className);
-			},
-			[className](const Component* component) -> bool
-			{
-				const auto* placeholder = dynamic_cast<const CreatedComponentPlaceholder<BaseType>*>(component);
-				return placeholder && placeholder->GetRegisteredClassName() == className;
-			},
-			ownerRequirement);
-	}
 }
 
 ClassCreationPanel::ClassCreationPanel(EditorHUD* hud) :
@@ -213,13 +134,19 @@ void ClassCreationPanel::Draw()
 
 	ImGui::InputText("Class Name", classNameBuffer_, sizeof(classNameBuffer_));
 
-	const char* selectedBaseClassName = kBaseClassOptions[selectedBaseClassIndex_].name;
+	const std::vector<BaseClassOption> baseClassOptions = BuildBaseClassOptions();
+	if (selectedBaseClassIndex_ < 0 || selectedBaseClassIndex_ >= static_cast<int>(baseClassOptions.size()))
+	{
+		selectedBaseClassIndex_ = 0;
+	}
+
+	const char* selectedBaseClassName = baseClassOptions.empty() ? "" : baseClassOptions[selectedBaseClassIndex_].name.c_str();
 	if (ImGui::BeginCombo("Base Class", selectedBaseClassName))
 	{
-		for (int optionIndex = 0; optionIndex < static_cast<int>(std::size(kBaseClassOptions)); ++optionIndex)
+		for (int optionIndex = 0; optionIndex < static_cast<int>(baseClassOptions.size()); ++optionIndex)
 		{
 			const bool isSelected = optionIndex == selectedBaseClassIndex_;
-			if (ImGui::Selectable(kBaseClassOptions[optionIndex].name, isSelected))
+			if (ImGui::Selectable(baseClassOptions[optionIndex].name.c_str(), isSelected))
 			{
 				selectedBaseClassIndex_ = optionIndex;
 			}
@@ -241,12 +168,6 @@ void ClassCreationPanel::Draw()
 	if (!statusMessage_.empty())
 	{
 		ImGui::TextColored(hasError_ ? ImVec4(1.f, 0.25f, 0.2f, 1.f) : ImVec4(0.3f, 0.85f, 0.35f, 1.f), "%s", statusMessage_.c_str());
-	}
-
-	if (asyncCMakeRebuildResult_.valid() &&
-		asyncCMakeRebuildResult_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-	{
-		asyncCMakeRebuildResult_.get();
 	}
 
 	ImGui::Separator();
@@ -300,7 +221,20 @@ void ClassCreationPanel::CreateClass()
 		return;
 	}
 
-	const BaseClassOption& baseClassOption = kBaseClassOptions[selectedBaseClassIndex_];
+	std::vector<BaseClassOption> baseClassOptions = BuildBaseClassOptions();
+	if (baseClassOptions.empty())
+	{
+		statusMessage_ = "No base classes are available.";
+		hasError_ = true;
+		return;
+	}
+
+	if (selectedBaseClassIndex_ < 0 || selectedBaseClassIndex_ >= static_cast<int>(baseClassOptions.size()))
+	{
+		selectedBaseClassIndex_ = 0;
+	}
+
+	const BaseClassOption baseClassOption = baseClassOptions[selectedBaseClassIndex_];
 	if (!WriteClassFiles(className, baseClassOption, errorMessage))
 	{
 		statusMessage_ = errorMessage;
@@ -315,13 +249,20 @@ void ClassCreationPanel::CreateClass()
 		return;
 	}
 
-	RegisterCreatedClass(className, baseClassOption);
-	RebuildCMakeFiles();
 	EditorContext::Get()->BuildFileTree();
 
-	statusMessage_ = className + " created. CMake regeneration was started.";
+	statusMessage_ = className + " created. Rebuilding the editor to compile and register it.";
 	hasError_ = false;
 	classNameBuffer_[0] = '\0';
+
+	if (!EditorGameProjectBuildUtils::RestartEditor(true))
+	{
+		statusMessage_ = className + " created, but the editor rebuild could not be started.";
+		hasError_ = true;
+		return;
+	}
+
+	engine->Exit();
 }
 
 bool ClassCreationPanel::ValidateClassName(const std::string& className, std::string& outError) const
@@ -369,6 +310,14 @@ bool ClassCreationPanel::ValidateClassName(const std::string& className, std::st
 		return false;
 	}
 
+	DynamicObjectFactory* dynamicObjectFactory = DynamicObjectFactory::GetInstance();
+	if (dynamicObjectFactory->GetObjectMap().find(className) != dynamicObjectFactory->GetObjectMap().end() ||
+		dynamicObjectFactory->GetComponentMap().find(className) != dynamicObjectFactory->GetComponentMap().end())
+	{
+		outError = "A dynamic class with that name is already registered.";
+		return false;
+	}
+
 	return true;
 }
 
@@ -392,6 +341,35 @@ bool ClassCreationPanel::IsSelectedLocationValid(std::string& outError) const
 	return true;
 }
 
+std::vector<ClassCreationPanel::BaseClassOption> ClassCreationPanel::BuildBaseClassOptions() const
+{
+	std::vector<BaseClassOption> baseClassOptions;
+	std::unordered_set<std::string> registeredBaseClassNames;
+
+	for (const BaseClassOption& baseClassOption : kBuiltInBaseClassOptions)
+	{
+		baseClassOptions.push_back(baseClassOption);
+		registeredBaseClassNames.insert(baseClassOption.name);
+	}
+
+	for (const EditorGameClassRegistration::ClassMetadata& classMetadata : EditorGameClassRegistration::GetRegisteredClassMetadata())
+	{
+		if (classMetadata.className.empty() || classMetadata.includePath.empty())
+		{
+			continue;
+		}
+
+		if (!registeredBaseClassNames.insert(classMetadata.className).second)
+		{
+			continue;
+		}
+
+		baseClassOptions.push_back({ classMetadata.className, classMetadata.includePath, classMetadata.isComponent });
+	}
+
+	return baseClassOptions;
+}
+
 bool ClassCreationPanel::WriteClassFiles(const std::string& className, const BaseClassOption& baseClassOption, std::string& outError)
 {
 	const std::filesystem::path classDirectory = std::filesystem::path(selectedDirectory_);
@@ -413,6 +391,10 @@ bool ClassCreationPanel::WriteClassFiles(const std::string& className, const Bas
 
 	headerFile << "#pragma once\n\n";
 	headerFile << "#include \"" << baseClassOption.includePath << "\"\n\n";
+	if (baseClassOption.isComponent && baseClassOption.includePath != "Goknar/Components/Component.h")
+	{
+		headerFile << "#include \"Goknar/Components/Component.h\"\n\n";
+	}
 	headerFile << "class " << className << " : public " << baseClassOption.name << "\n";
 	headerFile << "{\n";
 	headerFile << "public:\n";
@@ -430,7 +412,7 @@ bool ClassCreationPanel::WriteClassFiles(const std::string& className, const Bas
 	{
 		headerFile << "\tvirtual void TickComponent(float deltaTime) override;\n";
 	}
-	else if (std::strcmp(baseClassOption.name, "HUD") == 0)
+	else if (baseClassOption.name == "HUD")
 	{
 		headerFile << "\tvirtual void UpdateHUD() override;\n";
 	}
@@ -480,7 +462,7 @@ bool ClassCreationPanel::WriteClassFiles(const std::string& className, const Bas
 		sourceFile << "\t" << baseClassOption.name << "::TickComponent(deltaTime);\n";
 		sourceFile << "}\n";
 	}
-	else if (std::strcmp(baseClassOption.name, "HUD") == 0)
+	else if (baseClassOption.name == "HUD")
 	{
 		sourceFile << "void " << className << "::UpdateHUD()\n";
 		sourceFile << "{\n";
@@ -568,60 +550,6 @@ bool ClassCreationPanel::EnsureCMakeSubdirectory(const std::string& classDirecto
 	return true;
 }
 
-void ClassCreationPanel::RebuildCMakeFiles()
-{
-	const std::string projectRoot = GetProjectRootPath();
-	std::string command;
-#ifdef GOKNAR_PLATFORM_WINDOWS
-	command = "pushd " + QuoteForShell(projectRoot) + " && Build.sh nobuild";
-#else
-	command = "cd " + QuoteForShell(projectRoot) + " && ./Build.sh nobuild";
-#endif
-
-	asyncCMakeRebuildResult_ = std::async(std::launch::async,
-		[command]()
-		{
-			std::system(command.c_str());
-		});
-}
-
-void ClassCreationPanel::RegisterCreatedClass(const std::string& className, const BaseClassOption& baseClassOption)
-{
-	const std::string baseClassName = baseClassOption.name;
-	if (baseClassName == "ObjectBase")
-	{
-		RegisterObjectPlaceholder<ObjectBase>(className);
-	}
-	else if (baseClassName == "PhysicsObject")
-	{
-		RegisterObjectPlaceholder<PhysicsObject>(className);
-	}
-	else if (baseClassName == "OverlappingPhysicsObject")
-	{
-		RegisterObjectPlaceholder<OverlappingPhysicsObject>(className);
-	}
-	else if (baseClassName == "RigidBody")
-	{
-		RegisterObjectPlaceholder<RigidBody>(className);
-	}
-	else if (baseClassName == "Character")
-	{
-		RegisterObjectPlaceholder<Character>(className);
-	}
-	else if (baseClassName == "HUD")
-	{
-		RegisterObjectPlaceholder<HUD>(className);
-	}
-	else if (baseClassName == "Component")
-	{
-		RegisterComponentPlaceholder<Component>(className, DynamicComponentOwnerRequirement::ObjectBase);
-	}
-	else if (baseClassName == "PhysicsMovementComponent")
-	{
-		RegisterComponentPlaceholder<PhysicsMovementComponent>(className, DynamicComponentOwnerRequirement::OverlappingPhysicsObject);
-	}
-}
-
 std::string ClassCreationPanel::GetProjectRootPath() const
 {
 	return EnsureTrailingSlash(NormalizePath(EditorAssetPathUtils::GetProjectRootPath()));
@@ -650,9 +578,4 @@ std::string ClassCreationPanel::EnsureTrailingSlash(const std::string& path) con
 	}
 
 	return path + "/";
-}
-
-std::string ClassCreationPanel::QuoteForShell(const std::string& path) const
-{
-	return "\"" + path + "\"";
 }

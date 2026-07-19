@@ -3,6 +3,7 @@
 #include "imgui.h"
 
 #include "UI/EditorContext.h"
+#include "UI/EditorGameProjectBuildUtils.h"
 #include "UI/EditorHUD.h"
 #include "UI/Panels/AnimationGraphPanel.h"
 #include "UI/Panels/ViewportPanel.h"
@@ -40,17 +41,6 @@
 #include <filesystem>
 #include <fstream>
 
-#if GOKNAR_PLATFORM_WINDOWS
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
-		#include <windows.h>
-		#include <shellapi.h>
-#else
-	#include <unistd.h>
-	#include <sys/types.h>
-#endif
-
 namespace
 {
 	std::string Trim(const std::string& value)
@@ -77,6 +67,46 @@ namespace
 		}
 
 		return normalizedPath;
+	}
+
+	std::string ResolveEngineLocationFromConfigPath(const std::string& configPath, const std::string& engineLocation)
+	{
+		if (engineLocation.empty())
+		{
+			return "";
+		}
+
+		std::filesystem::path resolvedEnginePath(engineLocation);
+		if (resolvedEnginePath.is_relative())
+		{
+			std::error_code errorCode;
+			std::filesystem::path absoluteConfigPath = std::filesystem::absolute(std::filesystem::path(configPath), errorCode);
+			if (errorCode)
+			{
+				absoluteConfigPath = std::filesystem::path(configPath);
+			}
+
+			const std::filesystem::path configDirectory = absoluteConfigPath.parent_path();
+			const std::filesystem::path projectRoot = configDirectory.filename() == "Config"
+				? configDirectory.parent_path()
+				: configDirectory;
+			resolvedEnginePath = projectRoot / resolvedEnginePath;
+		}
+
+		std::error_code errorCode;
+		const std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(resolvedEnginePath, errorCode);
+		if (!errorCode)
+		{
+			return NormalizePath(canonicalPath.string());
+		}
+
+		return NormalizePath(resolvedEnginePath.lexically_normal().string());
+	}
+
+	bool IsEngineLocationValid(const std::string& engineLocation)
+	{
+		std::error_code errorCode;
+		return std::filesystem::exists(std::filesystem::path(engineLocation) / "CMakeLists.txt", errorCode) && !errorCode;
 	}
 
 	std::string EnsureTrailingSlash(const std::string& path)
@@ -136,7 +166,7 @@ namespace
 				continue;
 			}
 
-			return NormalizePath(Trim(line.substr(equalsIndex + 1)));
+			return ResolveEngineLocationFromConfigPath(configPath, Trim(line.substr(equalsIndex + 1)));
 		}
 
 		return "";
@@ -156,7 +186,7 @@ namespace
 		{
 			std::error_code errorCode;
 			const std::filesystem::path absolutePath = std::filesystem::weakly_canonical(candidatePath, errorCode);
-			if (!errorCode && std::filesystem::exists(absolutePath))
+			if (!errorCode && IsEngineLocationValid(absolutePath.string()))
 			{
 				return NormalizePath(absolutePath.string());
 			}
@@ -168,7 +198,7 @@ namespace
 	std::string GetEditorEngineLocation()
 	{
 		std::string engineLocation = GetEngineLocationFromBuildConfig("Config/Build.ini");
-		if (!engineLocation.empty())
+		if (!engineLocation.empty() && IsEngineLocationValid(engineLocation))
 		{
 			return engineLocation;
 		}
@@ -352,35 +382,20 @@ void MenuBarPanel::OnProjectSelected(const std::string& directoryPath)
 
 void MenuBarPanel::ContinueOpeningProject()
 {
-	if (!WriteEditorConfigFile("Config/EditorConfig.ini", pendingProjectName_, pendingProjectDirectoryPath_))
+	if (!WriteEditorConfigFile(EditorGameProjectBuildUtils::GetEditorConfigPath(), pendingProjectName_, pendingProjectDirectoryPath_))
 	{
 		GOKNAR_CORE_ERROR("Failed to update Config/EditorConfig.ini while opening the selected project.");
 		return;
 	}
 
-#ifdef GOKNAR_PLATFORM_WINDOWS
-	TCHAR szPath[MAX_PATH];
-	GetModuleFileName(NULL, szPath, MAX_PATH);
-
-	TCHAR szDir[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, szDir);
-
-	ShellExecute(NULL, NULL, szPath, NULL, szDir, SW_SHOWNORMAL);
-#else
-	pid_t pid = fork();
-
-	if (pid == 0)
+	const bool shouldRebuildGameEditorProject = !EditorGameProjectBuildUtils::IsCompiledGameEditorProjectCurrent(pendingProjectDirectoryPath_);
+	if (!EditorGameProjectBuildUtils::RestartEditor(shouldRebuildGameEditorProject))
 	{
-		char* args[] = { (char*)"./GoknarEditor", NULL };
-		execv(args[0], args);
-
-		_exit(1);
+		GOKNAR_CORE_ERROR(
+			"Failed to restart editor%s.",
+			shouldRebuildGameEditorProject ? " after starting game project rebuild" : "");
+		return;
 	}
-	else if (pid < 0)
-	{
-		GOKNAR_CORE_ERROR("Failed to fork process for restart.");
-	}
-#endif
 
 	engine->Exit();
 }

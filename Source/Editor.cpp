@@ -18,6 +18,7 @@
 
 #include "Objects/EditorFreeCameraObject.h"
 #include "UI/EditorContext.h"
+#include "UI/EditorGameProjectBuildUtils.h"
 #include "UI/EditorRuntimeDynamicObjectFactoryRegistrar.h"
 #include "UI/EditorHUD.h"
 #include "UI/EditorSceneSerializer.h"
@@ -35,10 +36,20 @@ Editor::Editor() : Application()
 
 	ConfigManager editorConfig;
 	std::string currentProjectPath = "./";
-	if (editorConfig.ReadFile("Config/EditorConfig.ini"))
+	if (editorConfig.ReadFile(EditorGameProjectBuildUtils::GetEditorConfigPath()))
 	{
 		currentProjectPath = editorConfig.GetString("Editor", "CurrentProjectPath", "");
 		ProjectDir = currentProjectPath;
+		if (!EditorGameProjectBuildUtils::IsCompiledGameEditorProjectCurrent(currentProjectPath))
+		{
+			GOKNAR_CORE_WARN("Current project differs from the game classes compiled into the editor. Rebuilding the editor for %s.", currentProjectPath.c_str());
+			if (!EditorGameProjectBuildUtils::RestartEditor(true))
+			{
+				GOKNAR_CORE_ERROR("Failed to start editor rebuild for %s.", currentProjectPath.c_str());
+			}
+			engine->Exit();
+			return;
+		}
 		LoadProject(currentProjectPath);
 	}
 	else

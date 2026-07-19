@@ -9,10 +9,12 @@ endif()
 
 file(STRINGS "Config/Build.ini" ENGINE_LOCATION_LINE REGEX "^EngineLocation=")
 set(ENGINE_PATH "")
+set(CONFIGURED_ENGINE_PATH "")
 
 if(ENGINE_LOCATION_LINE)
     string(REGEX REPLACE "^EngineLocation=(.*)$" "\\1" ENGINE_PATH "${ENGINE_LOCATION_LINE}")
     string(STRIP "${ENGINE_PATH}" ENGINE_PATH)
+    set(CONFIGURED_ENGINE_PATH "${ENGINE_PATH}")
 endif()
 
 if(ENGINE_PATH)
@@ -20,8 +22,16 @@ if(ENGINE_PATH)
     if(NOT IS_ABSOLUTE "${ENGINE_PATH}")
         get_filename_component(ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINE_PATH}" ABSOLUTE)
     endif()
-else()
+    if(NOT EXISTS "${ENGINE_PATH}/CMakeLists.txt")
+        message(WARNING "EngineLocation '${CONFIGURED_ENGINE_PATH}' does not contain a CMakeLists.txt. Trying fallback engine paths.")
+        set(ENGINE_PATH "")
+    endif()
+endif()
+
+if(NOT ENGINE_PATH)
     set(ENGINE_PATH_CANDIDATES
+        "${CMAKE_CURRENT_SOURCE_DIR}/GoknarEngine/Goknar"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../GoknarEngine/Goknar"
         "${CMAKE_CURRENT_SOURCE_DIR}/../Goknar"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../GoknarEngine/Goknar"
     )
@@ -35,7 +45,7 @@ else()
     endforeach()
 
     if(NOT ENGINE_PATH)
-        message(FATAL_ERROR "EngineLocation is not set in Config/Build.ini and no fallback engine path could be found. Set EngineLocation to your Goknar engine directory.")
+        message(FATAL_ERROR "Could not find the Goknar engine. Set EngineLocation in Config/Build.ini to your Goknar engine directory.")
     endif()
 endif()
 
@@ -156,9 +166,11 @@ if(WIN32 OR MSVC)
     # Force Visual Studio Startup Project using the variable
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${APP_NAME})
 
-    add_custom_command(TARGET ${APP_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:zlib>
-            $<TARGET_FILE_DIR:${APP_NAME}>
-    )
+    if(TARGET zlib)
+        add_custom_command(TARGET ${APP_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:zlib>
+                $<TARGET_FILE_DIR:${APP_NAME}>
+        )
+    endif()
 endif()

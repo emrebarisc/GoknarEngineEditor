@@ -4,7 +4,9 @@
 
 #include <chrono>
 
+#ifndef GOKNAR_EDITOR_COMPANION
 #include "Goknar.h"
+#endif
 #include "Goknar/Engine.h"
 #include "Goknar/Scene.h"
 #include "Goknar/ObjectBase.h"
@@ -100,7 +102,9 @@ void Game::Run()
 {
 }
 
+#ifndef GOKNAR_EDITOR_COMPANION
 Application *CreateApplication()
 {
 	return new Game();
 }
+#endif

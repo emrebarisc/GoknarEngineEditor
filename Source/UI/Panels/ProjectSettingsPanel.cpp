@@ -3,12 +3,14 @@
 #include "imgui.h"
 
 #include "Goknar/Managers/ConfigManager.h"
+#include "UI/EditorGameProjectBuildUtils.h"
 #include "UI/EditorSourceCodeUtils.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cfloat>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <unordered_map>
 
@@ -35,6 +37,20 @@ namespace
 
 		const size_t lastNonWhitespace = value.find_last_not_of(" \t\r\n");
 		return value.substr(firstNonWhitespace, lastNonWhitespace - firstNonWhitespace + 1);
+	}
+
+	std::string NormalizePathString(const std::string& path)
+	{
+		std::string normalizedPath = path;
+		for (char& character : normalizedPath)
+		{
+			if (character == '\\')
+			{
+				character = '/';
+			}
+		}
+
+		return normalizedPath;
 	}
 
 	bool IsTruthyConfigValue(const std::string& value)
@@ -426,7 +442,7 @@ bool ProjectSettingsPanel::WriteFieldValue(ConfigDocument& document, ConfigField
 std::string ProjectSettingsPanel::ResolveActiveProjectPath()
 {
 	ConfigManager editorConfig;
-	if (editorConfig.ReadFile("Config/EditorConfig.ini"))
+	if (editorConfig.ReadFile(EditorGameProjectBuildUtils::GetEditorConfigPath()))
 	{
 		const std::string currentProjectPath = editorConfig.GetString("Editor", "CurrentProjectPath", "");
 		if (!currentProjectPath.empty())
@@ -440,16 +456,50 @@ std::string ProjectSettingsPanel::ResolveActiveProjectPath()
 
 std::string ProjectSettingsPanel::NormalizePath(const std::string& path)
 {
-	std::string normalizedPath = path;
-	for (char& character : normalizedPath)
+	return NormalizePathString(path);
+}
+
+namespace
+{
+	std::string ResolveEngineLocationFromConfigPath(const std::string& configPath, const std::string& engineLocation)
 	{
-		if (character == '\\')
+		if (engineLocation.empty())
 		{
-			character = '/';
+			return "";
 		}
+
+		std::filesystem::path resolvedEnginePath(engineLocation);
+		if (resolvedEnginePath.is_relative())
+		{
+			std::error_code errorCode;
+			std::filesystem::path absoluteConfigPath = std::filesystem::absolute(std::filesystem::path(configPath), errorCode);
+			if (errorCode)
+			{
+				absoluteConfigPath = std::filesystem::path(configPath);
+			}
+
+			const std::filesystem::path configDirectory = absoluteConfigPath.parent_path();
+			const std::filesystem::path projectRoot = configDirectory.filename() == "Config"
+				? configDirectory.parent_path()
+				: configDirectory;
+			resolvedEnginePath = projectRoot / resolvedEnginePath;
+		}
+
+		std::error_code errorCode;
+		const std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(resolvedEnginePath, errorCode);
+		if (!errorCode)
+		{
+			return NormalizePathString(canonicalPath.string());
+		}
+
+		return NormalizePathString(resolvedEnginePath.lexically_normal().string());
 	}
 
-	return normalizedPath;
+	bool IsEngineLocationValid(const std::string& engineLocation)
+	{
+		std::error_code errorCode;
+		return std::filesystem::exists(std::filesystem::path(engineLocation) / "CMakeLists.txt", errorCode) && !errorCode;
+	}
 }
 
 std::string ProjectSettingsPanel::EnsureTrailingSlash(const std::string& path)
@@ -511,7 +561,7 @@ std::string ProjectSettingsPanel::GetEngineLocationFromBuildConfig(const std::st
 			continue;
 		}
 
-		return NormalizePath(Trim(line.substr(equalsIndex + 1)));
+		return ResolveEngineLocationFromConfigPath(configPath, Trim(line.substr(equalsIndex + 1)));
 	}
 
 	return "";
@@ -531,7 +581,7 @@ std::string ProjectSettingsPanel::GetFallbackEngineLocation()
 	{
 		std::error_code errorCode;
 		const std::filesystem::path absolutePath = std::filesystem::weakly_canonical(candidatePath, errorCode);
-		if (!errorCode && std::filesystem::exists(absolutePath))
+		if (!errorCode && IsEngineLocationValid(absolutePath.string()))
 		{
 			return NormalizePath(absolutePath.string());
 		}
@@ -577,7 +627,7 @@ void ProjectSettingsPanel::EnsureBuildConfigExists(const std::string& projectRoo
 	std::filesystem::create_directories(std::filesystem::path(buildConfigPath).parent_path(), errorCode);
 
 	std::string engineLocation = GetEngineLocationFromBuildConfig("Config/Build.ini");
-	if (engineLocation.empty())
+	if (engineLocation.empty() || !IsEngineLocationValid(engineLocation))
 	{
 		engineLocation = GetFallbackEngineLocation();
 	}

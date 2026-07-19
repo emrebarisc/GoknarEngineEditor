@@ -7,7 +7,6 @@
 #include "Goknar/Debug/DebugDrawer.h"
 #include "Goknar/Engine.h"
 #include "Goknar/Factories/DynamicObjectFactory.h"
-#include "Goknar/Helpers/ContentPathUtils.h"
 #include "Goknar/Helpers/SceneParser.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Scene.h"
@@ -18,7 +17,7 @@
 
 namespace
 {
-	constexpr const char* kReflectedComponentsOmittedAttribute = "EditorReflectedComponentsOmitted";
+	constexpr const char* kConstructorOwnedComponentsOmittedAttribute = "EditorReflectedComponentsOmitted";
 
 	bool ShouldWriteObject(Scene* scene, ObjectBase* object)
 	{
@@ -33,45 +32,6 @@ namespace
 		}
 
 		return !dynamic_cast<DebugObject*>(object);
-	}
-
-	bool SceneFileOmitsReflectedComponents(const std::string& path)
-	{
-		tinyxml2::XMLDocument document;
-		if (document.LoadFile(ContentPathUtils::ToAbsoluteContentPath(path).c_str()) != tinyxml2::XML_SUCCESS)
-		{
-			return false;
-		}
-
-		const tinyxml2::XMLElement* rootElement = document.RootElement();
-		return rootElement && rootElement->BoolAttribute(kReflectedComponentsOmittedAttribute, false);
-	}
-
-	void ApplyReflectionsToObjectTree(ObjectBase* object)
-	{
-		if (!object)
-		{
-			return;
-		}
-
-		EditorRuntimeDynamicObjectFactoryRegistrar::ApplyReflectionsToObject(object);
-		for (ObjectBase* childObject : object->GetChildren())
-		{
-			ApplyReflectionsToObjectTree(childObject);
-		}
-	}
-
-	void ApplyReflectionsToSceneObjects(Scene* scene)
-	{
-		if (!scene)
-		{
-			return;
-		}
-
-		for (ObjectBase* object : scene->GetObjects())
-		{
-			ApplyReflectionsToObjectTree(object);
-		}
 	}
 
 	void ApplyEditorComponentSerialization(ObjectBase* object, tinyxml2::XMLElement* componentsElement)
@@ -92,7 +52,7 @@ namespace
 			}
 
 			tinyxml2::XMLElement* nextComponentElement = componentElement->NextSiblingElement();
-			if (EditorRuntimeDynamicObjectFactoryRegistrar::IsReflectedComponent(component))
+			if (EditorRuntimeDynamicObjectFactoryRegistrar::IsConstructorOwnedComponent(component))
 			{
 				componentsElement->DeleteChild(componentElement);
 				componentElement = nextComponentElement;
@@ -174,22 +134,13 @@ namespace
 
 bool EditorSceneSerializer::OpenScene(const std::string& path)
 {
-	const bool previousApplyReflectionsOnCreate = EditorRuntimeDynamicObjectFactoryRegistrar::GetApplyReflectionsOnCreate();
-	EditorRuntimeDynamicObjectFactoryRegistrar::ClearReflectedComponentMarkers();
-	EditorRuntimeDynamicObjectFactoryRegistrar::SetApplyReflectionsOnCreate(SceneFileOmitsReflectedComponents(path));
+	EditorRuntimeDynamicObjectFactoryRegistrar::ClearConstructorOwnedComponentMarkers();
 	const bool didOpenScene = engine->GetApplication()->OpenScene(path);
-	EditorRuntimeDynamicObjectFactoryRegistrar::SetApplyReflectionsOnCreate(previousApplyReflectionsOnCreate);
-	if (didOpenScene)
-	{
-		ApplyReflectionsToSceneObjects(engine->GetApplication()->GetMainScene());
-	}
 	return didOpenScene;
 }
 
 void EditorSceneSerializer::SaveScene(Scene* scene, const std::string& filePath)
 {
-	ApplyReflectionsToSceneObjects(scene);
-
 	SceneParser::SaveScene(scene, filePath);
 
 	tinyxml2::XMLDocument document;
@@ -200,7 +151,7 @@ void EditorSceneSerializer::SaveScene(Scene* scene, const std::string& filePath)
 
 	if (tinyxml2::XMLElement* rootElement = document.RootElement())
 	{
-		rootElement->SetAttribute(kReflectedComponentsOmittedAttribute, true);
+		rootElement->SetAttribute(kConstructorOwnedComponentsOmittedAttribute, true);
 	}
 
 	ApplyRegisteredObjectClassNames(scene, document);
