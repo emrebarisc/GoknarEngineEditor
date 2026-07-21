@@ -20,6 +20,7 @@
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Materials/MaterialFunction.h"
 #include "Goknar/Materials/MaterialFunctionSerializer.h"
+#include "Goknar/Objects/PlayerStart.h"
 
 #include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorSceneSerializer.h"
@@ -29,10 +30,12 @@
 #include "AnimationGraphPanel.h"
 #include "ClassCreationPanel.h"
 #include "ImageViewerPanel.h"
-#include "MeshViewerPanel.h"
 #include "ShaderEditor/ShaderEditorPanel.h"
 #include "SkeletalMeshViewerPanel.h"
+#include "StaticMeshViewerPanel.h"
 #include "UI/EditorHUD.h"
+
+#include "Objects/EditorFreeCameraObject.h"
 
 namespace
 {
@@ -675,7 +678,7 @@ void FileBrowserPanel::DrawGrid()
 					}
 					else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
 					{
-						MeshViewerPanel* viewer = (MeshViewerPanel*)hud_->GetPanel<MeshViewerPanel>();
+						StaticMeshViewerPanel* viewer = (StaticMeshViewerPanel*)hud_->GetPanel<StaticMeshViewerPanel>();
 						if (viewer)
 						{
 							viewer->SetTargetStaticMesh(staticMesh);
@@ -982,6 +985,21 @@ void FileBrowserPanel::OpenPendingScene()
 		context->sceneSavePath = pendingSceneToOpen_;
 		context->ClearSceneDirty();
 		context->ClearSelection();
+
+		Vector3 cameraPosition = Vector3::ZeroVector;
+
+		std::vector<PlayerStart*> playerStarts = engine->GetObjectsOfType<PlayerStart>();
+
+		if (0 < playerStarts.size())
+		{
+			cameraPosition = playerStarts[0]->GetWorldPosition();
+		}
+
+		Vector3 rotationVector = Vector3{ 1.f, 1.f, -1.5f }.GetNormalized();
+
+		context->viewportCameraObject->SetWorldPosition(cameraPosition + rotationVector * 2.f);
+
+		context->viewportCameraObject->SetWorldRotation(Quaternion::FromTwoVectors(Vector3::ForwardVector, rotationVector));
 	}
 
 	pendingSceneToOpen_.clear();
