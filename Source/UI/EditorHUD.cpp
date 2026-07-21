@@ -68,6 +68,7 @@
 #include "Panels/SaveScenePanel.h"
 #include "Panels/ScenePanel.h"
 #include "Panels/ShaderEditor/ShaderEditorPanel.h"
+#include "Panels/StaticMeshViewerPanel.h"
 #include "Panels/SkeletalMeshViewerPanel.h"
 #include "Panels/SystemFileBrowserPanel.h"
 #include "Panels/ToolBarPanel.h"
@@ -210,6 +211,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<SaveScenePanel>();
 	AddPanel<ScenePanel>();
 	AddPanel<ShaderEditorPanel>();
+	AddPanel<StaticMeshViewerPanel>();
 	AddPanel<SkeletalMeshViewerPanel>();
 	AddPanel<SystemFileBrowserPanel>();
 	AddPanel<ToolBarPanel>();

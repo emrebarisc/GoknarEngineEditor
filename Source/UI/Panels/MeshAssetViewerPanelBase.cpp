@@ -7,9 +7,13 @@
 
 #include "Goknar/Camera.h"
 #include "Goknar/Components/CameraComponent.h"
+#include "Goknar/Engine.h"
 #include "Goknar/Helpers/AssetParser.h"
 #include "Goknar/Helpers/ContentPathUtils.h"
+#include "Goknar/Managers/ResourceManager.h"
+#include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
+#include "Goknar/Model/MeshUnit.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Renderer/RenderTarget.h"
 #include "Goknar/Renderer/Texture.h"
@@ -27,6 +31,11 @@ namespace
 	constexpr float SidePanelWidth = 320.f;
 	constexpr float MinimumViewportSize = 96.f;
 	constexpr ImGuiTableFlags ViewerTableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV;
+
+	Vector4 GetPreviewDefaultMaterialColor()
+	{
+		return { 0.78f, 0.84f, 0.92f, 1.f };
+	}
 
 	std::string GetDisplayAssetPath(const std::string& assetPath)
 	{
@@ -104,7 +113,7 @@ void MeshAssetViewerPanelBase::SetIsOpen(bool isOpen)
 	}
 	else
 	{
-		SetPreviewRenderActive(HasCurrentMesh());
+		SetPreviewRenderActive(CanRenderCurrentMesh());
 	}
 }
 
@@ -119,7 +128,7 @@ void MeshAssetViewerPanelBase::Draw()
 		return;
 	}
 
-	SetPreviewRenderActive(HasCurrentMesh());
+	SetPreviewRenderActive(CanRenderCurrentMesh());
 
 	if (ImGui::BeginTable("MeshAssetViewerLayout", 2, ViewerTableFlags))
 	{
@@ -155,6 +164,13 @@ void MeshAssetViewerPanelBase::OnTargetMeshChanged()
 		return;
 	}
 
+	if (!IsCurrentMeshReadyToView())
+	{
+		ResetCameraToCurrentMesh();
+		SetPreviewRenderActive(false);
+		return;
+	}
+
 	const std::string meshPath = GetCurrentMeshPath();
 	selectedMaterialPaths_ = meshPath.empty() ? std::vector<std::string>{} : AssetParser::GetMeshMaterialPaths(meshPath);
 	selectedMaterialPaths_.resize(GetSubMeshCount());
@@ -179,9 +195,74 @@ bool MeshAssetViewerPanelBase::DoesMaterialAssetExist(const std::string& materia
 		std::filesystem::exists(ContentPathUtils::ToAbsoluteContentPath(relativeMaterialPath));
 }
 
+bool MeshAssetViewerPanelBase::HasMaterialAssetOverride(size_t subMeshIndex) const
+{
+	return subMeshIndex < selectedMaterialPaths_.size() && !selectedMaterialPaths_[subMeshIndex].empty();
+}
+
+Material* MeshAssetViewerPanelBase::CreateInitializedPreviewDefaultMaterial(MeshUnit* subMesh, const char* materialName) const
+{
+	if (!subMesh)
+	{
+		return nullptr;
+	}
+
+	Material* material = new Material();
+	const Vector4 previewColor = GetPreviewDefaultMaterialColor();
+	material->SetName(materialName ? materialName : "__Editor__MeshViewerDefaultPreviewMaterial");
+	material->SetBaseColor(previewColor);
+	material->SetEmissiveColor(Vector3(previewColor.x, previewColor.y, previewColor.z));
+	material->SetAmbientOcclusion(1.f);
+	material->SetMetallic(0.f);
+	material->SetRoughness(0.65f);
+	material->SetShadingModel(MaterialShadingModel::TwoSided);
+	material->SetShadingType(MaterialShadingType::Unlit);
+	material->Build(subMesh);
+	material->PreInit();
+	material->Init();
+	material->PostInit();
+
+	return material;
+}
+
+MaterialInstance* MeshAssetViewerPanelBase::CreatePreviewDefaultMaterialInstance(Material* material) const
+{
+	if (!material)
+	{
+		return nullptr;
+	}
+
+	MaterialInstance* materialInstance = MaterialInstance::Create(material);
+	const Vector4 previewColor = GetPreviewDefaultMaterialColor();
+	materialInstance->SetBaseColor(previewColor);
+	materialInstance->SetEmissiveColor(Vector3(previewColor.x, previewColor.y, previewColor.z));
+	materialInstance->SetAmbientOcclusion(1.f);
+	materialInstance->SetMetallic(0.f);
+	materialInstance->SetRoughness(0.65f);
+	materialInstance->SetShadingModel(MaterialShadingModel::TwoSided);
+	materialInstance->SetShadingType(MaterialShadingType::Unlit);
+	return materialInstance;
+}
+
+void MeshAssetViewerPanelBase::DestroyPreviewDefaultMaterial(Material*& material) const
+{
+	if (!material)
+	{
+		return;
+	}
+
+	engine->GetResourceManager()->RemoveMaterial(material);
+	material = nullptr;
+}
+
 bool MeshAssetViewerPanelBase::HasAdditionalSidePanelContent() const
 {
 	return false;
+}
+
+const char* MeshAssetViewerPanelBase::GetMeshNotReadyText() const
+{
+	return "Mesh is not ready to view.";
 }
 
 void MeshAssetViewerPanelBase::DrawAdditionalSidePanelContent()
@@ -207,6 +288,13 @@ void MeshAssetViewerPanelBase::DrawViewport()
 	if (!HasCurrentMesh())
 	{
 		DrawEmptyViewportMessage(GetNoMeshSelectedText());
+		ImGui::EndChild();
+		return;
+	}
+
+	if (!IsCurrentMeshReadyToView())
+	{
+		DrawEmptyViewportMessage(GetMeshNotReadyText());
 		ImGui::EndChild();
 		return;
 	}
@@ -268,6 +356,13 @@ void MeshAssetViewerPanelBase::DrawMeshProperties()
 
 	const std::string meshPath = GetCurrentMeshPath();
 	ImGui::TextWrapped("%s", GetDisplayAssetPath(meshPath).c_str());
+
+	if (!IsCurrentMeshReadyToView())
+	{
+		ImGui::Spacing();
+		ImGui::TextDisabled("%s", GetMeshNotReadyText());
+		return;
+	}
 
 	const size_t subMeshCount = GetSubMeshCount();
 	ImGui::Spacing();
@@ -360,6 +455,11 @@ void MeshAssetViewerPanelBase::ResetCameraToCurrentMesh()
 
 void MeshAssetViewerPanelBase::RefreshPreviewMaterialOverrides()
 {
+	if (!CanRenderCurrentMesh())
+	{
+		return;
+	}
+
 	const size_t subMeshCount = GetSubMeshCount();
 	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
 	{
@@ -369,12 +469,14 @@ void MeshAssetViewerPanelBase::RefreshPreviewMaterialOverrides()
 
 void MeshAssetViewerPanelBase::SetPreviewRenderActive(bool active)
 {
+	const bool shouldRender = active && CanRenderCurrentMesh();
+
 	if (renderTarget_)
 	{
-		renderTarget_->SetIsActive(active);
+		renderTarget_->SetIsActive(shouldRender);
 	}
 
-	if (!active && cameraObject_)
+	if (!shouldRender && cameraObject_)
 	{
 		cameraObject_->GetController()->SetIsActive(false);
 	}
@@ -387,7 +489,7 @@ void MeshAssetViewerPanelBase::OnMaterialSelected(const std::string& path)
 	const int selectedSubMeshIndex = pendingMaterialSelectionSubMeshIndex_;
 	pendingMaterialSelectionSubMeshIndex_ = -1;
 
-	if (!HasCurrentMesh() ||
+	if (!CanRenderCurrentMesh() ||
 		selectedSubMeshIndex < 0 ||
 		selectedSubMeshIndex >= static_cast<int>(GetSubMeshCount()))
 	{
@@ -415,4 +517,9 @@ void MeshAssetViewerPanelBase::OnMaterialSelected(const std::string& path)
 	}
 
 	RefreshPreviewMaterialOverrides();
+}
+
+bool MeshAssetViewerPanelBase::CanRenderCurrentMesh() const
+{
+	return HasCurrentMesh() && IsCurrentMeshReadyToView();
 }

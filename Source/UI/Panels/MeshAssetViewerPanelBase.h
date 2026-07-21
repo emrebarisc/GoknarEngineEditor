@@ -6,7 +6,9 @@
 #include "EditorPanel.h"
 
 class Box;
+class Material;
 class MaterialInstance;
+class MeshUnit;
 class MeshViewerCameraObject;
 class ObjectBase;
 class RenderTarget;
@@ -42,6 +44,10 @@ protected:
 	}
 
 	bool DoesMaterialAssetExist(const std::string& materialPath) const;
+	bool HasMaterialAssetOverride(size_t subMeshIndex) const;
+	Material* CreateInitializedPreviewDefaultMaterial(MeshUnit* subMesh, const char* materialName) const;
+	MaterialInstance* CreatePreviewDefaultMaterialInstance(Material* material) const;
+	void DestroyPreviewDefaultMaterial(Material*& material) const;
 
 private:
 	void DrawViewport();
@@ -53,8 +59,10 @@ private:
 	void RefreshPreviewMaterialOverrides();
 	void SetPreviewRenderActive(bool active);
 	void OnMaterialSelected(const std::string& path);
+	bool CanRenderCurrentMesh() const;
 
 	virtual bool HasCurrentMesh() const = 0;
+	virtual bool IsCurrentMeshReadyToView() const = 0;
 	virtual std::string GetCurrentMeshPath() const = 0;
 	virtual const Box* GetCurrentMeshBounds() const = 0;
 	virtual size_t GetSubMeshCount() const = 0;
@@ -65,6 +73,7 @@ private:
 	virtual MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const = 0;
 	virtual void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) = 0;
 	virtual const char* GetNoMeshSelectedText() const = 0;
+	virtual const char* GetMeshNotReadyText() const;
 	virtual bool HasAdditionalSidePanelContent() const;
 	virtual void DrawAdditionalSidePanelContent();
 

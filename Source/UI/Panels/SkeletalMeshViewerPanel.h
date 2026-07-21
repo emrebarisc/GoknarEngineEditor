@@ -17,6 +17,7 @@ public:
 
 private:
 	bool HasCurrentMesh() const override;
+	bool IsCurrentMeshReadyToView() const override;
 	std::string GetCurrentMeshPath() const override;
 	const Box* GetCurrentMeshBounds() const override;
 	size_t GetSubMeshCount() const override;
@@ -27,12 +28,16 @@ private:
 	MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const override;
 	void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
 	const char* GetNoMeshSelectedText() const override;
+	const char* GetMeshNotReadyText() const override;
 	bool HasAdditionalSidePanelContent() const override;
 	void DrawAdditionalSidePanelContent() override;
 
 	void ClearPreviewMaterialOverrides();
+	void ClearPreviewDefaultMaterial();
 	SkeletalMeshUnit* GetSubMesh(size_t subMeshIndex) const;
+	Material* GetPreviewDefaultMaterial(SkeletalMeshUnit* subMesh) const;
 
 	SkeletalMeshComponent* skeletalMeshComponent_{ nullptr };
 	SkeletalMesh* targetSkeletalMesh_{ nullptr };
+	mutable Material* previewDefaultMaterial_{ nullptr };
 };

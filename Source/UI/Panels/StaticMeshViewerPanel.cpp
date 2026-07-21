@@ -1,5 +1,6 @@
-#include "MeshViewerPanel.h"
+#include "StaticMeshViewerPanel.h"
 
+#include "Goknar/Engine.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
@@ -7,10 +8,11 @@
 #include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
+#include "Goknar/Renderer/Renderer.h"
 
 namespace
 {
-	constexpr unsigned int MeshViewerRenderMask = 0x10000000;
+	constexpr unsigned int StaticMeshViewerRenderMask = 0x10000000;
 
 	bool HasStaticMeshSelection(const StaticMesh* staticMesh)
 	{
@@ -36,13 +38,13 @@ namespace
 	}
 }
 
-MeshViewerPanel::MeshViewerPanel(EditorHUD* hud) :
+StaticMeshViewerPanel::StaticMeshViewerPanel(EditorHUD* hud) :
 	MeshAssetViewerPanelBase(
-		"Mesh Viewer",
+		"Static Mesh Viewer",
 		hud,
 		"__Editor__StaticMeshViewerCamera",
 		"__Editor__StaticMeshViewerTarget",
-		MeshViewerRenderMask,
+		StaticMeshViewerRenderMask,
 		"StaticMeshViewerViewport",
 		"StaticMeshViewerProperties")
 {
@@ -52,13 +54,13 @@ MeshViewerPanel::MeshViewerPanel(EditorHUD* hud) :
 	staticMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
 }
 
-MeshViewerPanel::~MeshViewerPanel()
+StaticMeshViewerPanel::~StaticMeshViewerPanel()
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
 }
 
-void MeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
+void StaticMeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
@@ -88,50 +90,50 @@ void MeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
 	OnTargetMeshChanged();
 }
 
-bool MeshViewerPanel::HasCurrentMesh() const
+bool StaticMeshViewerPanel::HasCurrentMesh() const
 {
 	return HasStaticMeshSelection(targetStaticMesh_);
 }
 
-bool MeshViewerPanel::IsCurrentMeshReadyToView() const
+bool StaticMeshViewerPanel::IsCurrentMeshReadyToView() const
 {
 	return IsStaticMeshReadyForPreview(targetStaticMesh_);
 }
 
-std::string MeshViewerPanel::GetCurrentMeshPath() const
+std::string StaticMeshViewerPanel::GetCurrentMeshPath() const
 {
 	return targetStaticMesh_ ? targetStaticMesh_->GetPath() : "";
 }
 
-const Box* MeshViewerPanel::GetCurrentMeshBounds() const
+const Box* StaticMeshViewerPanel::GetCurrentMeshBounds() const
 {
 	return targetStaticMesh_ ? &targetStaticMesh_->GetAABB() : nullptr;
 }
 
-size_t MeshViewerPanel::GetSubMeshCount() const
+size_t StaticMeshViewerPanel::GetSubMeshCount() const
 {
 	return targetStaticMesh_ ? targetStaticMesh_->GetSubMeshes().size() : 0;
 }
 
-std::string MeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
+std::string StaticMeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
 {
 	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetName() : "";
 }
 
-size_t MeshViewerPanel::GetSubMeshVertexCount(size_t subMeshIndex) const
+size_t StaticMeshViewerPanel::GetSubMeshVertexCount(size_t subMeshIndex) const
 {
 	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetVertexCount() : 0;
 }
 
-size_t MeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
+size_t StaticMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 {
 	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetFaceCount() : 0;
 }
 
-bool MeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
+bool StaticMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
 {
 	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	if (!IsCurrentMeshReadyToView() || !subMesh || !DoesMaterialAssetExist(materialPath))
@@ -159,7 +161,7 @@ bool MeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::str
 	return true;
 }
 
-MaterialInstance* MeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
+MaterialInstance* StaticMeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
 {
 	if (!IsCurrentMeshReadyToView())
 	{
@@ -176,7 +178,7 @@ MaterialInstance* MeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshI
 	return material ? MaterialInstance::Create(material) : nullptr;
 }
 
-void MeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
+void StaticMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
 {
 	if (!staticMeshComponent_ || !targetStaticMesh_ || !IsCurrentMeshReadyToView())
 	{
@@ -200,17 +202,34 @@ void MeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* 
 	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
 }
 
-const char* MeshViewerPanel::GetNoMeshSelectedText() const
+const char* StaticMeshViewerPanel::GetNoMeshSelectedText() const
 {
 	return "No static mesh selected.";
 }
 
-const char* MeshViewerPanel::GetMeshNotReadyText() const
+const char* StaticMeshViewerPanel::GetMeshNotReadyText() const
 {
 	return "Static mesh is not ready to view. It has not been sent to the GPU yet.";
 }
 
-void MeshViewerPanel::ClearPreviewMaterialOverrides()
+void StaticMeshViewerPanel::RefreshPreviewRenderData()
+{
+	if (!staticMeshComponent_ || !targetStaticMesh_ || !IsCurrentMeshReadyToView())
+	{
+		return;
+	}
+
+	StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance();
+	if (!meshInstance || !meshInstance->GetMesh())
+	{
+		return;
+	}
+
+	engine->GetRenderer()->RemoveStaticMeshInstance(meshInstance);
+	engine->GetRenderer()->AddStaticMeshInstance(meshInstance);
+}
+
+void StaticMeshViewerPanel::ClearPreviewMaterialOverrides()
 {
 	if (!staticMeshComponent_)
 	{
@@ -231,12 +250,12 @@ void MeshViewerPanel::ClearPreviewMaterialOverrides()
 	}
 }
 
-void MeshViewerPanel::ClearPreviewDefaultMaterial()
+void StaticMeshViewerPanel::ClearPreviewDefaultMaterial()
 {
 	DestroyPreviewDefaultMaterial(previewDefaultMaterial_);
 }
 
-MeshUnit* MeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
+MeshUnit* StaticMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetStaticMesh_ || subMeshIndex >= targetStaticMesh_->GetSubMeshes().size())
 	{
@@ -246,11 +265,11 @@ MeshUnit* MeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 	return targetStaticMesh_->GetSubMeshes()[subMeshIndex];
 }
 
-Material* MeshViewerPanel::GetPreviewDefaultMaterial(MeshUnit* subMesh) const
+Material* StaticMeshViewerPanel::GetPreviewDefaultMaterial(MeshUnit* subMesh) const
 {
 	if (!previewDefaultMaterial_)
 	{
-		previewDefaultMaterial_ = CreateInitializedPreviewDefaultMaterial(subMesh, "__Editor__MeshViewerDefaultMaterial");
+		previewDefaultMaterial_ = CreateInitializedPreviewDefaultMaterial(subMesh, "__Editor__StaticMeshViewerDefaultMaterial");
 	}
 
 	return previewDefaultMaterial_;

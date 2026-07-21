@@ -12,6 +12,29 @@
 namespace
 {
 	constexpr unsigned int SkeletalMeshViewerRenderMask = 0x40000000;
+
+	bool HasSkeletalMeshSelection(const SkeletalMesh* skeletalMesh)
+	{
+		return skeletalMesh && !skeletalMesh->GetSubMeshes().empty();
+	}
+
+	bool IsSkeletalMeshReadyForPreview(const SkeletalMesh* skeletalMesh)
+	{
+		if (!HasSkeletalMeshSelection(skeletalMesh))
+		{
+			return false;
+		}
+
+		for (const SkeletalMeshUnit* subMesh : skeletalMesh->GetSubMeshes())
+		{
+			if (!subMesh || subMesh->GetVertexCount() == 0 || subMesh->GetFaceCount() == 0)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
 }
 
 SkeletalMeshViewerPanel::SkeletalMeshViewerPanel(EditorHUD* hud) :
@@ -33,11 +56,13 @@ SkeletalMeshViewerPanel::SkeletalMeshViewerPanel(EditorHUD* hud) :
 SkeletalMeshViewerPanel::~SkeletalMeshViewerPanel()
 {
 	ClearPreviewMaterialOverrides();
+	ClearPreviewDefaultMaterial();
 }
 
 void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMesh* skeletalMesh)
 {
 	ClearPreviewMaterialOverrides();
+	ClearPreviewDefaultMaterial();
 	targetSkeletalMesh_ = nullptr;
 
 	if (!skeletalMesh)
@@ -47,18 +72,31 @@ void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMesh* skeletalMesh)
 		return;
 	}
 
-	skeletalMeshComponent_->SetMesh(skeletalMesh);
-	skeletalMeshComponent_->SetIsActive(true);
-	skeletalMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
-	skeletalMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
 	targetSkeletalMesh_ = skeletalMesh;
+
+	if (IsSkeletalMeshReadyForPreview(targetSkeletalMesh_))
+	{
+		skeletalMeshComponent_->SetMesh(skeletalMesh);
+		skeletalMeshComponent_->SetIsActive(true);
+		skeletalMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
+		skeletalMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
+	}
+	else
+	{
+		skeletalMeshComponent_->SetIsActive(false);
+	}
 
 	OnTargetMeshChanged();
 }
 
 bool SkeletalMeshViewerPanel::HasCurrentMesh() const
 {
-	return targetSkeletalMesh_ && !targetSkeletalMesh_->GetSubMeshes().empty();
+	return HasSkeletalMeshSelection(targetSkeletalMesh_);
+}
+
+bool SkeletalMeshViewerPanel::IsCurrentMeshReadyToView() const
+{
+	return IsSkeletalMeshReadyForPreview(targetSkeletalMesh_);
 }
 
 std::string SkeletalMeshViewerPanel::GetCurrentMeshPath() const
@@ -97,7 +135,7 @@ size_t SkeletalMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
 {
 	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
-	if (!subMesh || !DoesMaterialAssetExist(materialPath))
+	if (!IsCurrentMeshReadyToView() || !subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
 	}
@@ -112,7 +150,7 @@ bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const 
 	MaterialSerializer::Deserialize(materialPath, material);
 	material->Build(subMesh);
 
-	if (subMesh->GetIsInitialized())
+	if (IsCurrentMeshReadyToView())
 	{
 		material->PreInit();
 		material->Init();
@@ -124,14 +162,24 @@ bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const 
 
 MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
 {
+	if (!IsCurrentMeshReadyToView())
+	{
+		return nullptr;
+	}
+
 	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
+	if (!HasMaterialAssetOverride(subMeshIndex))
+	{
+		return CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
+	}
+
 	return material ? MaterialInstance::Create(material) : nullptr;
 }
 
 void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
 {
-	if (!skeletalMeshComponent_ || !targetSkeletalMesh_)
+	if (!skeletalMeshComponent_ || !targetSkeletalMesh_ || !IsCurrentMeshReadyToView())
 	{
 		if (materialInstance)
 		{
@@ -158,6 +206,11 @@ const char* SkeletalMeshViewerPanel::GetNoMeshSelectedText() const
 	return "No skeletal mesh selected.";
 }
 
+const char* SkeletalMeshViewerPanel::GetMeshNotReadyText() const
+{
+	return "Skeletal mesh is not ready to view. It has not been sent to the GPU yet.";
+}
+
 bool SkeletalMeshViewerPanel::HasAdditionalSidePanelContent() const
 {
 	return true;
@@ -170,6 +223,12 @@ void SkeletalMeshViewerPanel::DrawAdditionalSidePanelContent()
 	if (!targetSkeletalMesh_)
 	{
 		ImGui::TextDisabled("No skeletal mesh selected.");
+		return;
+	}
+
+	if (!IsCurrentMeshReadyToView())
+	{
+		ImGui::TextDisabled("%s", GetMeshNotReadyText());
 		return;
 	}
 
@@ -223,6 +282,11 @@ void SkeletalMeshViewerPanel::ClearPreviewMaterialOverrides()
 	}
 }
 
+void SkeletalMeshViewerPanel::ClearPreviewDefaultMaterial()
+{
+	DestroyPreviewDefaultMaterial(previewDefaultMaterial_);
+}
+
 SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetSkeletalMesh_ || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
@@ -231,4 +295,14 @@ SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 	}
 
 	return targetSkeletalMesh_->GetSubMeshes()[subMeshIndex];
+}
+
+Material* SkeletalMeshViewerPanel::GetPreviewDefaultMaterial(SkeletalMeshUnit* subMesh) const
+{
+	if (!previewDefaultMaterial_)
+	{
+		previewDefaultMaterial_ = CreateInitializedPreviewDefaultMaterial(subMesh, "__Editor__SkeletalMeshViewerDefaultMaterial");
+	}
+
+	return previewDefaultMaterial_;
 }

@@ -7,11 +7,11 @@ class MeshUnit;
 class StaticMesh;
 class StaticMeshComponent;
 
-class MeshViewerPanel : public MeshAssetViewerPanelBase
+class StaticMeshViewerPanel : public MeshAssetViewerPanelBase
 {
 public:
-	explicit MeshViewerPanel(EditorHUD* hud);
-	~MeshViewerPanel() override;
+	explicit StaticMeshViewerPanel(EditorHUD* hud);
+	~StaticMeshViewerPanel() override;
 
 	void SetTargetStaticMesh(StaticMesh* staticMesh);
 
@@ -29,6 +29,7 @@ private:
 	void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
 	const char* GetNoMeshSelectedText() const override;
 	const char* GetMeshNotReadyText() const override;
+	void RefreshPreviewRenderData();
 
 	void ClearPreviewMaterialOverrides();
 	void ClearPreviewDefaultMaterial();
