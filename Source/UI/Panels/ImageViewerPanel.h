@@ -43,6 +43,7 @@ private:
 	void ResetResizeState();
 	bool LoadSourceImage();
 	void RebuildDisplayTexture(const std::vector<unsigned char>& buffer, int width, int height);
+	void SetTargetUploadToGPU(bool uploadToGPU);
 	void DrawResizeControls();
 	void DrawConversionControls();
 	void DrawOverwriteConfirmationPopup();

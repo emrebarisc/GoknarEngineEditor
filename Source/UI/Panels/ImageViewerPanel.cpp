@@ -162,6 +162,45 @@ namespace
 		}
 	}
 
+	std::vector<unsigned char> BuildPreviewTextureBuffer(
+		const std::vector<unsigned char>& source,
+		int width,
+		int height,
+		int sourceChannels,
+		int& outPreviewChannels)
+	{
+		outPreviewChannels = sourceChannels;
+		if (sourceChannels != 1)
+		{
+			return source;
+		}
+
+		size_t sourceBufferSize = 0;
+		if (!TryGetImageBufferSize(width, height, sourceChannels, sourceBufferSize) ||
+			source.size() < sourceBufferSize)
+		{
+			return {};
+		}
+
+		outPreviewChannels = 3;
+		size_t previewBufferSize = 0;
+		if (!TryGetImageBufferSize(width, height, outPreviewChannels, previewBufferSize))
+		{
+			return {};
+		}
+
+		std::vector<unsigned char> previewBuffer(previewBufferSize);
+		for (size_t sourceIndex = 0, previewIndex = 0; sourceIndex < sourceBufferSize; ++sourceIndex, previewIndex += outPreviewChannels)
+		{
+			const unsigned char value = source[sourceIndex];
+			previewBuffer[previewIndex] = value;
+			previewBuffer[previewIndex + 1] = value;
+			previewBuffer[previewIndex + 2] = value;
+		}
+
+		return previewBuffer;
+	}
+
 	std::vector<unsigned char> ResizeImageBilinear(
 		const std::vector<unsigned char>& source,
 		int sourceWidth,
@@ -240,6 +279,10 @@ void ImageViewerPanel::SetTargetImage(Image* image)
 {
 	targetImage_ = image;
 	targetTexture_ = image ? image->GetOrCreateGeneratedTexture() : nullptr;
+	if (targetImage_ && targetTexture_)
+	{
+		targetTexture_->SetUploadToGPU(targetImage_->GetUploadToGPU());
+	}
 	ResetView();
 	ResetResizeState();
 
@@ -325,15 +368,23 @@ void ImageViewerPanel::RebuildDisplayTexture(const std::vector<unsigned char>& b
 		return;
 	}
 
+	int previewChannels = sourceImageChannels_;
+	const std::vector<unsigned char> previewBuffer = BuildPreviewTextureBuffer(buffer, width, height, sourceImageChannels_, previewChannels);
+	if (previewBuffer.empty() || !TryGetImageBufferSize(width, height, previewChannels, bufferSize))
+	{
+		return;
+	}
+
 	unsigned char* textureBuffer = new unsigned char[bufferSize];
-	std::memcpy(textureBuffer, buffer.data(), bufferSize);
+	std::memcpy(textureBuffer, previewBuffer.data(), bufferSize);
 
 	std::unique_ptr<Texture> texture = std::make_unique<Texture>();
 	texture->SetSize(width, height);
-	texture->SetChannels(sourceImageChannels_);
+	texture->SetChannels(previewChannels);
 	texture->SetBuffer(textureBuffer);
 	texture->SetTextureUsage(targetImage_ ? targetImage_->GetTextureUsage() : TextureUsage::Diffuse);
-	ApplyTextureFormatForChannels(texture.get(), sourceImageChannels_);
+	texture->SetUploadToGPU(true);
+	ApplyTextureFormatForChannels(texture.get(), previewChannels);
 
 	if (targetImage_)
 	{
@@ -346,6 +397,19 @@ void ImageViewerPanel::RebuildDisplayTexture(const std::vector<unsigned char>& b
 	texture->PostInit();
 
 	displayTexture_ = std::move(texture);
+}
+
+void ImageViewerPanel::SetTargetUploadToGPU(bool uploadToGPU)
+{
+	if (targetImage_)
+	{
+		targetImage_->SetUploadToGPU(uploadToGPU);
+	}
+
+	if (targetTexture_)
+	{
+		targetTexture_->SetUploadToGPU(uploadToGPU);
+	}
 }
 
 void ImageViewerPanel::Draw()
@@ -459,6 +523,13 @@ void ImageViewerPanel::Draw()
 				}
 			}
 			ImGui::EndCombo();
+		}
+
+		bool uploadToGPU = targetImage_ ? targetImage_->GetUploadToGPU() : targetTexture_->GetUploadToGPU();
+
+		if (ImGui::Checkbox("Upload To GPU", &uploadToGPU))
+		{
+			SetTargetUploadToGPU(uploadToGPU);
 		}
 
 		DrawResizeControls();
