@@ -19,6 +19,7 @@ class SkeletalMeshComponent;
 class BoxCollisionComponent;
 class SphereCollisionComponent;
 class CapsuleCollisionComponent;
+class HeightMapCollisionComponent;
 class MovingTriangleMeshCollisionComponent;
 class NonMovingTriangleMeshCollisionComponent;
 class NavigationTreeComponent;
@@ -32,6 +33,7 @@ enum class DetailsAssetSelectionTarget
 	SkeletalMeshMaterial,
 	NavigationTree,
 	Image,
+	HeightMapImage,
 	Audio
 };
 
@@ -59,6 +61,7 @@ private:
 	void DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCollisionComponent);
 	void DrawSphereCollisionComponentDetails(SphereCollisionComponent* sphereCollisionComponent);
 	void DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponent* capsuleCollisionComponent);
+	void DrawHeightMapCollisionComponentDetails(HeightMapCollisionComponent* heightMapCollisionComponent);
 	void DrawMovingTriangleMeshCollisionComponentDetails(MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent);
 	void DrawNonMovingTriangleMeshCollisionComponentDetails(NonMovingTriangleMeshCollisionComponent* nonMovingTriangleMeshCollisionComponent);
 

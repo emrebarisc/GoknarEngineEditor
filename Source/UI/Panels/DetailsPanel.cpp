@@ -12,6 +12,7 @@
 #include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/ResourceManager.h"
+#include "Goknar/Contents/Image.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
@@ -21,6 +22,7 @@
 #include "Goknar/Physics/Components/BoxCollisionComponent.h"
 #include "Goknar/Physics/Components/CapsuleCollisionComponent.h"
 #include "Goknar/Physics/Components/SphereCollisionComponent.h"
+#include "Goknar/Physics/Components/HeightMapCollisionComponent.h"
 #include "Goknar/Physics/Components/NonMovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Physics/Components/MovingTriangleMeshCollisionComponent.h"
 #include "Goknar/Navigation/NavigationTreeComponent.h"
@@ -39,10 +41,13 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <map>
+#include <memory>
 
 template <class T>
 T* AddCollisionComponent(PhysicsObject* physicsObject)
@@ -610,6 +615,102 @@ namespace
 		return path;
 	}
 
+	bool LooksLikeRawFloatHeightMap(const Image* image)
+	{
+		if (!image || !image->GetBuffer() || image->GetChannels() != static_cast<int>(sizeof(float)))
+		{
+			return false;
+		}
+
+		const unsigned char* buffer = image->GetBuffer();
+		const int pixelCount = image->GetWidth() * image->GetHeight();
+		if (pixelCount <= 0)
+		{
+			return false;
+		}
+
+		int grayscaleLikePixels = 0;
+		for (int pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+		{
+			const unsigned char* pixel = buffer + pixelIndex * image->GetChannels();
+			if (pixel[0] == pixel[1] && pixel[1] == pixel[2])
+			{
+				++grayscaleLikePixels;
+			}
+		}
+
+		return grayscaleLikePixels < pixelCount * 9 / 10;
+	}
+
+	float DecodeHeightMapPixel(const unsigned char* pixel, int channels)
+	{
+		if (!pixel || channels <= 0)
+		{
+			return 0.0f;
+		}
+
+		if (channels == 1 || channels == 2)
+		{
+			return static_cast<float>(pixel[0]) / 255.0f;
+		}
+
+		const float red = static_cast<float>(pixel[0]) / 255.0f;
+		const float green = static_cast<float>(pixel[1]) / 255.0f;
+		const float blue = static_cast<float>(pixel[2]) / 255.0f;
+		return red * 0.2126f + green * 0.7152f + blue * 0.0722f;
+	}
+
+	Image* CreateHeightMapCollisionImage(const Image* sourceImage, const HeightMapCollisionComponent* component)
+	{
+		if (!sourceImage || !sourceImage->GetBuffer())
+		{
+			return nullptr;
+		}
+
+		if (LooksLikeRawFloatHeightMap(sourceImage))
+		{
+			return const_cast<Image*>(sourceImage);
+		}
+
+		const int width = sourceImage->GetWidth();
+		const int height = sourceImage->GetHeight();
+		const int channels = sourceImage->GetChannels();
+		if (width <= 1 || height <= 1 || channels <= 0)
+		{
+			return nullptr;
+		}
+
+		float heightScale = component ? component->GetMaxHeight() : 1.0f;
+		if (!std::isfinite(heightScale) || heightScale <= SMALLER_EPSILON)
+		{
+			heightScale = 1.0f;
+		}
+
+		const size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+		unsigned char* floatBuffer = new unsigned char[pixelCount * sizeof(float)];
+		const unsigned char* sourceBuffer = sourceImage->GetBuffer();
+		for (size_t pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+		{
+			const float heightValue = DecodeHeightMapPixel(sourceBuffer + pixelIndex * channels, channels) * heightScale;
+			std::memcpy(floatBuffer + pixelIndex * sizeof(float), &heightValue, sizeof(float));
+		}
+
+		static std::vector<std::unique_ptr<Image>> ownedCollisionImages;
+		std::unique_ptr<Image> collisionImage = std::make_unique<Image>(
+			sourceImage->GetPath(),
+			width,
+			height,
+			static_cast<int>(sizeof(float)),
+			floatBuffer);
+		collisionImage->SetName(sourceImage->GetName());
+		collisionImage->SetTextureUsage(TextureUsage::Height);
+		collisionImage->SetCanUseTextureAtlas(false);
+
+		Image* collisionImagePtr = collisionImage.get();
+		ownedCollisionImages.push_back(std::move(collisionImage));
+		return collisionImagePtr;
+	}
+
 	std::string GetComponentTypeName(Component* component)
 	{
 		if (dynamic_cast<StaticMeshParticleSystemComponent*>(component))
@@ -645,6 +746,11 @@ namespace
 		if (dynamic_cast<CapsuleCollisionComponent*>(component))
 		{
 			return "CapsuleCollisionComponent";
+		}
+
+		if (dynamic_cast<HeightMapCollisionComponent*>(component))
+		{
+			return "HeightMapCollisionComponent";
 		}
 
 		if (dynamic_cast<MovingTriangleMeshCollisionComponent*>(component))
@@ -801,6 +907,11 @@ void DetailsPanel::SetupReflections()
 		{
 			AddCollisionComponent<SphereCollisionComponent>(physicsObject);
 		};
+	physicsReflections_["HeightMapCollisionComponent"] =
+		[](PhysicsObject* physicsObject)
+		{
+			AddCollisionComponent<HeightMapCollisionComponent>(physicsObject);
+		};
 	physicsReflections_["MovingTriangleMeshCollisionComponent"] =
 		[](PhysicsObject* physicsObject)
 		{
@@ -949,6 +1060,32 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		{
 			RebuildSceneNavigationMesh();
 			MarkSceneDirty("Navigation tree changed");
+		}
+		break;
+	}
+	case DetailsAssetSelectionTarget::HeightMapImage:
+	{
+		Image* newHeightMapImage = engine->GetResourceManager()->GetContent<Image>(normalizedPath);
+		if (newHeightMapImage)
+		{
+			for (void* assetSelectionComponent : assetSelectionComponents)
+			{
+				HeightMapCollisionComponent* heightMapCollisionComponent = (HeightMapCollisionComponent*)assetSelectionComponent;
+				if (heightMapCollisionComponent)
+				{
+					Image* collisionImage = CreateHeightMapCollisionImage(newHeightMapImage, heightMapCollisionComponent);
+					heightMapCollisionComponent->SetHeightMapImage(collisionImage ? collisionImage : newHeightMapImage);
+					if (newHeightMapImage->GetWidth() > 1)
+					{
+						heightMapCollisionComponent->SetHeightStickWidth(newHeightMapImage->GetWidth());
+					}
+					if (newHeightMapImage->GetHeight() > 1)
+					{
+						heightMapCollisionComponent->SetHeightStickLength(newHeightMapImage->GetHeight());
+					}
+				}
+			}
+			MarkSceneDirty("Height map image changed");
 		}
 		break;
 	}
@@ -1987,6 +2124,122 @@ void DetailsPanel::DrawMultipleObjectDetails()
 			}
 		}
 
+		const std::vector<HeightMapCollisionComponent*> heightMapCollisionComponents = CastItems<HeightMapCollisionComponent>(componentGroup.components);
+		if (!heightMapCollisionComponents.empty())
+		{
+			DrawBatchTextValue(
+				"HeightMapImage",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component)
+				{
+					const Image* image = component->GetHeightMapImage();
+					return image ? ToDisplayContentPath(image->GetPath()) : std::string();
+				});
+
+			if (ImGui::Button("Select asset##MultiHeightMapImageAsset"))
+			{
+				std::vector<void*> assetSelectionComponents;
+				for (HeightMapCollisionComponent* component : heightMapCollisionComponents)
+				{
+					assetSelectionComponents.push_back(component);
+				}
+				setBatchAssetSelection(assetSelectionComponents, DetailsAssetSelectionTarget::HeightMapImage, EditorAssetType::Texture);
+			}
+
+			bool hasHeightMapImage = false;
+			for (HeightMapCollisionComponent* component : heightMapCollisionComponents)
+			{
+				if (component->GetHeightMapImage())
+				{
+					hasHeightMapImage = true;
+					break;
+				}
+			}
+
+			if (hasHeightMapImage)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Clear##MultiHeightMapImageAsset"))
+				{
+					for (HeightMapCollisionComponent* component : heightMapCollisionComponents)
+					{
+						component->SetHeightMapImage(nullptr);
+					}
+					MarkSceneDirty("Height map image cleared");
+				}
+			}
+
+			if (DrawBatchIntField(
+				"HeightStickWidth",
+				"##MultiHeightMapCollisionHeightStickWidth",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetHeightStickWidth(); },
+				[](HeightMapCollisionComponent* component, int value) { component->SetHeightStickWidth((std::max)(value, 2)); }))
+			{
+				MarkSceneDirty("Height map stick width changed");
+			}
+
+			if (DrawBatchIntField(
+				"HeightStickLength",
+				"##MultiHeightMapCollisionHeightStickLength",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetHeightStickLength(); },
+				[](HeightMapCollisionComponent* component, int value) { component->SetHeightStickLength((std::max)(value, 2)); }))
+			{
+				MarkSceneDirty("Height map stick length changed");
+			}
+
+			if (DrawBatchFloatField(
+				"MinHeight",
+				"##MultiHeightMapCollisionMinHeight",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetMinHeight(); },
+				[](HeightMapCollisionComponent* component, float value) { component->SetMinHeight(value); }))
+			{
+				MarkSceneDirty("Height map min height changed");
+			}
+
+			if (DrawBatchFloatField(
+				"MaxHeight",
+				"##MultiHeightMapCollisionMaxHeight",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetMaxHeight(); },
+				[](HeightMapCollisionComponent* component, float value) { component->SetMaxHeight(value); }))
+			{
+				MarkSceneDirty("Height map max height changed");
+			}
+
+			if (DrawBatchFloatField(
+				"Width",
+				"##MultiHeightMapCollisionWidth",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetWidth(); },
+				[](HeightMapCollisionComponent* component, float value) { component->SetWidth(value); }))
+			{
+				MarkSceneDirty("Height map width changed");
+			}
+
+			if (DrawBatchFloatField(
+				"Length",
+				"##MultiHeightMapCollisionLength",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetLength(); },
+				[](HeightMapCollisionComponent* component, float value) { component->SetLength(value); }))
+			{
+				MarkSceneDirty("Height map length changed");
+			}
+
+			if (DrawBatchFloatField(
+				"HeightScale",
+				"##MultiHeightMapCollisionHeightScale",
+				heightMapCollisionComponents,
+				[](HeightMapCollisionComponent* component) { return component->GetHeightScale(); },
+				[](HeightMapCollisionComponent* component, float value) { component->SetHeightScale(value); }))
+			{
+				MarkSceneDirty("Height map scale changed");
+			}
+		}
+
 		const std::vector<MovingTriangleMeshCollisionComponent*> movingTriangleMeshCollisionComponents = CastItems<MovingTriangleMeshCollisionComponent>(componentGroup.components);
 		if (!movingTriangleMeshCollisionComponents.empty())
 		{
@@ -2106,6 +2359,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	BoxCollisionComponent* boxCollisionComponent{ nullptr };
 	SphereCollisionComponent* sphereCollisionComponent{ nullptr };
 	CapsuleCollisionComponent* capsuleCollisionComponent{ nullptr };
+	HeightMapCollisionComponent* heightMapCollisionComponent{ nullptr };
 	MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent{ nullptr };
 	NonMovingTriangleMeshCollisionComponent* nonMvingTriangleMeshCollisionComponent{ nullptr };
 	NavigationTreeComponent* navigationTreeComponent{ nullptr };
@@ -2118,6 +2372,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
 	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
 	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
+	heightMapCollisionComponent = dynamic_cast<HeightMapCollisionComponent*>(component);
 	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
 	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
 	navigationTreeComponent = dynamic_cast<NavigationTreeComponent*>(component);
@@ -2147,6 +2402,10 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (capsuleCollisionComponent)
 	{
 		componentTypeString = "CapsuleCollisionComponent";
+	}
+	else if (heightMapCollisionComponent)
+	{
+		componentTypeString = "HeightMapCollisionComponent";
 	}
 	else if (movingTriangleMeshCollisionComponent)
 	{
@@ -2221,6 +2480,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
 	sphereCollisionComponent = dynamic_cast<SphereCollisionComponent*>(component);
 	capsuleCollisionComponent = dynamic_cast<CapsuleCollisionComponent*>(component);
+	heightMapCollisionComponent = dynamic_cast<HeightMapCollisionComponent*>(component);
 	movingTriangleMeshCollisionComponent = dynamic_cast<MovingTriangleMeshCollisionComponent*>(component);
 	nonMvingTriangleMeshCollisionComponent = dynamic_cast<NonMovingTriangleMeshCollisionComponent*>(component);
 	navigationTreeComponent = dynamic_cast<NavigationTreeComponent*>(component);
@@ -2248,6 +2508,10 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (capsuleCollisionComponent)
 	{
 		DrawCapsuleCollisionComponentDetails(capsuleCollisionComponent);
+	}
+	else if (heightMapCollisionComponent)
+	{
+		DrawHeightMapCollisionComponentDetails(heightMapCollisionComponent);
 	}
 	else if (movingTriangleMeshCollisionComponent)
 	{
@@ -2622,6 +2886,106 @@ void DetailsPanel::DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponen
 	}
 }
 
+void DetailsPanel::DrawHeightMapCollisionComponentDetails(HeightMapCollisionComponent* heightMapCollisionComponent)
+{
+	if (!heightMapCollisionComponent)
+	{
+		return;
+	}
+
+	const std::string specialPostfix = "##" + std::to_string(heightMapCollisionComponent->GetGUID());
+	const Image* heightMapImage = heightMapCollisionComponent->GetHeightMapImage();
+
+	ImGui::Text("HeightMapImage: ");
+	ImGui::SameLine();
+	ImGui::TextWrapped("%s", heightMapImage ? ToDisplayContentPath(heightMapImage->GetPath()).c_str() : "");
+
+	if (ImGui::Button(("Select asset" + specialPostfix).c_str()))
+	{
+		assetSelectionComponent_ = heightMapCollisionComponent;
+		assetSelectionComponentType_ = DetailsAssetSelectionTarget::HeightMapImage;
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::Texture;
+
+		AssetSelectorPanel::OnAssetSelected =
+			Delegate<void(const std::string&)>::Create<DetailsPanel, &DetailsPanel::OnAssetSelected>(this);
+
+		hud_->ShowPanel<AssetSelectorPanel>();
+	}
+
+	if (heightMapImage)
+	{
+		ImGui::SameLine();
+		if (ImGui::Button(("Clear" + specialPostfix).c_str()))
+		{
+			heightMapCollisionComponent->SetHeightMapImage(nullptr);
+			MarkSceneDirty("Height map image cleared");
+		}
+	}
+
+	int heightStickWidth = heightMapCollisionComponent->GetHeightStickWidth();
+	ImGui::Text("HeightStickWidth: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputInt("##HeightMapCollisionHeightStickWidth" + specialPostfix, heightStickWidth))
+	{
+		heightMapCollisionComponent->SetHeightStickWidth((std::max)(heightStickWidth, 2));
+		MarkSceneDirty("Height map stick width changed");
+	}
+
+	int heightStickLength = heightMapCollisionComponent->GetHeightStickLength();
+	ImGui::Text("HeightStickLength: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputInt("##HeightMapCollisionHeightStickLength" + specialPostfix, heightStickLength))
+	{
+		heightMapCollisionComponent->SetHeightStickLength((std::max)(heightStickLength, 2));
+		MarkSceneDirty("Height map stick length changed");
+	}
+
+	float minHeight = heightMapCollisionComponent->GetMinHeight();
+	ImGui::Text("MinHeight: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputFloat("##HeightMapCollisionMinHeight" + specialPostfix, minHeight))
+	{
+		heightMapCollisionComponent->SetMinHeight(minHeight);
+		MarkSceneDirty("Height map min height changed");
+	}
+
+	float maxHeight = heightMapCollisionComponent->GetMaxHeight();
+	ImGui::Text("MaxHeight: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputFloat("##HeightMapCollisionMaxHeight" + specialPostfix, maxHeight))
+	{
+		heightMapCollisionComponent->SetMaxHeight(maxHeight);
+		MarkSceneDirty("Height map max height changed");
+	}
+
+	float width = heightMapCollisionComponent->GetWidth();
+	ImGui::Text("Width: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputFloat("##HeightMapCollisionWidth" + specialPostfix, width))
+	{
+		heightMapCollisionComponent->SetWidth(width);
+		MarkSceneDirty("Height map width changed");
+	}
+
+	float length = heightMapCollisionComponent->GetLength();
+	ImGui::Text("Length: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputFloat("##HeightMapCollisionLength" + specialPostfix, length))
+	{
+		heightMapCollisionComponent->SetLength(length);
+		MarkSceneDirty("Height map length changed");
+	}
+
+	float heightScale = heightMapCollisionComponent->GetHeightScale();
+	ImGui::Text("HeightScale: ");
+	ImGui::SameLine();
+	if (EditorWidgets::DrawInputFloat("##HeightMapCollisionHeightScale" + specialPostfix, heightScale))
+	{
+		heightMapCollisionComponent->SetHeightScale(heightScale);
+		MarkSceneDirty("Height map scale changed");
+	}
+}
+
 void DetailsPanel::DrawMovingTriangleMeshCollisionComponentDetails(MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent)
 {
 	std::string meshPath;
@@ -2688,6 +3052,7 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 		"BoxCollisionComponent",
 		"CapsuleCollisionComponent",
 		"SphereCollisionComponent",
+		"HeightMapCollisionComponent",
 		"MovingTriangleMeshCollisionComponent",
 		"NonMovingTriangleMeshCollisionComponent"
 	};
