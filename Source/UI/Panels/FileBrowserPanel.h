@@ -31,6 +31,9 @@ private:
 	void HandleContextMenu(const std::string& itemPath, const std::string& itemName, bool isFolder);
 	void DrawCreateContentMenu(const std::string& targetDirectory);
 	void OpenClassCreationPanel(const std::string& initialDirectory);
+	void OpenImportFileSelector(const std::string& targetDirectory);
+	void OpenImportDirectorySelector(const std::string& targetDirectory);
+	void ImportFileSystemItem(const std::string& source);
 	void OpenAssetFile(const std::string& filePath);
 	void RequestOpenScene(const std::string& filePath);
 	void DrawSaveChangesPrompt();
@@ -66,6 +69,7 @@ private:
 	std::string selectedItemForMenu_{ "" };
 	std::string pendingSceneToOpen_{ "" };
 	std::string pendingCreationDirectory_{};
+	std::string pendingImportDirectory_{};
 	PendingAssetCreationType pendingAssetCreationType_{ PendingAssetCreationType::None };
 	char renameBuffer_[256]{ 0 };
 	char creationNameBuffer_[256]{ 0 };

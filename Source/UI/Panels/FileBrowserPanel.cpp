@@ -33,6 +33,7 @@
 #include "ShaderEditor/ShaderEditorPanel.h"
 #include "SkeletalMeshViewerPanel.h"
 #include "StaticMeshViewerPanel.h"
+#include "SystemFileBrowserPanel.h"
 #include "UI/EditorHUD.h"
 
 #include "Objects/EditorFreeCameraObject.h"
@@ -71,6 +72,12 @@ namespace
 				return static_cast<char>(std::tolower(character));
 			});
 		return value;
+	}
+
+	size_t FindContentMarker(const std::string& path)
+	{
+		const std::string lowerPath = ToLower(path);
+		return lowerPath.find("/content/");
 	}
 
 	std::string GetAbsoluteProjectPath(const std::string& relativePath)
@@ -123,6 +130,25 @@ namespace
 		return !errorCode;
 	}
 
+	bool MoveFileSystemItemOnDisk(const std::filesystem::path& sourcePath, const std::filesystem::path& destinationPath)
+	{
+		std::error_code errorCode;
+		std::filesystem::rename(sourcePath, destinationPath, errorCode);
+		if (!errorCode)
+		{
+			return true;
+		}
+
+		if (!CopyFileSystemItem(sourcePath, destinationPath))
+		{
+			return false;
+		}
+
+		errorCode.clear();
+		std::filesystem::remove_all(sourcePath, errorCode);
+		return !errorCode;
+	}
+
 	ImVec2 RemapTextureUV(const Texture* texture, const ImVec2& uv)
 	{
 		return texture ?
@@ -141,6 +167,38 @@ namespace
 	{
 		const std::string sourceRoot = EnsureTrailingSlash(NormalizePath((std::filesystem::path(EditorAssetPathUtils::GetProjectRootPath()) / "Source").generic_string()));
 		return StartsWith(EnsureTrailingSlash(NormalizePath(path)), sourceRoot);
+	}
+
+	std::string ToEditorReflectionPathForContentItem(const std::filesystem::path& itemPath)
+	{
+		const std::string normalizedItemPath = NormalizePath(itemPath.generic_string());
+		const size_t contentMarkerIndex = FindContentMarker(normalizedItemPath);
+		if (contentMarkerIndex == std::string::npos)
+		{
+			return "";
+		}
+
+		const std::string projectRoot = normalizedItemPath.substr(0, contentMarkerIndex + 1);
+		const std::string contentRelativePath = normalizedItemPath.substr(contentMarkerIndex + 9);
+		return NormalizePath((std::filesystem::path(projectRoot) / "Editor" / contentRelativePath).generic_string());
+	}
+
+	bool MoveEditorReflection(const std::filesystem::path& sourcePath, const std::filesystem::path& destinationPath)
+	{
+		const std::string sourceReflection = ToEditorReflectionPathForContentItem(sourcePath);
+		if (sourceReflection.empty() || !std::filesystem::exists(sourceReflection))
+		{
+			return true;
+		}
+
+		const std::string destinationReflection = ToEditorReflectionPathForContentItem(destinationPath);
+		if (destinationReflection.empty() || std::filesystem::exists(destinationReflection))
+		{
+			return false;
+		}
+
+		EditorAssetPathUtils::EnsureDirectoryForFile(destinationReflection);
+		return MoveFileSystemItemOnDisk(sourceReflection, destinationReflection);
 	}
 
 	std::string TryGetGameAssetFileType(const std::string& filePath)
@@ -853,6 +911,21 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 		ImGui::EndMenu();
 	}
 
+	if (isContentDirectory && ImGui::BeginMenu("Import"))
+	{
+		if (ImGui::MenuItem("File"))
+		{
+			OpenImportFileSelector(targetDirectory);
+		}
+
+		if (ImGui::MenuItem("Folder"))
+		{
+			OpenImportDirectorySelector(targetDirectory);
+		}
+
+		ImGui::EndMenu();
+	}
+
 	if (!targetDirectory.empty())
 	{
 		if (isContentDirectory)
@@ -874,6 +947,39 @@ void FileBrowserPanel::OpenClassCreationPanel(const std::string& initialDirector
 		classCreationPanel->Open(initialDirectory);
 		hud_->ShowPanel<ClassCreationPanel>();
 	}
+}
+
+void FileBrowserPanel::OpenImportFileSelector(const std::string& targetDirectory)
+{
+	if (SystemFileBrowserPanel* systemFileBrowserPanel = hud_->GetPanel<SystemFileBrowserPanel>())
+	{
+		pendingImportDirectory_ = EnsureTrailingSlash(targetDirectory);
+		systemFileBrowserPanel->OpenFileSelector(
+			Delegate<void(const std::string&)>::Create<FileBrowserPanel, &FileBrowserPanel::ImportFileSystemItem>(this));
+		hud_->ShowPanel<SystemFileBrowserPanel>();
+	}
+}
+
+void FileBrowserPanel::OpenImportDirectorySelector(const std::string& targetDirectory)
+{
+	if (SystemFileBrowserPanel* systemFileBrowserPanel = hud_->GetPanel<SystemFileBrowserPanel>())
+	{
+		pendingImportDirectory_ = EnsureTrailingSlash(targetDirectory);
+		systemFileBrowserPanel->OpenDirectorySelector(
+			Delegate<void(const std::string&)>::Create<FileBrowserPanel, &FileBrowserPanel::ImportFileSystemItem>(this));
+		hud_->ShowPanel<SystemFileBrowserPanel>();
+	}
+}
+
+void FileBrowserPanel::ImportFileSystemItem(const std::string& source)
+{
+	if (pendingImportDirectory_.empty())
+	{
+		return;
+	}
+
+	MoveFileSystemItem(source, pendingImportDirectory_);
+	pendingImportDirectory_.clear();
 }
 
 void FileBrowserPanel::OpenAssetFile(const std::string& filePath)
@@ -1170,22 +1276,13 @@ void FileBrowserPanel::MoveFileSystemItem(const std::string& source, const std::
 		std::filesystem::path destPath(cleanTarget);
 		destPath /= srcPath.filename();
 
-		if (srcPath != destPath && !std::filesystem::exists(destPath))
+		if (srcPath != destPath && std::filesystem::exists(srcPath) && !std::filesystem::exists(destPath))
 		{
-			// 1. Move primary content
-			std::filesystem::rename(srcPath, destPath);
-
-			// 2. Move editor reflection file/folder
-			std::string srcReflection = EditorAssetPathUtils::ToEditorReflectionPath(srcPath.generic_string());
-			std::string destReflection = EditorAssetPathUtils::ToEditorReflectionPath(destPath.generic_string());
-
-			if (std::filesystem::exists(srcReflection))
+			if (MoveFileSystemItemOnDisk(srcPath, destPath))
 			{
-				EditorAssetPathUtils::EnsureDirectoryForFile(destReflection);
-				std::filesystem::rename(srcReflection, destReflection);
+				MoveEditorReflection(srcPath, destPath);
+				needsRefresh_ = true;
 			}
-
-			needsRefresh_ = true;
 		}
 	}
 	catch (...) {}
