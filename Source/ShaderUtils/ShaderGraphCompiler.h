@@ -2,8 +2,10 @@
 
 #include "Goknar/Core.h"
 #include "Goknar/Materials/Material.h"
+#include "Goknar/Materials/MaterialFunction.h"
 #include "UI/Panels/ShaderEditor/ShaderEditorTypes.h"
 
+#include <string>
 #include <vector>
 
 struct GOKNAR_API ShaderGraphCompileInput
@@ -18,4 +20,5 @@ class GOKNAR_API ShaderGraphCompiler
 {
 public:
     void CompileMaterial(const ShaderGraphCompileInput& input, MaterialInitializationData* outMaterialData) const;
+    bool CompileMaterialFunction(const ShaderGraphCompileInput& input, const std::string& assetPath, MaterialFunction& outMaterialFunction) const;
 };

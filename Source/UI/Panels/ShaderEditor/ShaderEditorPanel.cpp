@@ -1,6 +1,7 @@
 #include "ShaderEditorPanel.h"
 
 #include "ShaderUtils/ShaderGraphCompiler.h"
+#include "ShaderUtils/ShaderGraphTypeUtils.h"
 
 #include <functional>
 #include <unordered_set>
@@ -46,6 +47,10 @@ namespace
 	constexpr const char* kMaterialEditorReflectionFileType = "MaterialEditorReflection";
 	constexpr const char* kMaterialFunctionEditorReflectionFileType = "MaterialFunctionEditorReflection";
 	constexpr const char* MATERIAL_NODE_METADATA_PREFIX = "// GOKNAR_MATERIAL_NODE|";
+	constexpr const char* kWorldTransformGetterCategory = "WorldTransformGetters";
+	constexpr const char* kWorldPositionGetterNodeName = "World Position";
+	constexpr const char* kWorldRotationGetterNodeName = "World Rotation";
+	constexpr const char* kWorldScalingGetterNodeName = "World Scaling";
 	constexpr int kMaxMaterialArraySize = 64;
 
 	std::string GetAssetBrowserDirectory(const std::string& currentAssetPath)
@@ -152,6 +157,65 @@ namespace
 		return node.typeCategory == "Texture" && node.name == "Texture Sample";
 	}
 
+	bool IsWorldTransformGetterNode(const ShaderNode& node)
+	{
+		return node.typeCategory == kWorldTransformGetterCategory;
+	}
+
+	std::string GetWorldTransformMatrixExpression()
+	{
+		return SHADER_VARIABLE_NAMES::VERTEX_SHADER_OUTS::FINAL_MODEL_MATRIX;
+	}
+
+	std::string BuildWorldPositionExpression(const std::string& matrixExpression)
+	{
+		return "vec3(" + matrixExpression + "[0][3], " + matrixExpression + "[1][3], " + matrixExpression + "[2][3])";
+	}
+
+	std::string BuildWorldScalingExpression(const std::string& matrixExpression)
+	{
+		return "vec3("
+			"length(vec3(" + matrixExpression + "[0][0], " + matrixExpression + "[1][0], " + matrixExpression + "[2][0])), "
+			"length(vec3(" + matrixExpression + "[0][1], " + matrixExpression + "[1][1], " + matrixExpression + "[2][1])), "
+			"length(vec3(" + matrixExpression + "[0][2], " + matrixExpression + "[1][2], " + matrixExpression + "[2][2])))";
+	}
+
+	std::string BuildWorldRotationGetterFunctionDefinition(const std::string& functionName)
+	{
+		return
+			"vec3 " + functionName + "(mat4 worldTransform)\n"
+			"{\n"
+			"\tvec3 worldScale = " + BuildWorldScalingExpression("worldTransform") + ";\n"
+			"\tvec3 safeScale = max(worldScale, vec3(0.000001));\n"
+			"\tfloat r00 = worldTransform[0][0] / safeScale.x;\n"
+			"\tfloat r01 = worldTransform[0][1] / safeScale.y;\n"
+			"\tfloat r02 = worldTransform[0][2] / safeScale.z;\n"
+			"\tfloat r12 = worldTransform[1][2] / safeScale.z;\n"
+			"\tfloat r22 = worldTransform[2][2] / safeScale.z;\n"
+			"\treturn vec3(atan(r12, r22), asin(clamp(-r02, -1.0, 1.0)), atan(r01, r00));\n"
+			"}\n";
+	}
+
+	std::string GetWorldTransformGetterExpression(const ShaderNode& node, const std::string& matrixExpression, const std::string& rotationFunctionName)
+	{
+		if (node.name == kWorldPositionGetterNodeName)
+		{
+			return BuildWorldPositionExpression(matrixExpression);
+		}
+
+		if (node.name == kWorldScalingGetterNodeName)
+		{
+			return BuildWorldScalingExpression(matrixExpression);
+		}
+
+		if (node.name == kWorldRotationGetterNodeName)
+		{
+			return rotationFunctionName + "(" + matrixExpression + ")";
+		}
+
+		return "vec3(0.0)";
+	}
+
 	std::string SanitizeIdentifier(std::string value)
 	{
 		for (char& character : value)
@@ -246,11 +310,6 @@ namespace
 	{
 		const size_t maxPinCount = std::max(inputPinCount, outputPinCount);
 		return std::max(80.0f, 45.0f + static_cast<float>(maxPinCount) * 25.0f);
-	}
-
-	std::string GetMaterialFunctionOutputFunctionName(const std::string& baseFunctionName, const MaterialFunctionPinDefinition& outputDefinition, size_t outputIndex)
-	{
-		return baseFunctionName + "_out_" + std::to_string(outputIndex) + "_" + SanitizeIdentifier(outputDefinition.name);
 	}
 
 	const char* ShaderPinTypeToString(ShaderPinType type)
@@ -878,8 +937,6 @@ void ShaderEditorPanel::ResetInteractionState()
 {
 	selectedNodeIds_.clear();
 	preDragSelection_.clear();
-	clipboardNodes_.clear();
-	clipboardLinks_.clear();
 	selectedNodeId_ = -1;
 	selectedLinkId_ = -1;
 	scale_ = 1.0f;
@@ -2503,6 +2560,8 @@ void ShaderEditorPanel::DrawNodeCanvas()
 		else if (node.typeCategory == "MaterialVariableArray") bg_col = isSelected ? IM_COL32(45, 90, 120, 255) : IM_COL32(30, 65, 90, 255);
 		else if (node.typeCategory == "MaterialVariableGet" || node.typeCategory == "MaterialVariableSet") bg_col = isSelected ? IM_COL32(55, 125, 125, 255) : IM_COL32(35, 92, 92, 255);
 		else if (node.typeCategory == "MaterialVariableArrayGet" || node.typeCategory == "MaterialVariableArraySet") bg_col = isSelected ? IM_COL32(55, 105, 135, 255) : IM_COL32(35, 75, 102, 255);
+		else if (node.typeCategory == kWorldTransformGetterCategory) bg_col = isSelected ? IM_COL32(85, 105, 70, 255) : IM_COL32(55, 75, 45, 255);
+		else if (node.typeCategory == ShaderGraphTypeUtils::kVectorConverterCategory) bg_col = isSelected ? IM_COL32(95, 80, 130, 255) : IM_COL32(68, 52, 100, 255);
 		else if (node.typeCategory == "Flow") bg_col = isSelected ? IM_COL32(120, 80, 45, 255) : IM_COL32(90, 58, 30, 255);
 
 		draw_list->AddRectFilled(rect_min, rect_max, bg_col, 4.0f * scale_);
@@ -2801,6 +2860,17 @@ void ShaderEditorPanel::DrawNodeCanvas()
 				{
 					for (const char* var : { "boneTransformationMatrix", "worldTransformationMatrix", "relativeTransformationMatrix", "modelMatrix", "viewProjectionMatrix", "transformationMatrix", "viewPosition" })
 						if (ImGui::MenuItem(var)) nodes_.push_back(SpawnNode("Variables", var, spawnPos));
+					if (ImGui::BeginMenu("World Transform"))
+					{
+						for (const char* getter : { kWorldPositionGetterNodeName, kWorldRotationGetterNodeName, kWorldScalingGetterNodeName })
+						{
+							if (ImGui::MenuItem(getter))
+							{
+								nodes_.push_back(SpawnNode(kWorldTransformGetterCategory, getter, spawnPos));
+							}
+						}
+						ImGui::EndMenu();
+					}
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("Vertex Inputs"))
@@ -2970,6 +3040,18 @@ void ShaderEditorPanel::DrawNodeCanvas()
 		{
 			for (const char* func : { "MatrixCompMult", "OuterProduct", "Transpose", "Determinant", "Inverse" })
 				if (ImGui::MenuItem(func)) nodes_.push_back(SpawnNode("Matrix", func, spawnPos));
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Converters"))
+		{
+			for (const char* converter : { "Float2", "Float3", "Float4" })
+			{
+				if (ImGui::MenuItem(converter))
+				{
+					nodes_.push_back(SpawnNode(ShaderGraphTypeUtils::kVectorConverterCategory, converter, spawnPos));
+				}
+			}
 			ImGui::EndMenu();
 		}
 
@@ -3834,6 +3916,18 @@ ShaderNode ShaderEditorPanel::SpawnNode(const std::string& category, const std::
 		node.outputs.push_back({ nextId_++, node.id, "Value", type, ShaderPinKind::Output });
 		node.size = ImVec2(320, 60);
 	}
+	else if (category == kWorldTransformGetterCategory)
+	{
+		node.outputs.push_back({
+			nextId_++,
+			node.id,
+			name == kWorldRotationGetterNodeName ? "Euler" : "Value",
+			ShaderPinType::Vector3,
+			ShaderPinKind::Output,
+			Vector3(0.f)
+			});
+		node.size = ImVec2(200, 60);
+	}
 	else if (category == "MaterialVariable")
 	{
 		node.name = SanitizeIdentifier(name);
@@ -3892,6 +3986,16 @@ ShaderNode ShaderEditorPanel::SpawnNode(const std::string& category, const std::
 			node.inputs.push_back({ nextId_++, node.id, "UV", ShaderPinType::Vector2, ShaderPinKind::Input, Vector2(0.f) });
 			node.outputs.push_back({ nextId_++, node.id, "Color", ShaderPinType::Vector4, ShaderPinKind::Output });
 			node.size = ImVec2(220, 170);
+		}
+	}
+	else if (category == ShaderGraphTypeUtils::kVectorConverterCategory)
+	{
+		const ShaderPinType targetType = ShaderGraphTypeUtils::GetFloatVectorConverterTargetType(name);
+		if (targetType != ShaderPinType::None)
+		{
+			node.inputs.push_back({ nextId_++, node.id, "Value", ShaderPinType::Any, ShaderPinKind::Input, 0.0f });
+			node.outputs.push_back({ nextId_++, node.id, "Out", targetType, ShaderPinKind::Output, GetDefaultValueForPinType(targetType) });
+			node.size = ImVec2(170, 65);
 		}
 	}
 	else if (category == "Custom")
@@ -4222,580 +4326,12 @@ bool ShaderEditorPanel::BuildActiveMaterialFunction(MaterialFunction& outMateria
 		return false;
 	}
 
-	outMaterialFunction.SetAssetPath(currentAssetPath_);
-	outMaterialFunction.SetName(std::filesystem::path(currentAssetPath_).filename().generic_string());
+	ShaderGraphCompileInput materialFunctionCompileInput;
+	materialFunctionCompileInput.nodes = &nodes_;
+	materialFunctionCompileInput.links = &links_;
+	materialFunctionCompileInput.textures = &textures_;
+	materialFunctionCompileInput.masterNodeId = masterNodeId_;
 
-	std::vector<ShaderNode*> inputNodes;
-	for (ShaderNode& node : nodes_)
-	{
-		if (node.typeCategory == "FunctionInput")
-		{
-			inputNodes.push_back(&node);
-		}
-	}
-
-	std::sort(inputNodes.begin(), inputNodes.end(), [](const ShaderNode* left, const ShaderNode* right)
-		{
-			return left->id < right->id;
-		});
-
-	std::vector<MaterialFunctionPinDefinition> inputDefinitions;
-	for (const ShaderNode* inputNode : inputNodes)
-	{
-		if (!inputNode || inputNode->outputs.empty())
-		{
-			continue;
-		}
-
-		inputDefinitions.push_back({ inputNode->name, inputNode->outputs[0].type });
-	}
-	outMaterialFunction.SetInputs(inputDefinitions);
-
-	std::vector<MaterialFunctionPinDefinition> outputDefinitions;
-	for (const ShaderPin& outputPin : masterNode->inputs)
-	{
-		outputDefinitions.push_back({ outputPin.name, outputPin.type });
-	}
-	outMaterialFunction.SetOutputs(outputDefinitions);
-
-	const std::string generatedFunctionName = "mf_" + SanitizeIdentifier(currentAssetPath_);
-	outMaterialFunction.SetGeneratedFunctionName(generatedFunctionName);
-
-	auto GetGLSLTypeString = [](ShaderPinType type) -> std::string
-		{
-			switch (type)
-			{
-			case ShaderPinType::Float: return "float";
-			case ShaderPinType::Vector2: return "vec2";
-			case ShaderPinType::Vector3: return "vec3";
-			case ShaderPinType::Vector4: return "vec4";
-			case ShaderPinType::Vector4i: return "ivec4";
-			case ShaderPinType::Matrix4x4: return "mat4";
-			case ShaderPinType::Texture: return "sampler2D";
-			case ShaderPinType::Any:
-			case ShaderPinType::None:
-			default:
-				return "float";
-			}
-		};
-
-	auto PromoteTypes = [](ShaderPinType left, ShaderPinType right) -> ShaderPinType
-		{
-			if (left == right) return left;
-			if (left == ShaderPinType::Any) return right;
-			if (right == ShaderPinType::Any) return left;
-			if (left == ShaderPinType::Float) return right;
-			if (right == ShaderPinType::Float) return left;
-			return std::max(left, right);
-		};
-
-	auto GetDefaultValueString = [&](const ShaderPin& pin) -> std::pair<std::string, ShaderPinType>
-		{
-			switch (pin.type)
-			{
-			case ShaderPinType::Vector2:
-				if (std::holds_alternative<Vector2>(pin.defaultValue))
-				{
-					const Vector2 value = std::get<Vector2>(pin.defaultValue);
-					return { "vec2(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ")", ShaderPinType::Vector2 };
-				}
-				break;
-			case ShaderPinType::Vector3:
-				if (std::holds_alternative<Vector3>(pin.defaultValue))
-				{
-					const Vector3 value = std::get<Vector3>(pin.defaultValue);
-					return { "vec3(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z) + ")", ShaderPinType::Vector3 };
-				}
-				break;
-			case ShaderPinType::Vector4:
-				if (std::holds_alternative<Vector4>(pin.defaultValue))
-				{
-					const Vector4 value = std::get<Vector4>(pin.defaultValue);
-					return { "vec4(" + std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z) + ", " + std::to_string(value.w) + ")", ShaderPinType::Vector4 };
-				}
-				break;
-			case ShaderPinType::Any:
-			case ShaderPinType::Float:
-			case ShaderPinType::None:
-			default:
-				if (std::holds_alternative<float>(pin.defaultValue))
-				{
-					return { std::to_string(std::get<float>(pin.defaultValue)) + "f", ShaderPinType::Float };
-				}
-				break;
-			}
-
-			return { "0.0f", ShaderPinType::Float };
-		};
-
-	auto GetGLSLFuncName = [](const std::string& nodeName) -> std::string
-		{
-			if (nodeName == "Sine") return "sin";
-			if (nodeName == "Cosine") return "cos";
-			if (nodeName == "Tangent") return "tan";
-			if (nodeName == "InverseSqrt") return "inversesqrt";
-			if (nodeName == "FloatBitsToInt") return "floatBitsToInt";
-			if (nodeName == "FloatBitsToUint") return "floatBitsToUint";
-			if (nodeName == "IntBitsToFloat") return "intBitsToFloat";
-			if (nodeName == "UintBitsToFloat") return "uintBitsToFloat";
-			if (nodeName == "MatrixCompMult") return "matrixCompMult";
-			if (nodeName == "OuterProduct") return "outerProduct";
-			if (nodeName == "RoundEven") return "roundEven";
-			if (nodeName == "IsNan") return "isnan";
-			if (nodeName == "IsInf") return "isinf";
-
-			std::string glslName = nodeName;
-			glslName[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(glslName[0])));
-			return glslName;
-		};
-
-	auto GetMaskComponentExpression = [](const std::string& value, ShaderPinType inputType, size_t componentIndex) -> std::string
-		{
-			static const char* componentNames[] = { "x", "y", "z", "w" };
-			if (componentIndex >= 4)
-			{
-				return "0.0f";
-			}
-
-			switch (inputType)
-			{
-			case ShaderPinType::Float:
-				return componentIndex == 0 ? value : "0.0f";
-			case ShaderPinType::Vector2:
-				return componentIndex < 2 ? value + "." + componentNames[componentIndex] : "0.0f";
-			case ShaderPinType::Vector3:
-				return componentIndex < 3 ? value + "." + componentNames[componentIndex] : "0.0f";
-			case ShaderPinType::Vector4:
-				return value + "." + componentNames[componentIndex];
-			case ShaderPinType::Vector4i:
-				return "float(" + value + "." + componentNames[componentIndex] + ")";
-			case ShaderPinType::Any:
-			case ShaderPinType::Matrix4x4:
-			case ShaderPinType::Texture:
-			case ShaderPinType::None:
-			default:
-				return componentIndex == 0 ? value : "0.0f";
-			}
-		};
-
-	auto FormatOutputValue = [](const std::string& value, ShaderPinType actualType, ShaderPinType expectedType) -> std::string
-		{
-			if (actualType == expectedType || actualType == ShaderPinType::Any)
-			{
-				return value;
-			}
-
-			if (expectedType == ShaderPinType::Vector4 && actualType == ShaderPinType::Vector3) return "vec4(" + value + ", 1.0f)";
-			if (expectedType == ShaderPinType::Vector4 && actualType == ShaderPinType::Float) return "vec4(" + value + ")";
-			if (expectedType == ShaderPinType::Vector3 && actualType == ShaderPinType::Vector4) return value + ".xyz";
-			if (expectedType == ShaderPinType::Vector3 && actualType == ShaderPinType::Float) return "vec3(" + value + ")";
-			if (expectedType == ShaderPinType::Vector2 && actualType == ShaderPinType::Float) return "vec2(" + value + ")";
-			return value;
-		};
-
-	std::vector<ShaderNode*> executionOrder;
-	std::unordered_set<int> visitedNodes;
-	std::unordered_map<int, ShaderPinType> resolvedPinTypes;
-	std::unordered_set<std::string> emittedFunctionNames;
-
-	std::function<void(int)> backtrace = [&](int nodeId)
-		{
-			if (visitedNodes.find(nodeId) != visitedNodes.end())
-			{
-				return;
-			}
-
-			visitedNodes.insert(nodeId);
-			ShaderNode* node = FindNode(nodeId);
-			if (!node)
-			{
-				return;
-			}
-
-			for (const ShaderPin& inputPin : node->inputs)
-			{
-				for (const ShaderLink& link : links_)
-				{
-					if (link.endPinId == inputPin.id)
-					{
-						if (ShaderPin* connectedOutput = FindPin(link.startPinId))
-						{
-							backtrace(connectedOutput->nodeId);
-						}
-					}
-				}
-			}
-
-			if (nodeId != masterNodeId_)
-			{
-				executionOrder.push_back(node);
-			}
-		};
-
-	for (const ShaderPin& masterOutputPin : masterNode->inputs)
-	{
-		for (const ShaderLink& link : links_)
-		{
-			if (link.endPinId == masterOutputPin.id)
-			{
-				if (ShaderPin* connectedOutput = FindPin(link.startPinId))
-				{
-					backtrace(connectedOutput->nodeId);
-				}
-			}
-		}
-	}
-
-	auto GetPinValueAndType = [&](const ShaderPin& pin) -> std::pair<std::string, ShaderPinType>
-		{
-			for (const ShaderLink& link : links_)
-			{
-				if (link.endPinId != pin.id)
-				{
-					continue;
-				}
-
-				ShaderPin* outputPin = FindPin(link.startPinId);
-				ShaderNode* sourceNode = outputPin ? FindNode(outputPin->nodeId) : nullptr;
-				if (!outputPin || !sourceNode)
-				{
-					continue;
-				}
-
-				if (sourceNode->typeCategory == "FunctionInput")
-				{
-					return { SanitizeIdentifier(sourceNode->name), outputPin->type };
-				}
-
-				if (sourceNode->typeCategory == "Variables")
-				{
-					return { sourceNode->name, outputPin->type };
-				}
-
-				const ShaderPinType actualType = resolvedPinTypes.count(outputPin->id) ? resolvedPinTypes.at(outputPin->id) : outputPin->type;
-				return { "node_" + std::to_string(sourceNode->id) + "_out_" + std::to_string(outputPin->id), actualType };
-			}
-
-			return GetDefaultValueString(pin);
-		};
-
-	auto IsInputPinConnected = [&](int pinId) -> bool
-		{
-			return std::any_of(links_.begin(), links_.end(), [pinId](const ShaderLink& link)
-				{
-					return link.endPinId == pinId;
-				});
-		};
-
-	std::string nestedFunctionDefinitions;
-	std::string functionBody = "\t// --- Generated Material Function Calculations ---\n";
-
-	for (ShaderNode* node : executionOrder)
-	{
-		if (!node || node->typeCategory == "FunctionInput" || node->typeCategory == "Variables")
-		{
-			continue;
-		}
-
-		functionBody += "\t// Node: " + node->name + "\n";
-		const std::string outVar = node->outputs.empty() ? "" : "node_" + std::to_string(node->id) + "_out_" + std::to_string(node->outputs[0].id);
-
-		if (node->typeCategory == "Math" || node->typeCategory == "Trigonometry" ||
-			node->typeCategory == "Exponential" || node->typeCategory == "Geometric" ||
-			node->typeCategory == "Matrix")
-		{
-			if (node->name == "Mask")
-			{
-				auto [value, type] = GetPinValueAndType(node->inputs[0]);
-				for (size_t outputIndex = 0; outputIndex < node->outputs.size(); ++outputIndex)
-				{
-					const ShaderPin& outputPin = node->outputs[outputIndex];
-					const std::string outputVar = "node_" + std::to_string(node->id) + "_out_" + std::to_string(outputPin.id);
-					resolvedPinTypes[outputPin.id] = ShaderPinType::Float;
-					functionBody += "\tfloat " + outputVar + " = " + GetMaskComponentExpression(value, type, outputIndex) + ";\n";
-				}
-			}
-			else if (node->name == "Add" || node->name == "Subtract" || node->name == "Multiply" || node->name == "Divide" || node->name == "Modulo")
-			{
-				auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
-				auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
-				const ShaderPinType outType = PromoteTypes(typeA, typeB);
-				resolvedPinTypes[node->outputs[0].id] = outType;
-				if (node->name == "Modulo")
-				{
-					functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = mod(" + valueA + ", " + valueB + ");\n";
-				}
-				else
-				{
-					const std::string op = node->name == "Add" ? "+" : node->name == "Subtract" ? "-" : node->name == "Multiply" ? "*" : "/";
-					functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = " + valueA + " " + op + " " + valueB + ";\n";
-				}
-			}
-			else if (node->name == "Modf" || node->name == "Frexp")
-			{
-				auto [valueX, typeX] = GetPinValueAndType(node->inputs[0]);
-				resolvedPinTypes[node->outputs[0].id] = typeX;
-				resolvedPinTypes[node->outputs[1].id] = typeX;
-				const std::string outVar2 = "node_" + std::to_string(node->id) + "_out_" + std::to_string(node->outputs[1].id);
-				const std::string funcName = GetGLSLFuncName(node->name);
-				functionBody += "\t" + GetGLSLTypeString(typeX) + " " + outVar2 + ";\n";
-				functionBody += "\t" + GetGLSLTypeString(typeX) + " " + outVar + " = " + funcName + "(" + valueX + ", " + outVar2 + ");\n";
-			}
-			else
-			{
-				const std::string funcName = GetGLSLFuncName(node->name);
-				if (node->inputs.size() == 1)
-				{
-					auto [value, type] = GetPinValueAndType(node->inputs[0]);
-					ShaderPinType outType = type;
-					if (node->name == "Length" || node->name == "Determinant" || node->name == "IsNan" || node->name == "IsInf")
-					{
-						outType = ShaderPinType::Float;
-					}
-					resolvedPinTypes[node->outputs[0].id] = outType;
-					functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = " + funcName + "(" + value + ");\n";
-				}
-				else if (node->inputs.size() == 2)
-				{
-					auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
-					auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
-					ShaderPinType outType = PromoteTypes(typeA, typeB);
-					if (node->name == "Distance" || node->name == "Dot") outType = ShaderPinType::Float;
-					if (node->name == "Cross") outType = ShaderPinType::Vector3;
-					if (node->name == "OuterProduct") outType = ShaderPinType::Matrix4x4;
-					resolvedPinTypes[node->outputs[0].id] = outType;
-					functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = " + funcName + "(" + valueA + ", " + valueB + ");\n";
-				}
-				else if (node->inputs.size() == 3)
-				{
-					auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
-					auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
-					auto [valueC, typeC] = GetPinValueAndType(node->inputs[2]);
-					ShaderPinType outType = PromoteTypes(typeA, typeB);
-					outType = PromoteTypes(outType, typeC);
-					resolvedPinTypes[node->outputs[0].id] = outType;
-					functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = " + funcName + "(" + valueA + ", " + valueB + ", " + valueC + ");\n";
-				}
-			}
-		}
-		else if (node->typeCategory == "Texture" && node->name == "Texture Sample")
-		{
-			auto [uvValue, uvType] = GetPinValueAndType(node->inputs[0]);
-			if (!IsInputPinConnected(node->inputs[0].id))
-			{
-				uvValue = SHADER_VARIABLE_NAMES::TEXTURE::UV;
-				uvType = ShaderPinType::Vector2;
-			}
-
-			resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector4;
-			const std::string samplerName = GetTextureSamplerNameForNode(*node);
-			if (samplerName.empty())
-			{
-				functionBody += "\tvec4 " + outVar + " = vec4(0.0f, 0.0f, 0.0f, 1.0f);\n";
-			}
-			else
-			{
-				const std::string sampleUV = GetTextureSampleUVExpression(*node, uvValue, uvType);
-				functionBody += "\tvec4 " + outVar + " = texture(" + samplerName + ", " + sampleUV + ");\n";
-			}
-		}
-		else if (node->typeCategory == "Constants")
-		{
-			if (node->name == "Float Constant")
-			{
-				resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Float;
-				functionBody += "\tfloat " + outVar + " = " + GetPinValueAndType(node->outputs[0]).first + ";\n";
-			}
-			else if (node->name == "Vector2 Constant")
-			{
-				resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector2;
-				functionBody += "\tvec2 " + outVar + " = vec2(" + GetPinValueAndType(node->inputs[0]).first + ", " + GetPinValueAndType(node->inputs[1]).first + ");\n";
-			}
-			else if (node->name == "Vector3 Constant")
-			{
-				resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector3;
-				functionBody += "\tvec3 " + outVar + " = vec3(" + GetPinValueAndType(node->inputs[0]).first + ", " + GetPinValueAndType(node->inputs[1]).first + ", " + GetPinValueAndType(node->inputs[2]).first + ");\n";
-			}
-			else if (node->name == "Vector4 Constant")
-			{
-				resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Vector4;
-				functionBody += "\tvec4 " + outVar + " = vec4(" + GetPinValueAndType(node->inputs[0]).first + ", " + GetPinValueAndType(node->inputs[1]).first + ", " + GetPinValueAndType(node->inputs[2]).first + ", " + GetPinValueAndType(node->inputs[3]).first + ");\n";
-			}
-		}
-		else if (node->typeCategory == "Custom" && node->name == "Custom GLSL")
-		{
-			resolvedPinTypes[node->outputs[0].id] = ShaderPinType::Any;
-			std::string code = node->stringData;
-			std::string calculation;
-			std::string result = "0.0";
-			const size_t pos = code.find("RETURN_RESULT:");
-			if (pos != std::string::npos)
-			{
-				calculation = code.substr(0, pos);
-				result = code.substr(pos + 14);
-			}
-			else
-			{
-				calculation = code;
-			}
-
-			result.erase(std::remove(result.begin(), result.end(), ';'), result.end());
-			result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
-			result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
-			if (result.empty())
-			{
-				result = "0.0";
-			}
-
-			functionBody += calculation + "\n";
-			functionBody += "#define " + outVar + " (" + result + ")\n";
-		}
-		else if (node->typeCategory == "Flow" && node->name == "If" && node->inputs.size() >= 5 && !node->outputs.empty())
-		{
-			auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
-			auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
-			auto [valueLess, typeLess] = GetPinValueAndType(node->inputs[2]);
-			auto [valueEqual, typeEqual] = GetPinValueAndType(node->inputs[3]);
-			auto [valueGreater, typeGreater] = GetPinValueAndType(node->inputs[4]);
-			(void)typeA;
-			(void)typeB;
-
-			ShaderPinType outType = PromoteTypes(typeLess, typeEqual);
-			outType = PromoteTypes(outType, typeGreater);
-			if (outType == ShaderPinType::Any)
-			{
-				outType = typeLess != ShaderPinType::Any ? typeLess :
-					typeEqual != ShaderPinType::Any ? typeEqual :
-					typeGreater;
-			}
-			if (outType == ShaderPinType::None)
-			{
-				outType = ShaderPinType::Float;
-			}
-
-			resolvedPinTypes[node->outputs[0].id] = outType;
-			functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = ((" + valueA + ") < (" + valueB + ")) ? " +
-				FormatOutputValue(valueLess, typeLess, outType) + " : (((" + valueA + ") == (" + valueB + ")) ? " +
-				FormatOutputValue(valueEqual, typeEqual, outType) + " : " +
-				FormatOutputValue(valueGreater, typeGreater, outType) + ");\n";
-		}
-		else if (node->typeCategory == "Flow" && node->name == "If" && node->inputs.size() >= 2 && node->outputs.size() >= 3)
-		{
-			auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
-			auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
-			(void)typeA;
-			(void)typeB;
-
-			for (const ShaderPin& outputPin : node->outputs)
-			{
-				resolvedPinTypes[outputPin.id] = ShaderPinType::Float;
-			}
-
-			const std::string greaterVar = "node_" + std::to_string(node->id) + "_out_" + std::to_string(node->outputs[0].id);
-			const std::string equalVar = "node_" + std::to_string(node->id) + "_out_" + std::to_string(node->outputs[1].id);
-			const std::string lessVar = "node_" + std::to_string(node->id) + "_out_" + std::to_string(node->outputs[2].id);
-			functionBody += "\tfloat " + greaterVar + " = ((" + valueA + ") > (" + valueB + ")) ? 1.0f : 0.0f;\n";
-			functionBody += "\tfloat " + equalVar + " = ((" + valueA + ") == (" + valueB + ")) ? 1.0f : 0.0f;\n";
-			functionBody += "\tfloat " + lessVar + " = ((" + valueA + ") < (" + valueB + ")) ? 1.0f : 0.0f;\n";
-		}
-		else if (node->typeCategory == "Flow" && node->inputs.size() >= 4 && !node->outputs.empty())
-		{
-			auto [valueA, typeA] = GetPinValueAndType(node->inputs[0]);
-			auto [valueB, typeB] = GetPinValueAndType(node->inputs[1]);
-			auto [valueTrue, typeTrue] = GetPinValueAndType(node->inputs[2]);
-			auto [valueFalse, typeFalse] = GetPinValueAndType(node->inputs[3]);
-			(void)typeA;
-			(void)typeB;
-
-			ShaderPinType outType = PromoteTypes(typeTrue, typeFalse);
-			if (outType == ShaderPinType::Any)
-			{
-				outType = typeTrue != ShaderPinType::Any ? typeTrue : typeFalse;
-			}
-			if (outType == ShaderPinType::None)
-			{
-				outType = ShaderPinType::Float;
-			}
-
-			resolvedPinTypes[node->outputs[0].id] = outType;
-			const std::string comparisonOperator = node->stringData.empty() ? ">" : node->stringData;
-			functionBody += "\t" + GetGLSLTypeString(outType) + " " + outVar + " = ((" + valueA + ") " + comparisonOperator + " (" + valueB + ")) ? " +
-				FormatOutputValue(valueTrue, typeTrue, outType) + " : " + FormatOutputValue(valueFalse, typeFalse, outType) + ";\n";
-		}
-		else if (node->typeCategory == "Functions")
-		{
-			MaterialFunction materialFunction;
-			if (!LoadMaterialFunctionSignature(node->stringData, materialFunction))
-			{
-				continue;
-			}
-
-			const std::string functionName = materialFunction.GetGeneratedFunctionName();
-			if (!functionName.empty() && emittedFunctionNames.insert(functionName).second)
-			{
-				nestedFunctionDefinitions += materialFunction.GetGeneratedFunctionDefinitions();
-				if (!nestedFunctionDefinitions.empty() && nestedFunctionDefinitions.back() != '\n')
-				{
-					nestedFunctionDefinitions += "\n";
-				}
-			}
-
-			std::string joinedArguments;
-			for (size_t inputIndex = 0; inputIndex < node->inputs.size(); ++inputIndex)
-			{
-				if (inputIndex > 0)
-				{
-					joinedArguments += ", ";
-				}
-				joinedArguments += GetPinValueAndType(node->inputs[inputIndex]).first;
-			}
-
-			for (size_t outputIndex = 0; outputIndex < node->outputs.size(); ++outputIndex)
-			{
-				const ShaderPin& outputPin = node->outputs[outputIndex];
-				const ShaderPinType outType = outputPin.type;
-				const std::string outputVar = "node_" + std::to_string(node->id) + "_out_" + std::to_string(outputPin.id);
-				const MaterialFunctionPinDefinition outputDefinition{
-					outputPin.name,
-					outputPin.type
-				};
-
-				resolvedPinTypes[outputPin.id] = outType;
-				functionBody += "\t" + GetGLSLTypeString(outType) + " " + outputVar + " = " +
-					GetMaterialFunctionOutputFunctionName(functionName, outputDefinition, outputIndex) +
-					"(" + joinedArguments + ");\n";
-			}
-		}
-	}
-
-	std::string functionDefinition = nestedFunctionDefinitions;
-	for (size_t outputIndex = 0; outputIndex < masterNode->inputs.size(); ++outputIndex)
-	{
-		const ShaderPin& masterOutputPin = masterNode->inputs[outputIndex];
-		const auto [finalValue, finalType] = GetPinValueAndType(masterOutputPin);
-		const std::string formattedResult = FormatOutputValue(finalValue, finalType, masterOutputPin.type);
-		const MaterialFunctionPinDefinition outputDefinition{
-			masterOutputPin.name,
-			masterOutputPin.type
-		};
-
-		functionDefinition += GetGLSLTypeString(masterOutputPin.type) + " " +
-			GetMaterialFunctionOutputFunctionName(generatedFunctionName, outputDefinition, outputIndex) + "(";
-		for (size_t inputIndex = 0; inputIndex < inputDefinitions.size(); ++inputIndex)
-		{
-			if (inputIndex > 0)
-			{
-				functionDefinition += ", ";
-			}
-
-			functionDefinition += GetGLSLTypeString(inputDefinitions[inputIndex].type) + " " + SanitizeIdentifier(inputDefinitions[inputIndex].name);
-		}
-		functionDefinition += ")\n{\n";
-		functionDefinition += functionBody;
-		functionDefinition += "\treturn " + formattedResult + ";\n";
-		functionDefinition += "}\n";
-	}
-
-	outMaterialFunction.SetGeneratedFunctionDefinitions(functionDefinition);
-	return true;
+	ShaderGraphCompiler materialFunctionCompiler;
+	return materialFunctionCompiler.CompileMaterialFunction(materialFunctionCompileInput, currentAssetPath_, outMaterialFunction);
 }

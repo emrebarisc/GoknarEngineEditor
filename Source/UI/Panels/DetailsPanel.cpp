@@ -893,9 +893,25 @@ void DetailsPanel::SetupReflections()
 		};
 
 	physicsReflections_["BoxCollisionComponent"] =
-		[this](PhysicsObject* physicsObject)
+		[](PhysicsObject* physicsObject)
 		{
-			AddCollisionComponent<BoxCollisionComponent>(physicsObject);
+			if (physicsObject->GetFirstComponentOfType<BoxCollisionComponent>())
+			{
+				return;
+			}
+
+			BoxCollisionComponent* boxCollisionComponent = physicsObject->AddSubComponent<BoxCollisionComponent>();
+			if (!dynamic_cast<RigidBody*>(physicsObject))
+			{
+				return;
+			}
+
+			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
+			StaticMesh* staticMesh = staticMeshComponent && staticMeshComponent->GetMeshInstance() ? staticMeshComponent->GetMeshInstance()->GetMesh() : nullptr;
+			if (staticMesh && staticMesh->GetAABB().GetSize() != Vector3::ZeroVector)
+			{
+				boxCollisionComponent->SetHalfSize(staticMesh->GetAABB().GetSize() * 0.5f);
+			}
 		};
 	physicsReflections_["CapsuleCollisionComponent"] =
 		[](PhysicsObject* physicsObject)
