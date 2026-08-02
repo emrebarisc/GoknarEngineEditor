@@ -4,6 +4,7 @@
 
 #include "imgui.h"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,6 +26,7 @@ public:
 		sourceImageWidth_(0),
 		sourceImageHeight_(0),
 		sourceImageChannels_(0),
+		visibleChannels_{ true, true, true, true },
 		keepAspectRatio_(true),
 		hasPendingResize_(false),
 		shouldOpenOverwritePopup_(false),
@@ -43,7 +45,10 @@ private:
 	void ResetResizeState();
 	bool LoadSourceImage();
 	void RebuildDisplayTexture(const std::vector<unsigned char>& buffer, int width, int height);
+	void RebuildCurrentPreviewTexture();
 	void SetTargetUploadToGPU(bool uploadToGPU);
+	void ResetChannelVisibility();
+	void DrawChannelControls();
 	void DrawResizeControls();
 	void DrawConversionControls();
 	void DrawOverwriteConfirmationPopup();
@@ -73,6 +78,7 @@ private:
 	int sourceImageWidth_;
 	int sourceImageHeight_;
 	int sourceImageChannels_;
+	std::array<bool, 4> visibleChannels_;
 	bool keepAspectRatio_;
 	bool hasPendingResize_;
 	bool shouldOpenOverwritePopup_;

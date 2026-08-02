@@ -32,6 +32,8 @@ namespace
 	constexpr size_t MaxResizeBufferBytes = 512ull * 1024ull * 1024ull;
 	constexpr const char* OverwritePopupName = "Overwrite image?";
 	constexpr const char* ConversionOverwritePopupName = "Overwrite converted image?";
+	constexpr int MaxChannelToggles = 4;
+	constexpr std::array<const char*, MaxChannelToggles> ChannelLabels = { "R", "G", "B", "A" };
 
 	constexpr std::array<TextureUsage, 10> TextureUsageOptions =
 	{
@@ -162,19 +164,27 @@ namespace
 		}
 	}
 
+	int GetVisibleChannelCount(int sourceChannels)
+	{
+		return std::clamp(sourceChannels, 0, MaxChannelToggles);
+	}
+
+	bool IsChannelVisible(const std::array<bool, MaxChannelToggles>& channelVisibility, int channelIndex, int sourceChannels)
+	{
+		return channelIndex >= 0 &&
+			channelIndex < GetVisibleChannelCount(sourceChannels) &&
+			channelVisibility[channelIndex];
+	}
+
 	std::vector<unsigned char> BuildPreviewTextureBuffer(
 		const std::vector<unsigned char>& source,
 		int width,
 		int height,
 		int sourceChannels,
+		const std::array<bool, MaxChannelToggles>& channelVisibility,
 		int& outPreviewChannels)
 	{
 		outPreviewChannels = sourceChannels;
-		if (sourceChannels != 1)
-		{
-			return source;
-		}
-
 		size_t sourceBufferSize = 0;
 		if (!TryGetImageBufferSize(width, height, sourceChannels, sourceBufferSize) ||
 			source.size() < sourceBufferSize)
@@ -182,7 +192,29 @@ namespace
 			return {};
 		}
 
-		outPreviewChannels = 3;
+		const int visibleChannelCount = GetVisibleChannelCount(sourceChannels);
+		bool allChannelsVisible = visibleChannelCount > 0;
+		int selectedChannelCount = 0;
+		int selectedChannelIndex = -1;
+		for (int channelIndex = 0; channelIndex < visibleChannelCount; ++channelIndex)
+		{
+			if (channelVisibility[channelIndex])
+			{
+				++selectedChannelCount;
+				selectedChannelIndex = channelIndex;
+			}
+			else
+			{
+				allChannelsVisible = false;
+			}
+		}
+
+		if (allChannelsVisible && sourceChannels != 1)
+		{
+			return source;
+		}
+
+		outPreviewChannels = sourceChannels == 4 && selectedChannelCount > 1 ? 4 : 3;
 		size_t previewBufferSize = 0;
 		if (!TryGetImageBufferSize(width, height, outPreviewChannels, previewBufferSize))
 		{
@@ -190,12 +222,41 @@ namespace
 		}
 
 		std::vector<unsigned char> previewBuffer(previewBufferSize);
-		for (size_t sourceIndex = 0, previewIndex = 0; sourceIndex < sourceBufferSize; ++sourceIndex, previewIndex += outPreviewChannels)
+		const size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+		for (size_t pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
 		{
-			const unsigned char value = source[sourceIndex];
-			previewBuffer[previewIndex] = value;
-			previewBuffer[previewIndex + 1] = value;
-			previewBuffer[previewIndex + 2] = value;
+			const unsigned char* sourcePixel = source.data() + pixelIndex * static_cast<size_t>(sourceChannels);
+			unsigned char* previewPixel = previewBuffer.data() + pixelIndex * static_cast<size_t>(outPreviewChannels);
+
+			if (selectedChannelCount == 1)
+			{
+				const unsigned char value = sourcePixel[selectedChannelIndex];
+				previewPixel[0] = value;
+				previewPixel[1] = value;
+				previewPixel[2] = value;
+				if (outPreviewChannels == 4)
+				{
+					previewPixel[3] = 255;
+				}
+				continue;
+			}
+
+			if (sourceChannels == 1)
+			{
+				const unsigned char value = IsChannelVisible(channelVisibility, 0, sourceChannels) ? sourcePixel[0] : 0;
+				previewPixel[0] = value;
+				previewPixel[1] = value;
+				previewPixel[2] = value;
+				continue;
+			}
+
+			previewPixel[0] = IsChannelVisible(channelVisibility, 0, sourceChannels) ? sourcePixel[0] : 0;
+			previewPixel[1] = IsChannelVisible(channelVisibility, 1, sourceChannels) ? sourcePixel[1] : 0;
+			previewPixel[2] = IsChannelVisible(channelVisibility, 2, sourceChannels) ? sourcePixel[2] : 0;
+			if (outPreviewChannels == 4)
+			{
+				previewPixel[3] = IsChannelVisible(channelVisibility, 3, sourceChannels) ? sourcePixel[3] : 255;
+			}
 		}
 
 		return previewBuffer;
@@ -309,6 +370,7 @@ void ImageViewerPanel::ResetResizeState()
 	sourceImageWidth_ = 0;
 	sourceImageHeight_ = 0;
 	sourceImageChannels_ = 0;
+	ResetChannelVisibility();
 	keepAspectRatio_ = true;
 	hasPendingResize_ = false;
 	shouldOpenOverwritePopup_ = false;
@@ -369,7 +431,7 @@ void ImageViewerPanel::RebuildDisplayTexture(const std::vector<unsigned char>& b
 	}
 
 	int previewChannels = sourceImageChannels_;
-	const std::vector<unsigned char> previewBuffer = BuildPreviewTextureBuffer(buffer, width, height, sourceImageChannels_, previewChannels);
+	const std::vector<unsigned char> previewBuffer = BuildPreviewTextureBuffer(buffer, width, height, sourceImageChannels_, visibleChannels_, previewChannels);
 	if (previewBuffer.empty() || !TryGetImageBufferSize(width, height, previewChannels, bufferSize))
 	{
 		return;
@@ -399,6 +461,20 @@ void ImageViewerPanel::RebuildDisplayTexture(const std::vector<unsigned char>& b
 	displayTexture_ = std::move(texture);
 }
 
+void ImageViewerPanel::RebuildCurrentPreviewTexture()
+{
+	if (hasPendingResize_ && !pendingResizeBuffer_.empty())
+	{
+		RebuildDisplayTexture(pendingResizeBuffer_, resizeWidth_, resizeHeight_);
+		return;
+	}
+
+	if (!sourceImageBuffer_.empty())
+	{
+		RebuildDisplayTexture(sourceImageBuffer_, sourceImageWidth_, sourceImageHeight_);
+	}
+}
+
 void ImageViewerPanel::SetTargetUploadToGPU(bool uploadToGPU)
 {
 	if (targetImage_)
@@ -409,6 +485,53 @@ void ImageViewerPanel::SetTargetUploadToGPU(bool uploadToGPU)
 	if (targetTexture_)
 	{
 		targetTexture_->SetUploadToGPU(uploadToGPU);
+	}
+}
+
+void ImageViewerPanel::ResetChannelVisibility()
+{
+	visibleChannels_.fill(true);
+}
+
+void ImageViewerPanel::DrawChannelControls()
+{
+	if (sourceImageChannels_ <= 0 || sourceImageBuffer_.empty())
+	{
+		return;
+	}
+
+	const ImGuiStyle& style = ImGui::GetStyle();
+	const float panelHeight = ImGui::GetFrameHeightWithSpacing() + style.WindowPadding.y * 2.0f;
+	ImGui::BeginChild(
+		"ImageChannelControls",
+		ImVec2(0.0f, panelHeight),
+		true,
+		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+	bool channelVisibilityChanged = false;
+	const int visibleChannelCount = GetVisibleChannelCount(sourceImageChannels_);
+	for (int channelIndex = 0; channelIndex < visibleChannelCount; ++channelIndex)
+	{
+		ImGui::PushID(channelIndex);
+		bool isVisible = visibleChannels_[channelIndex];
+		if (ImGui::Checkbox(ChannelLabels[channelIndex], &isVisible))
+		{
+			visibleChannels_[channelIndex] = isVisible;
+			channelVisibilityChanged = true;
+		}
+		ImGui::PopID();
+
+		if (channelIndex + 1 < visibleChannelCount)
+		{
+			ImGui::SameLine();
+		}
+	}
+
+	ImGui::EndChild();
+
+	if (channelVisibilityChanged)
+	{
+		RebuildCurrentPreviewTexture();
 	}
 }
 
@@ -435,6 +558,8 @@ void ImageViewerPanel::Draw()
 		ImGui::TableNextRow();
 
 		ImGui::TableSetColumnIndex(0);
+		DrawChannelControls();
+		displayTexture = GetDisplayTexture();
 		ImGui::BeginChild("ImageViewport", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 		ImGuiIO& io = ImGui::GetIO();
