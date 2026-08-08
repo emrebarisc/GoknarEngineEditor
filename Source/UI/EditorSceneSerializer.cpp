@@ -1,13 +1,22 @@
 #include "EditorSceneSerializer.h"
 
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "Goknar/Application.h"
 #include "Goknar/Components/Component.h"
+#include "Goknar/Components/LightComponents/DirectionalLightComponent.h"
+#include "Goknar/Components/LightComponents/PointLightComponent.h"
+#include "Goknar/Components/LightComponents/SpotLightComponent.h"
 #include "Goknar/Debug/DebugDrawer.h"
 #include "Goknar/Engine.h"
 #include "Goknar/Factories/DynamicObjectFactory.h"
 #include "Goknar/Helpers/SceneParser.h"
+#include "Goknar/Lights/DirectionalLight.h"
+#include "Goknar/Lights/PointLight.h"
+#include "Goknar/Lights/SpotLight.h"
+#include "Goknar/Math/GoknarMath.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Scene.h"
 
@@ -34,7 +43,244 @@ namespace
 		return !dynamic_cast<DebugObject*>(object);
 	}
 
-	void ApplyEditorComponentSerialization(ObjectBase* object, tinyxml2::XMLElement* componentsElement)
+	bool ShouldWriteLight(Light* light, bool isFromReferencedScene)
+	{
+		if (!light || isFromReferencedScene)
+		{
+			return false;
+		}
+
+		return light->GetName().find("__Editor__") == std::string::npos;
+	}
+
+	std::string SerializeVector3(const Vector3& vector)
+	{
+		return std::to_string(vector.x) + " " + std::to_string(vector.y) + " " + std::to_string(vector.z);
+	}
+
+	void WriteVectorElement(tinyxml2::XMLDocument& document, tinyxml2::XMLElement* parentElement, const char* elementName, const Vector3& value)
+	{
+		if (!parentElement)
+		{
+			return;
+		}
+
+		tinyxml2::XMLElement* element = document.NewElement(elementName);
+		element->SetText(SerializeVector3(value).c_str());
+		parentElement->InsertEndChild(element);
+	}
+
+	void WriteFloatElement(tinyxml2::XMLDocument& document, tinyxml2::XMLElement* parentElement, const char* elementName, float value)
+	{
+		if (!parentElement)
+		{
+			return;
+		}
+
+		tinyxml2::XMLElement* element = document.NewElement(elementName);
+		element->SetText(value);
+		parentElement->InsertEndChild(element);
+	}
+
+	void WriteTextElement(tinyxml2::XMLDocument& document, tinyxml2::XMLElement* parentElement, const char* elementName, const std::string& value)
+	{
+		if (!parentElement)
+		{
+			return;
+		}
+
+		tinyxml2::XMLElement* element = document.NewElement(elementName);
+		element->SetText(value.c_str());
+		parentElement->InsertEndChild(element);
+	}
+
+	void WriteLightComponentCommonElements(tinyxml2::XMLDocument& document, tinyxml2::XMLElement* componentElement, Light* light)
+	{
+		if (!light || !componentElement)
+		{
+			return;
+		}
+
+		WriteVectorElement(document, componentElement, "Color", light->GetColor());
+		WriteFloatElement(document, componentElement, "Intensity", light->GetIntensity());
+		WriteTextElement(document, componentElement, "IsCastingShadow", light->GetIsShadowEnabled() ? "1" : "0");
+		WriteFloatElement(document, componentElement, "ShadowIntensity", light->GetShadowIntensity());
+		WriteTextElement(
+			document,
+			componentElement,
+			"ShadowMapResolution",
+			std::to_string(light->GetShadowWidth()) + " " + std::to_string(light->GetShadowHeight()));
+	}
+
+	bool ApplyLightComponentSerialization(Component* component, tinyxml2::XMLDocument& document, tinyxml2::XMLElement* componentElement)
+	{
+		if (!component || !componentElement)
+		{
+			return false;
+		}
+
+		if (DirectionalLightComponent* directionalLightComponent = dynamic_cast<DirectionalLightComponent*>(component))
+		{
+			componentElement->SetName("DirectionalLightComponent");
+			WriteLightComponentCommonElements(document, componentElement, directionalLightComponent->GetLight());
+			return true;
+		}
+
+		if (PointLightComponent* pointLightComponent = dynamic_cast<PointLightComponent*>(component))
+		{
+			componentElement->SetName("PointLightComponent");
+			PointLight* light = pointLightComponent->GetLight();
+			WriteLightComponentCommonElements(document, componentElement, light);
+			if (light)
+			{
+				WriteFloatElement(document, componentElement, "Radius", light->GetRadius());
+			}
+			return true;
+		}
+
+		if (SpotLightComponent* spotLightComponent = dynamic_cast<SpotLightComponent*>(component))
+		{
+			componentElement->SetName("SpotLightComponent");
+			SpotLight* light = spotLightComponent->GetLight();
+			WriteLightComponentCommonElements(document, componentElement, light);
+			if (light)
+			{
+				WriteFloatElement(document, componentElement, "FalloffAngle", RADIAN_TO_DEGREE(light->GetFalloffAngle()));
+				WriteFloatElement(document, componentElement, "CoverageAngle", RADIAN_TO_DEGREE(light->GetCoverageAngle()));
+				WriteFloatElement(document, componentElement, "Radius", light->GetRadius());
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	template <typename ComponentType, typename LightType>
+	void CollectComponentOwnedLights(ObjectBase* object, std::unordered_set<const LightType*>& lights)
+	{
+		if (!object)
+		{
+			return;
+		}
+
+		for (Component* component : object->GetComponents())
+		{
+			if (ComponentType* lightComponent = dynamic_cast<ComponentType*>(component))
+			{
+				if (LightType* light = lightComponent->GetLight())
+				{
+					lights.insert(light);
+				}
+			}
+		}
+
+		for (ObjectBase* childObject : object->GetChildren())
+		{
+			CollectComponentOwnedLights<ComponentType, LightType>(childObject, lights);
+		}
+	}
+
+	template <typename ComponentType, typename LightType>
+	std::unordered_set<const LightType*> CollectComponentOwnedLights(Scene* scene)
+	{
+		std::unordered_set<const LightType*> lights;
+		if (!scene)
+		{
+			return lights;
+		}
+
+		for (ObjectBase* object : scene->GetObjects())
+		{
+			CollectComponentOwnedLights<ComponentType, LightType>(object, lights);
+		}
+
+		return lights;
+	}
+
+	template <typename LightType, typename IsReferencedSceneLight>
+	void RemoveComponentOwnedLightElements(
+		tinyxml2::XMLElement* lightsElement,
+		const char* elementName,
+		const std::vector<LightType*>& sceneLights,
+		const std::unordered_set<const LightType*>& componentOwnedLights,
+		IsReferencedSceneLight isReferencedSceneLight)
+	{
+		if (!lightsElement || componentOwnedLights.empty())
+		{
+			return;
+		}
+
+		tinyxml2::XMLElement* lightElement = lightsElement->FirstChildElement(elementName);
+		for (LightType* light : sceneLights)
+		{
+			const bool isFromReferencedScene = light ? isReferencedSceneLight(light) : false;
+			if (!ShouldWriteLight(light, isFromReferencedScene))
+			{
+				continue;
+			}
+
+			if (!lightElement)
+			{
+				break;
+			}
+
+			tinyxml2::XMLElement* nextLightElement = lightElement->NextSiblingElement(elementName);
+			if (componentOwnedLights.find(light) != componentOwnedLights.end())
+			{
+				lightsElement->DeleteChild(lightElement);
+			}
+
+			lightElement = nextLightElement;
+		}
+	}
+
+	void RemoveComponentOwnedLights(Scene* scene, tinyxml2::XMLDocument& document)
+	{
+		tinyxml2::XMLElement* rootElement = document.RootElement();
+		tinyxml2::XMLElement* lightsElement = rootElement ? rootElement->FirstChildElement("Lights") : nullptr;
+		if (!scene || !lightsElement)
+		{
+			return;
+		}
+
+		const std::unordered_set<const DirectionalLight*> directionalLights =
+			CollectComponentOwnedLights<DirectionalLightComponent, DirectionalLight>(scene);
+		RemoveComponentOwnedLightElements(
+			lightsElement,
+			"DirectionalLight",
+			scene->GetDirectionalLights(),
+			directionalLights,
+			[scene](DirectionalLight* light)
+			{
+				return scene->GetIsDirectionalLightFromReferencedScene(light);
+			});
+
+		const std::unordered_set<const PointLight*> pointLights =
+			CollectComponentOwnedLights<PointLightComponent, PointLight>(scene);
+		RemoveComponentOwnedLightElements(
+			lightsElement,
+			"PointLight",
+			scene->GetPointLights(),
+			pointLights,
+			[scene](PointLight* light)
+			{
+				return scene->GetIsPointLightFromReferencedScene(light);
+			});
+
+		const std::unordered_set<const SpotLight*> spotLights =
+			CollectComponentOwnedLights<SpotLightComponent, SpotLight>(scene);
+		RemoveComponentOwnedLightElements(
+			lightsElement,
+			"SpotLight",
+			scene->GetSpotLights(),
+			spotLights,
+			[scene](SpotLight* light)
+			{
+				return scene->GetIsSpotLightFromReferencedScene(light);
+			});
+	}
+
+	void ApplyEditorComponentSerialization(ObjectBase* object, tinyxml2::XMLDocument& document, tinyxml2::XMLElement* componentsElement)
 	{
 		if (!object || !componentsElement)
 		{
@@ -59,6 +305,12 @@ namespace
 				continue;
 			}
 
+			if (ApplyLightComponentSerialization(component, document, componentElement))
+			{
+				componentElement = nextComponentElement;
+				continue;
+			}
+
 			const std::string registeredClassName = factory->GetRegisteredComponentClassName(component);
 			if (!registeredClassName.empty() && registeredClassName != componentElement->Name())
 			{
@@ -69,7 +321,7 @@ namespace
 		}
 	}
 
-	void ApplyRegisteredObjectClassNames(Scene* scene, ObjectBase* object, tinyxml2::XMLElement* objectElement)
+	void ApplyRegisteredObjectClassNames(Scene* scene, ObjectBase* object, tinyxml2::XMLDocument& document, tinyxml2::XMLElement* objectElement)
 	{
 		if (!object || !objectElement)
 		{
@@ -83,7 +335,7 @@ namespace
 			objectElement->SetName(registeredClassName.c_str());
 		}
 
-		ApplyEditorComponentSerialization(object, objectElement->FirstChildElement("Components"));
+		ApplyEditorComponentSerialization(object, document, objectElement->FirstChildElement("Components"));
 
 		tinyxml2::XMLElement* childrenElement = objectElement->FirstChildElement("Children");
 		tinyxml2::XMLElement* childObjectElement = childrenElement ? childrenElement->FirstChildElement() : nullptr;
@@ -99,7 +351,7 @@ namespace
 				break;
 			}
 
-			ApplyRegisteredObjectClassNames(scene, childObject, childObjectElement);
+			ApplyRegisteredObjectClassNames(scene, childObject, document, childObjectElement);
 			childObjectElement = childObjectElement->NextSiblingElement();
 		}
 	}
@@ -126,7 +378,7 @@ namespace
 				break;
 			}
 
-			ApplyRegisteredObjectClassNames(scene, object, objectElement);
+			ApplyRegisteredObjectClassNames(scene, object, document, objectElement);
 			objectElement = objectElement->NextSiblingElement();
 		}
 	}
@@ -155,5 +407,6 @@ void EditorSceneSerializer::SaveScene(Scene* scene, const std::string& filePath)
 	}
 
 	ApplyRegisteredObjectClassNames(scene, document);
+	RemoveComponentOwnedLights(scene, document);
 	document.SaveFile(filePath.c_str());
 }
