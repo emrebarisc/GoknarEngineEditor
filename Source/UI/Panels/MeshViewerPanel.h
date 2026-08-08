@@ -29,13 +29,17 @@ private:
 	void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
 	const char* GetNoMeshSelectedText() const override;
 	const char* GetMeshNotReadyText() const override;
+	void InitializeCurrentMeshMaterials() override;
 
 	void ClearPreviewMaterialOverrides();
 	void ClearPreviewDefaultMaterial();
+	void ClearMaterialSlotVisualizerMaterial();
 	MeshUnit* GetSubMesh(size_t subMeshIndex) const;
 	Material* GetPreviewDefaultMaterial(MeshUnit* subMesh) const;
+	Material* GetMaterialSlotVisualizerMaterial(MeshUnit* subMesh) const;
 
 	StaticMeshComponent* staticMeshComponent_{ nullptr };
 	StaticMesh* targetStaticMesh_{ nullptr };
 	mutable Material* previewDefaultMaterial_{ nullptr };
+	mutable Material* materialSlotVisualizerMaterial_{ nullptr };
 };

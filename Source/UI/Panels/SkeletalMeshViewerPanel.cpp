@@ -5,7 +5,6 @@
 #include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
-#include "Goknar/Materials/MaterialSerializer.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
 
@@ -57,12 +56,14 @@ SkeletalMeshViewerPanel::~SkeletalMeshViewerPanel()
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
+	ClearMaterialSlotVisualizerMaterial();
 }
 
 void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMesh* skeletalMesh)
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
+	ClearMaterialSlotVisualizerMaterial();
 	targetSkeletalMesh_ = nullptr;
 
 	if (!skeletalMesh)
@@ -135,29 +136,12 @@ size_t SkeletalMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
 {
 	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
-	if (!IsCurrentMeshReadyToView() || !subMesh || !DoesMaterialAssetExist(materialPath))
+	if (!HasCurrentMesh() || !subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
 	}
 
-	Material* material = subMesh->GetMaterial();
-	if (!material)
-	{
-		return false;
-	}
-
-	material->ResetForRebuild();
-	MaterialSerializer::Deserialize(materialPath, material);
-	material->Build(subMesh);
-
-	if (IsCurrentMeshReadyToView())
-	{
-		material->PreInit();
-		material->Init();
-		material->PostInit();
-	}
-
-	return true;
+	return RebuildMaterialForSubMesh(subMesh, materialPath);
 }
 
 MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
@@ -169,12 +153,20 @@ MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t 
 
 	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
+	if (IsMaterialSlotVisualizerEnabled())
+	{
+		return CreateMaterialSlotVisualizerMaterialInstance(
+			GetMaterialSlotVisualizerMaterial(subMesh),
+			subMeshIndex,
+			IsMaterialSlotUnset(subMeshIndex));
+	}
+
 	if (!HasMaterialAssetOverride(subMeshIndex))
 	{
 		return CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
 	}
 
-	return material ? MaterialInstance::Create(material) : nullptr;
+	return material ? MaterialInstance::Create(material) : CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
 }
 
 void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
@@ -209,6 +201,19 @@ const char* SkeletalMeshViewerPanel::GetNoMeshSelectedText() const
 const char* SkeletalMeshViewerPanel::GetMeshNotReadyText() const
 {
 	return "Skeletal mesh is not ready to view. It has not been sent to the GPU yet.";
+}
+
+void SkeletalMeshViewerPanel::InitializeCurrentMeshMaterials()
+{
+	if (!targetSkeletalMesh_)
+	{
+		return;
+	}
+
+	for (SkeletalMeshUnit* subMesh : targetSkeletalMesh_->GetSubMeshes())
+	{
+		InitializeMaterialForSubMesh(subMesh);
+	}
 }
 
 bool SkeletalMeshViewerPanel::HasAdditionalSidePanelContent() const
@@ -287,6 +292,11 @@ void SkeletalMeshViewerPanel::ClearPreviewDefaultMaterial()
 	DestroyPreviewDefaultMaterial(previewDefaultMaterial_);
 }
 
+void SkeletalMeshViewerPanel::ClearMaterialSlotVisualizerMaterial()
+{
+	DestroyPreviewDefaultMaterial(materialSlotVisualizerMaterial_);
+}
+
 SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetSkeletalMesh_ || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
@@ -305,4 +315,14 @@ Material* SkeletalMeshViewerPanel::GetPreviewDefaultMaterial(SkeletalMeshUnit* s
 	}
 
 	return previewDefaultMaterial_;
+}
+
+Material* SkeletalMeshViewerPanel::GetMaterialSlotVisualizerMaterial(SkeletalMeshUnit* subMesh) const
+{
+	if (!materialSlotVisualizerMaterial_)
+	{
+		materialSlotVisualizerMaterial_ = CreateInitializedMaterialSlotVisualizerMaterial(subMesh, "__Editor__SkeletalMeshViewerMaterialSlotVisualizer");
+	}
+
+	return materialSlotVisualizerMaterial_;
 }

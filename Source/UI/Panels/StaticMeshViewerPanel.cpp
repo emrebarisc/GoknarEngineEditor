@@ -4,7 +4,6 @@
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
-#include "Goknar/Materials/MaterialSerializer.h"
 #include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
@@ -58,12 +57,14 @@ StaticMeshViewerPanel::~StaticMeshViewerPanel()
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
+	ClearMaterialSlotVisualizerMaterial();
 }
 
 void StaticMeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMesh)
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
+	ClearMaterialSlotVisualizerMaterial();
 	targetStaticMesh_ = nullptr;
 
 	if (!staticMesh)
@@ -136,29 +137,12 @@ size_t StaticMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 bool StaticMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
 {
 	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
-	if (!IsCurrentMeshReadyToView() || !subMesh || !DoesMaterialAssetExist(materialPath))
+	if (!HasCurrentMesh() || !subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
 	}
 
-	Material* material = subMesh->GetMaterial();
-	if (!material)
-	{
-		return false;
-	}
-
-	material->ResetForRebuild();
-	MaterialSerializer::Deserialize(materialPath, material);
-	material->Build(subMesh);
-
-	if (IsCurrentMeshReadyToView())
-	{
-		material->PreInit();
-		material->Init();
-		material->PostInit();
-	}
-
-	return true;
+	return RebuildMaterialForSubMesh(subMesh, materialPath);
 }
 
 MaterialInstance* StaticMeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
@@ -170,12 +154,20 @@ MaterialInstance* StaticMeshViewerPanel::CreatePreviewMaterialInstance(size_t su
 
 	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
 	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
+	if (IsMaterialSlotVisualizerEnabled())
+	{
+		return CreateMaterialSlotVisualizerMaterialInstance(
+			GetMaterialSlotVisualizerMaterial(subMesh),
+			subMeshIndex,
+			IsMaterialSlotUnset(subMeshIndex));
+	}
+
 	if (!HasMaterialAssetOverride(subMeshIndex))
 	{
 		return CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
 	}
 
-	return material ? MaterialInstance::Create(material) : nullptr;
+	return material ? MaterialInstance::Create(material) : CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
 }
 
 void StaticMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
@@ -210,6 +202,19 @@ const char* StaticMeshViewerPanel::GetNoMeshSelectedText() const
 const char* StaticMeshViewerPanel::GetMeshNotReadyText() const
 {
 	return "Static mesh is not ready to view. It has not been sent to the GPU yet.";
+}
+
+void StaticMeshViewerPanel::InitializeCurrentMeshMaterials()
+{
+	if (!targetStaticMesh_)
+	{
+		return;
+	}
+
+	for (MeshUnit* subMesh : targetStaticMesh_->GetSubMeshes())
+	{
+		InitializeMaterialForSubMesh(subMesh);
+	}
 }
 
 void StaticMeshViewerPanel::RefreshPreviewRenderData()
@@ -255,6 +260,11 @@ void StaticMeshViewerPanel::ClearPreviewDefaultMaterial()
 	DestroyPreviewDefaultMaterial(previewDefaultMaterial_);
 }
 
+void StaticMeshViewerPanel::ClearMaterialSlotVisualizerMaterial()
+{
+	DestroyPreviewDefaultMaterial(materialSlotVisualizerMaterial_);
+}
+
 MeshUnit* StaticMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetStaticMesh_ || subMeshIndex >= targetStaticMesh_->GetSubMeshes().size())
@@ -273,4 +283,14 @@ Material* StaticMeshViewerPanel::GetPreviewDefaultMaterial(MeshUnit* subMesh) co
 	}
 
 	return previewDefaultMaterial_;
+}
+
+Material* StaticMeshViewerPanel::GetMaterialSlotVisualizerMaterial(MeshUnit* subMesh) const
+{
+	if (!materialSlotVisualizerMaterial_)
+	{
+		materialSlotVisualizerMaterial_ = CreateInitializedMaterialSlotVisualizerMaterial(subMesh, "__Editor__StaticMeshViewerMaterialSlotVisualizer");
+	}
+
+	return materialSlotVisualizerMaterial_;
 }

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "EditorPanel.h"
+#include "Goknar/Math/GoknarMath.h"
 
 class Box;
 class Material;
@@ -45,8 +46,15 @@ protected:
 
 	bool DoesMaterialAssetExist(const std::string& materialPath) const;
 	bool HasMaterialAssetOverride(size_t subMeshIndex) const;
+	bool IsMaterialSlotVisualizerEnabled() const;
+	bool IsMaterialSlotUnset(size_t subMeshIndex) const;
+	bool RebuildMaterialForSubMesh(MeshUnit* subMesh, const std::string& materialPath) const;
+	void InitializeMaterialForSubMesh(MeshUnit* subMesh) const;
+	Vector4 GetMaterialSlotVisualizerColor(size_t subMeshIndex) const;
 	Material* CreateInitializedPreviewDefaultMaterial(MeshUnit* subMesh, const char* materialName) const;
+	Material* CreateInitializedMaterialSlotVisualizerMaterial(MeshUnit* subMesh, const char* materialName) const;
 	MaterialInstance* CreatePreviewDefaultMaterialInstance(Material* material) const;
+	MaterialInstance* CreateMaterialSlotVisualizerMaterialInstance(Material* material, size_t subMeshIndex, bool isMaterialUnset) const;
 	void DestroyPreviewDefaultMaterial(Material*& material) const;
 
 private:
@@ -74,6 +82,7 @@ private:
 	virtual void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) = 0;
 	virtual const char* GetNoMeshSelectedText() const = 0;
 	virtual const char* GetMeshNotReadyText() const;
+	virtual void InitializeCurrentMeshMaterials();
 	virtual bool HasAdditionalSidePanelContent() const;
 	virtual void DrawAdditionalSidePanelContent();
 
@@ -84,6 +93,7 @@ private:
 	Vector2 viewportSize_{ 1024.f, 1024.f };
 	std::vector<std::string> selectedMaterialPaths_{};
 	int pendingMaterialSelectionSubMeshIndex_{ -1 };
+	bool materialSlotVisualizerEnabled_{ false };
 	unsigned int renderMask_{ 0 };
 	std::string viewportChildId_{};
 	std::string sidePanelChildId_{};
