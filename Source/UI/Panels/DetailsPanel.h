@@ -13,9 +13,12 @@ class PhysicsObject;
 class ReflectionProbeObject;
 
 class Component;
+class DirectionalLightComponent;
 class ParticleSystemComponent;
+class PointLightComponent;
 class StaticMeshComponent;
 class SkeletalMeshComponent;
+class SpotLightComponent;
 class BoxCollisionComponent;
 class SphereCollisionComponent;
 class CapsuleCollisionComponent;
@@ -55,6 +58,9 @@ private:
 
 	void DrawComponentDetails(ObjectBase* owner, Component* component);
 	void DrawParticleSystemComponentDetails(ParticleSystemComponent* component);
+	void DrawDirectionalLightComponentDetails(DirectionalLightComponent* component);
+	void DrawPointLightComponentDetails(PointLightComponent* component);
+	void DrawSpotLightComponentDetails(SpotLightComponent* component);
 	void DrawStaticMeshComponentDetails(StaticMeshComponent* component);
 	void DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* component);
 	void DrawNavigationTreeComponentDetails(NavigationTreeComponent* component);

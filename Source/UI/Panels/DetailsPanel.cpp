@@ -7,6 +7,10 @@
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Scene.h"
 #include "Goknar/Objects/ReflectionProbeObject.h"
+#include "Goknar/Debug/DebugDrawer.h"
+#include "Goknar/Components/LightComponents/DirectionalLightComponent.h"
+#include "Goknar/Components/LightComponents/PointLightComponent.h"
+#include "Goknar/Components/LightComponents/SpotLightComponent.h"
 #include "Goknar/Components/ParticleSystemComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Components/SkeletalMeshComponent.h"
@@ -101,6 +105,54 @@ namespace
 		}
 
 		return false;
+	}
+
+	bool DrawLightComponentCommonDetails(Light* light, const std::string& specialPostfix)
+	{
+		if (!light)
+		{
+			return false;
+		}
+
+		bool changed = false;
+
+		float lightIntensity = light->GetIntensity();
+		ImGui::Text("Intensity: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputFloat(std::string("##LightComponentIntensity") + specialPostfix, lightIntensity))
+		{
+			light->SetIntensity(lightIntensity);
+			changed = true;
+		}
+
+		Vector3 lightColor = light->GetColor();
+		ImGui::Text("Color: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputVector3(std::string("##LightComponentColor") + specialPostfix, lightColor))
+		{
+			light->SetColor(lightColor);
+			changed = true;
+		}
+
+		bool isShadowEnabled = light->GetIsShadowEnabled();
+		ImGui::Text("Cast shadow: ");
+		ImGui::SameLine();
+		if (ImGui::Checkbox((std::string("##LightComponentIsCastingShadow") + specialPostfix).c_str(), &isShadowEnabled))
+		{
+			light->SetIsShadowEnabled(isShadowEnabled);
+			changed = true;
+		}
+
+		float shadowIntensity = light->GetShadowIntensity();
+		ImGui::Text("Shadow Intensity: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputFloat(std::string("##LightComponentShadowIntensity") + specialPostfix, shadowIntensity))
+		{
+			light->SetShadowIntensity(shadowIntensity);
+			changed = true;
+		}
+
+		return changed;
 	}
 
 	enum class MultiObjectDetailsClass
@@ -723,6 +775,21 @@ namespace
 			return "BillboardParticleSystemComponent";
 		}
 
+		if (dynamic_cast<DirectionalLightComponent*>(component))
+		{
+			return "DirectionalLightComponent";
+		}
+
+		if (dynamic_cast<PointLightComponent*>(component))
+		{
+			return "PointLightComponent";
+		}
+
+		if (dynamic_cast<SpotLightComponent*>(component))
+		{
+			return "SpotLightComponent";
+		}
+
 		if (dynamic_cast<StaticMeshComponent*>(component))
 		{
 			return "StaticMeshComponent";
@@ -849,6 +916,294 @@ namespace
 
 		return castItems;
 	}
+
+	template <typename TComponent>
+	bool DrawBatchLightComponentCommonFields(const char* idPrefix, const std::vector<TComponent*>& components)
+	{
+		const std::string id = std::string("##Multi") + idPrefix;
+		bool changed = false;
+
+		changed |= DrawBatchFloatField(
+			"Intensity",
+			id + "Intensity",
+			components,
+			[](TComponent* component)
+			{
+				const auto* light = component ? component->GetLight() : nullptr;
+				return light ? light->GetIntensity() : 0.f;
+			},
+			[](TComponent* component, float value)
+			{
+				if (auto* light = component ? component->GetLight() : nullptr)
+				{
+					light->SetIntensity(value);
+				}
+			});
+
+		changed |= DrawBatchVector3Field(
+			"Color",
+			id + "Color",
+			components,
+			[](TComponent* component)
+			{
+				const auto* light = component ? component->GetLight() : nullptr;
+				return light ? light->GetColor() : Vector3::ZeroVector;
+			},
+			[](TComponent* component, const Vector3& value)
+			{
+				if (auto* light = component ? component->GetLight() : nullptr)
+				{
+					light->SetColor(value);
+				}
+			});
+
+		changed |= DrawBatchBoolField(
+			"Cast shadow",
+			id + "IsCastingShadow",
+			components,
+			[](TComponent* component)
+			{
+				const auto* light = component ? component->GetLight() : nullptr;
+				return light ? light->GetIsShadowEnabled() : false;
+			},
+			[](TComponent* component, bool value)
+			{
+				if (auto* light = component ? component->GetLight() : nullptr)
+				{
+					light->SetIsShadowEnabled(value);
+				}
+			});
+
+		changed |= DrawBatchFloatField(
+			"Shadow Intensity",
+			id + "ShadowIntensity",
+			components,
+			[](TComponent* component)
+			{
+				const auto* light = component ? component->GetLight() : nullptr;
+				return light ? light->GetShadowIntensity() : 0.f;
+			},
+			[](TComponent* component, float value)
+			{
+				if (auto* light = component ? component->GetLight() : nullptr)
+				{
+					light->SetShadowIntensity(value);
+				}
+			});
+
+		return changed;
+	}
+
+	const char* DetailsCollisionDebugRootName = "__DetailsCollisionDebug__";
+
+	bool IsDetailsCollisionDebugRoot(const DebugObject* debugObject)
+	{
+		return debugObject && debugObject->GetNameWithoutId() == DetailsCollisionDebugRootName;
+	}
+
+	std::vector<DebugObject*> GetDetailsCollisionDebugRoots(ObjectBase* object)
+	{
+		std::vector<DebugObject*> debugRoots;
+		if (!engine || !object)
+		{
+			return debugRoots;
+		}
+
+		const std::vector<DebugObject*> debugObjects = engine->GetObjectsOfType<DebugObject>();
+		for (DebugObject* debugObject : debugObjects)
+		{
+			if (IsDetailsCollisionDebugRoot(debugObject) && debugObject->GetParent() == object)
+			{
+				debugRoots.push_back(debugObject);
+			}
+		}
+
+		return debugRoots;
+	}
+
+	bool IsDetailsCollisionDebugEnabled(ObjectBase* object)
+	{
+		return !GetDetailsCollisionDebugRoots(object).empty();
+	}
+
+	bool IsDrawableCollisionComponent(const Component* component)
+	{
+		return dynamic_cast<const BoxCollisionComponent*>(component) ||
+			dynamic_cast<const SphereCollisionComponent*>(component) ||
+			dynamic_cast<const CapsuleCollisionComponent*>(component) ||
+			dynamic_cast<const MovingTriangleMeshCollisionComponent*>(component) ||
+			dynamic_cast<const NonMovingTriangleMeshCollisionComponent*>(component);
+	}
+
+	bool ObjectHasDrawableCollisionComponent(ObjectBase* object)
+	{
+		if (!object)
+		{
+			return false;
+		}
+
+		for (Component* component : object->GetComponents())
+		{
+			if (IsDrawableCollisionComponent(component))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void ClearDetailsCollisionDebug(ObjectBase* object)
+	{
+		for (DebugObject* debugRoot : GetDetailsCollisionDebugRoots(object))
+		{
+			if (debugRoot)
+			{
+				debugRoot->Destroy();
+			}
+		}
+	}
+
+	void DrawTriangleMeshCollisionDebug(
+		const StaticMesh* mesh,
+		const Vector3& position,
+		const Quaternion& rotation,
+		const Vector3& scaling,
+		DebugObject* debugRoot)
+	{
+		if (!mesh || mesh->GetSubMeshes().empty() || !debugRoot)
+		{
+			return;
+		}
+
+		DebugObject* collisionObject = new DebugObject();
+		collisionObject->SetName("DebugObject_TriangleMeshCollisionComponent");
+		DebugDrawer::DrawMeshUnit(mesh->GetSubMeshes()[0], Colorf::Blue, 1.f, -1.f, collisionObject);
+		collisionObject->SetWorldPosition(position, false);
+		collisionObject->SetWorldRotation(rotation, false);
+		collisionObject->SetWorldScaling(scaling);
+		collisionObject->SetParent(debugRoot);
+	}
+
+	void DrawCollisionComponentDebug(const Component* component, DebugObject* debugRoot)
+	{
+		if (!component || !debugRoot)
+		{
+			return;
+		}
+
+		if (const BoxCollisionComponent* boxCollisionComponent = dynamic_cast<const BoxCollisionComponent*>(component))
+		{
+			DebugDrawer::DrawBox(
+				boxCollisionComponent->GetWorldPosition(),
+				boxCollisionComponent->GetWorldRotation(),
+				boxCollisionComponent->GetHalfSize() * boxCollisionComponent->GetWorldScaling(),
+				Colorf::White,
+				1.f,
+				-1.f,
+				debugRoot);
+			return;
+		}
+
+		if (const SphereCollisionComponent* sphereCollisionComponent = dynamic_cast<const SphereCollisionComponent*>(component))
+		{
+			DebugDrawer::DrawSphere(
+				sphereCollisionComponent->GetWorldPosition(),
+				sphereCollisionComponent->GetWorldRotation(),
+				sphereCollisionComponent->GetRadius(),
+				Colorf::Blue,
+				1.f,
+				-1.f,
+				debugRoot);
+			return;
+		}
+
+		if (const CapsuleCollisionComponent* capsuleCollisionComponent = dynamic_cast<const CapsuleCollisionComponent*>(component))
+		{
+			DebugDrawer::DrawCapsule(
+				capsuleCollisionComponent->GetWorldPosition(),
+				capsuleCollisionComponent->GetWorldRotation(),
+				capsuleCollisionComponent->GetRadius(),
+				capsuleCollisionComponent->GetHeight(),
+				Colorf::Blue,
+				1.f,
+				-1.f,
+				debugRoot);
+			return;
+		}
+
+		if (const MovingTriangleMeshCollisionComponent* movingTriangleMeshCollisionComponent = dynamic_cast<const MovingTriangleMeshCollisionComponent*>(component))
+		{
+			DrawTriangleMeshCollisionDebug(
+				movingTriangleMeshCollisionComponent->GetMesh(),
+				movingTriangleMeshCollisionComponent->GetWorldPosition(),
+				movingTriangleMeshCollisionComponent->GetWorldRotation(),
+				movingTriangleMeshCollisionComponent->GetWorldScaling(),
+				debugRoot);
+			return;
+		}
+
+		if (const NonMovingTriangleMeshCollisionComponent* nonMovingTriangleMeshCollisionComponent = dynamic_cast<const NonMovingTriangleMeshCollisionComponent*>(component))
+		{
+			DrawTriangleMeshCollisionDebug(
+				nonMovingTriangleMeshCollisionComponent->GetMesh(),
+				nonMovingTriangleMeshCollisionComponent->GetWorldPosition(),
+				nonMovingTriangleMeshCollisionComponent->GetWorldRotation(),
+				nonMovingTriangleMeshCollisionComponent->GetWorldScaling(),
+				debugRoot);
+		}
+	}
+
+	void DrawDetailsCollisionDebug(ObjectBase* object)
+	{
+		if (!object || IsDetailsCollisionDebugEnabled(object))
+		{
+			return;
+		}
+
+		DebugObject* debugRoot = new DebugObject();
+		debugRoot->SetName(DetailsCollisionDebugRootName);
+		debugRoot->SetParent(object);
+
+		for (Component* component : object->GetComponents())
+		{
+			DrawCollisionComponentDebug(component, debugRoot);
+		}
+	}
+
+	void RefreshDetailsCollisionDebug(ObjectBase* object)
+	{
+		if (!IsDetailsCollisionDebugEnabled(object))
+		{
+			return;
+		}
+
+		ClearDetailsCollisionDebug(object);
+		DrawDetailsCollisionDebug(object);
+	}
+
+	void DrawDetailsCollisionDebugToggle(ObjectBase* object)
+	{
+		if (!ObjectHasDrawableCollisionComponent(object))
+		{
+			return;
+		}
+
+		bool drawCollisionDebug = IsDetailsCollisionDebugEnabled(object);
+		ImGui::Text("Collision Debug: ");
+		ImGui::SameLine();
+		if (ImGui::Checkbox("##CollisionDebug", &drawCollisionDebug))
+		{
+			if (drawCollisionDebug)
+			{
+				DrawDetailsCollisionDebug(object);
+			}
+			else
+			{
+				ClearDetailsCollisionDebug(object);
+			}
+		}
+	}
 }
 
 DetailsPanel::DetailsPanel(EditorHUD* hud) : IEditorPanel("Details", hud)
@@ -884,6 +1239,24 @@ void DetailsPanel::SetupReflections()
 		[](ObjectBase* objectBase)
 		{
 			objectBase->AddSubComponent<StaticMeshParticleSystemComponent>();
+		};
+
+	objectReflections_["DirectionalLightComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<DirectionalLightComponent>();
+		};
+
+	objectReflections_["PointLightComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<PointLightComponent>();
+		};
+
+	objectReflections_["SpotLightComponent"] =
+		[](ObjectBase* objectBase)
+		{
+			objectBase->AddSubComponent<SpotLightComponent>();
 		};
 
 	objectReflections_["NavigationTreeComponent"] =
@@ -1257,6 +1630,8 @@ void DetailsPanel::DrawObjectDetails()
 			MarkSceneDirty("Object transform changed");
 		}
 	}
+
+	DrawDetailsCollisionDebugToggle(object);
 
 	ImGui::Separator();
 	ReflectionProbeObject* reflectionProbeObject = dynamic_cast<ReflectionProbeObject*>(object);
@@ -2066,6 +2441,103 @@ void DetailsPanel::DrawMultipleObjectDetails()
 			}
 		}
 
+		const std::vector<DirectionalLightComponent*> directionalLightComponents = CastItems<DirectionalLightComponent>(componentGroup.components);
+		if (!directionalLightComponents.empty())
+		{
+			if (DrawBatchLightComponentCommonFields("DirectionalLightComponent", directionalLightComponents))
+			{
+				MarkSceneDirty("Directional light component changed");
+			}
+		}
+
+		const std::vector<PointLightComponent*> pointLightComponents = CastItems<PointLightComponent>(componentGroup.components);
+		if (!pointLightComponents.empty())
+		{
+			bool changed = DrawBatchLightComponentCommonFields("PointLightComponent", pointLightComponents);
+			changed |= DrawBatchFloatField(
+				"Radius",
+				"##MultiPointLightComponentRadius",
+				pointLightComponents,
+				[](PointLightComponent* component)
+				{
+					const PointLight* light = component ? component->GetLight() : nullptr;
+					return light ? light->GetRadius() : 0.f;
+				},
+				[](PointLightComponent* component, float value)
+				{
+					if (PointLight* light = component ? component->GetLight() : nullptr)
+					{
+						light->SetRadius(value);
+					}
+				});
+
+			if (changed)
+			{
+				MarkSceneDirty("Point light component changed");
+			}
+		}
+
+		const std::vector<SpotLightComponent*> spotLightComponents = CastItems<SpotLightComponent>(componentGroup.components);
+		if (!spotLightComponents.empty())
+		{
+			bool changed = DrawBatchLightComponentCommonFields("SpotLightComponent", spotLightComponents);
+			changed |= DrawBatchFloatField(
+				"FalloffAngle",
+				"##MultiSpotLightComponentFalloffAngle",
+				spotLightComponents,
+				[](SpotLightComponent* component)
+				{
+					const SpotLight* light = component ? component->GetLight() : nullptr;
+					return light ? RADIAN_TO_DEGREE(light->GetFalloffAngle()) : 0.f;
+				},
+				[](SpotLightComponent* component, float value)
+				{
+					if (SpotLight* light = component ? component->GetLight() : nullptr)
+					{
+						light->SetFalloffAngle(value);
+					}
+				});
+
+			changed |= DrawBatchFloatField(
+				"CoverageAngle",
+				"##MultiSpotLightComponentCoverageAngle",
+				spotLightComponents,
+				[](SpotLightComponent* component)
+				{
+					const SpotLight* light = component ? component->GetLight() : nullptr;
+					return light ? RADIAN_TO_DEGREE(light->GetCoverageAngle()) : 0.f;
+				},
+				[](SpotLightComponent* component, float value)
+				{
+					if (SpotLight* light = component ? component->GetLight() : nullptr)
+					{
+						light->SetCoverageAngle(value);
+					}
+				});
+
+			changed |= DrawBatchFloatField(
+				"Radius",
+				"##MultiSpotLightComponentRadius",
+				spotLightComponents,
+				[](SpotLightComponent* component)
+				{
+					const SpotLight* light = component ? component->GetLight() : nullptr;
+					return light ? light->GetRadius() : 0.f;
+				},
+				[](SpotLightComponent* component, float value)
+				{
+					if (SpotLight* light = component ? component->GetLight() : nullptr)
+					{
+						light->SetRadius(value);
+					}
+				});
+
+			if (changed)
+			{
+				MarkSceneDirty("Spot light component changed");
+			}
+		}
+
 		const std::vector<StaticMeshParticleSystemComponent*> staticMeshParticleSystemComponents = CastItems<StaticMeshParticleSystemComponent>(componentGroup.components);
 		if (!staticMeshParticleSystemComponents.empty())
 		{
@@ -2370,6 +2842,9 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	}
 
 	ParticleSystemComponent* particleSystemComponent{ nullptr };
+	DirectionalLightComponent* directionalLightComponent{ nullptr };
+	PointLightComponent* pointLightComponent{ nullptr };
+	SpotLightComponent* spotLightComponent{ nullptr };
 	StaticMeshComponent* staticMeshComponent{ nullptr };
 	SkeletalMeshComponent* skeletalMeshComponent{ nullptr };
 	BoxCollisionComponent* boxCollisionComponent{ nullptr };
@@ -2383,6 +2858,9 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	std::string componentTypeString;
 
 	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
+	directionalLightComponent = dynamic_cast<DirectionalLightComponent*>(component);
+	pointLightComponent = dynamic_cast<PointLightComponent*>(component);
+	spotLightComponent = dynamic_cast<SpotLightComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
 	skeletalMeshComponent = dynamic_cast<SkeletalMeshComponent*>(component);
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
@@ -2402,6 +2880,18 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (staticMeshComponent)
 	{
 		componentTypeString = "StaticMeshComponent";
+	}
+	else if (directionalLightComponent)
+	{
+		componentTypeString = "DirectionalLightComponent";
+	}
+	else if (pointLightComponent)
+	{
+		componentTypeString = "PointLightComponent";
+	}
+	else if (spotLightComponent)
+	{
+		componentTypeString = "SpotLightComponent";
 	}
 	else if (skeletalMeshComponent)
 	{
@@ -2488,9 +2978,13 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 		}
 
 		MarkSceneDirty("Component transform changed");
+		RefreshDetailsCollisionDebug(component->GetOwner());
 	}
 
 	particleSystemComponent = dynamic_cast<ParticleSystemComponent*>(component);
+	directionalLightComponent = dynamic_cast<DirectionalLightComponent*>(component);
+	pointLightComponent = dynamic_cast<PointLightComponent*>(component);
+	spotLightComponent = dynamic_cast<SpotLightComponent*>(component);
 	staticMeshComponent = dynamic_cast<StaticMeshComponent*>(component);
 	skeletalMeshComponent = dynamic_cast<SkeletalMeshComponent*>(component);
 	boxCollisionComponent = dynamic_cast<BoxCollisionComponent*>(component);
@@ -2508,6 +3002,18 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	else if (staticMeshComponent)
 	{
 		DrawStaticMeshComponentDetails(staticMeshComponent);
+	}
+	else if (directionalLightComponent)
+	{
+		DrawDirectionalLightComponentDetails(directionalLightComponent);
+	}
+	else if (pointLightComponent)
+	{
+		DrawPointLightComponentDetails(pointLightComponent);
+	}
+	else if (spotLightComponent)
+	{
+		DrawSpotLightComponentDetails(spotLightComponent);
 	}
 	else if (skeletalMeshComponent)
 	{
@@ -2543,6 +3049,97 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	}
 
 	ImGui::EndDisabled();
+}
+
+void DetailsPanel::DrawDirectionalLightComponentDetails(DirectionalLightComponent* directionalLightComponent)
+{
+	if (!directionalLightComponent)
+	{
+		return;
+	}
+
+	DirectionalLight* light = directionalLightComponent->GetLight();
+	const std::string specialPostfix = "##" + std::to_string(directionalLightComponent->GetGUID());
+	if (DrawLightComponentCommonDetails(light, specialPostfix))
+	{
+		MarkSceneDirty("Directional light component changed");
+	}
+}
+
+void DetailsPanel::DrawPointLightComponentDetails(PointLightComponent* pointLightComponent)
+{
+	if (!pointLightComponent)
+	{
+		return;
+	}
+
+	PointLight* light = pointLightComponent->GetLight();
+	const std::string specialPostfix = "##" + std::to_string(pointLightComponent->GetGUID());
+	bool changed = DrawLightComponentCommonDetails(light, specialPostfix);
+
+	if (light)
+	{
+		float radius = light->GetRadius();
+		ImGui::Text("Radius: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputFloat(std::string("##PointLightComponentRadius") + specialPostfix, radius))
+		{
+			light->SetRadius(radius);
+			changed = true;
+		}
+	}
+
+	if (changed)
+	{
+		MarkSceneDirty("Point light component changed");
+	}
+}
+
+void DetailsPanel::DrawSpotLightComponentDetails(SpotLightComponent* spotLightComponent)
+{
+	if (!spotLightComponent)
+	{
+		return;
+	}
+
+	SpotLight* light = spotLightComponent->GetLight();
+	const std::string specialPostfix = "##" + std::to_string(spotLightComponent->GetGUID());
+	bool changed = DrawLightComponentCommonDetails(light, specialPostfix);
+
+	if (light)
+	{
+		float falloffAngle = RADIAN_TO_DEGREE(light->GetFalloffAngle());
+		ImGui::Text("FalloffAngle: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputFloat(std::string("##SpotLightComponentFalloffAngle") + specialPostfix, falloffAngle))
+		{
+			light->SetFalloffAngle(falloffAngle);
+			changed = true;
+		}
+
+		float coverageAngle = RADIAN_TO_DEGREE(light->GetCoverageAngle());
+		ImGui::Text("CoverageAngle: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputFloat(std::string("##SpotLightComponentCoverageAngle") + specialPostfix, coverageAngle))
+		{
+			light->SetCoverageAngle(coverageAngle);
+			changed = true;
+		}
+
+		float radius = light->GetRadius();
+		ImGui::Text("Radius: ");
+		ImGui::SameLine();
+		if (EditorWidgets::DrawInputFloat(std::string("##SpotLightComponentRadius") + specialPostfix, radius))
+		{
+			light->SetRadius(radius);
+			changed = true;
+		}
+	}
+
+	if (changed)
+	{
+		MarkSceneDirty("Spot light component changed");
+	}
 }
 
 void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMeshComponent)
@@ -2848,6 +3445,7 @@ void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCo
 		currentHalfSize))
 	{
 		ObjectBase* owner = boxCollisionComponent->GetOwner();
+		const bool wasCollisionDebugEnabled = IsDetailsCollisionDebugEnabled(owner);
 		ObjectBase* clone = owner->Clone();
 		engine->GetApplication()->GetMainScene()->AddObject(clone);
 
@@ -2858,6 +3456,10 @@ void DetailsPanel::DrawBoxCollisionComponentDetails(BoxCollisionComponent* boxCo
 
 		owner->Destroy();
 		engine->GetApplication()->GetMainScene()->RemoveObject(owner);
+		if (wasCollisionDebugEnabled)
+		{
+			DrawDetailsCollisionDebug(clone);
+		}
 
 		MarkSceneDirty("Box collision half size changed");
 	}
@@ -2873,6 +3475,7 @@ void DetailsPanel::DrawSphereCollisionComponentDetails(SphereCollisionComponent*
 	if (sphereCollisionComponentRadius != sphereCollisionComponent->GetRadius())
 	{
 		sphereCollisionComponent->SetRadius(sphereCollisionComponentRadius);
+		RefreshDetailsCollisionDebug(sphereCollisionComponent->GetOwner());
 		MarkSceneDirty("Sphere collision radius changed");
 	}
 }
@@ -2887,6 +3490,7 @@ void DetailsPanel::DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponen
 	if (capsuleCollisionComponentRadius != capsuleCollisionComponent->GetRadius())
 	{
 		capsuleCollisionComponent->SetRadius(capsuleCollisionComponentRadius);
+		RefreshDetailsCollisionDebug(capsuleCollisionComponent->GetOwner());
 		MarkSceneDirty("Capsule collision radius changed");
 	}
 
@@ -2898,6 +3502,7 @@ void DetailsPanel::DrawCapsuleCollisionComponentDetails(CapsuleCollisionComponen
 	if (capsuleCollisionComponentHeight != capsuleCollisionComponent->GetHeight())
 	{
 		capsuleCollisionComponent->SetHeight(capsuleCollisionComponentHeight);
+		RefreshDetailsCollisionDebug(capsuleCollisionComponent->GetOwner());
 		MarkSceneDirty("Capsule collision height changed");
 	}
 }
@@ -3055,6 +3660,9 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 		"SkeletalMeshComponent",
 		"BillboardParticleSystemComponent",
 		"StaticMeshParticleSystemComponent",
+		"DirectionalLightComponent",
+		"PointLightComponent",
+		"SpotLightComponent",
 		"NavigationTreeComponent"
 	};
 
@@ -3064,6 +3672,9 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 		"SkeletalMeshComponent",
 		"BillboardParticleSystemComponent",
 		"StaticMeshParticleSystemComponent",
+		"DirectionalLightComponent",
+		"PointLightComponent",
+		"SpotLightComponent",
 		"NavigationTreeComponent",
 		"BoxCollisionComponent",
 		"CapsuleCollisionComponent",
@@ -3090,7 +3701,12 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 			}
 			else if (physicsReflections_.find(selectedComponentString) != physicsReflections_.end())
 			{
+				const bool wasCollisionDebugEnabled = IsDetailsCollisionDebugEnabled(object);
 				physicsReflections_[selectedComponentString](physicsObject);
+				if (wasCollisionDebugEnabled)
+				{
+					RefreshDetailsCollisionDebug(object);
+				}
 				MarkSceneDirty("Collision component added");
 			}
 			selectedItem = 0;
