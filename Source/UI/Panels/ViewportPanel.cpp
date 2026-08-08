@@ -119,8 +119,8 @@ namespace
 		Camera* camera,
 		std::vector<EditorCollisionGameObjectPair>& collisionGameObjectPairs)
 	{
-		std::vector<MeshComponentType*> meshComponents = object->GetComponentsOfType<MeshComponentType>();
-		for (MeshComponentType* meshComponent : meshComponents)
+		std::shared_ptr < std::vector<MeshComponentType*>> meshComponents = object->GetComponentsOfType<MeshComponentType>();
+		for (MeshComponentType* meshComponent : *meshComponents)
 		{
 			if (!meshComponent || !meshComponent->GetIsActive())
 			{
@@ -165,8 +165,8 @@ namespace
 		Camera* camera,
 		std::vector<EditorCollisionGameObjectPair>& collisionGameObjectPairs)
 	{
-		std::vector<InstancedStaticMeshComponent*> meshComponents = object->GetComponentsOfType<InstancedStaticMeshComponent>();
-		for (InstancedStaticMeshComponent* meshComponent : meshComponents)
+		std::shared_ptr<std::vector<InstancedStaticMeshComponent*>> meshComponents = object->GetComponentsOfType<InstancedStaticMeshComponent>();
+		for (InstancedStaticMeshComponent* meshComponent : *meshComponents)
 		{
 			if (!meshComponent || !meshComponent->GetIsActive())
 			{
@@ -272,8 +272,8 @@ namespace
 		Box& bounds,
 		bool& hasBounds)
 	{
-		std::vector<MeshComponentType*> meshComponents = object->GetComponentsOfType<MeshComponentType>();
-		for (MeshComponentType* meshComponent : meshComponents)
+		std::shared_ptr<std::vector<MeshComponentType*>> meshComponents = object->GetComponentsOfType<MeshComponentType>();
+		for (MeshComponentType* meshComponent : *meshComponents)
 		{
 			if (!meshComponent || !meshComponent->GetIsActive())
 			{
@@ -312,8 +312,8 @@ namespace
 		Box& bounds,
 		bool& hasBounds)
 	{
-		std::vector<InstancedStaticMeshComponent*> meshComponents = object->GetComponentsOfType<InstancedStaticMeshComponent>();
-		for (InstancedStaticMeshComponent* meshComponent : meshComponents)
+		std::shared_ptr<std::vector<InstancedStaticMeshComponent*>> meshComponents = object->GetComponentsOfType<InstancedStaticMeshComponent>();
+		for (InstancedStaticMeshComponent* meshComponent : *meshComponents)
 		{
 			if (!meshComponent || !meshComponent->GetIsActive())
 			{
@@ -353,7 +353,7 @@ namespace
 	bool GetObjectRenderBounds(ObjectBase* object, unsigned int cameraRenderMask, Box& outBounds)
 	{
 		if (ShouldSkipObject(object) ||
-			object->GetComponentsOfType<RenderComponent>().empty())
+			object->GetComponentsOfType<RenderComponent>()->empty())
 		{
 			return false;
 		}

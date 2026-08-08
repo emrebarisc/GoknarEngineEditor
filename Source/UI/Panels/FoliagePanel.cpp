@@ -1039,8 +1039,8 @@ void FoliagePanel::SynchronizeFromScene()
 		runtime.object = object;
 
 		const Matrix& cellMatrix = object->GetWorldTransformationMatrix();
-		std::vector<InstancedStaticMeshComponent*> components = object->GetComponentsOfType<InstancedStaticMeshComponent>();
-		for (InstancedStaticMeshComponent* component : components)
+		std::shared_ptr<std::vector<InstancedStaticMeshComponent*>> components = object->GetComponentsOfType<InstancedStaticMeshComponent>();
+		for (InstancedStaticMeshComponent* component : *components)
 		{
 			if (!component || !component->GetMeshInstance())
 			{
