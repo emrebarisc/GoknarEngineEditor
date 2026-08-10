@@ -51,6 +51,7 @@
 #include "Panels/ClassCreationPanel.h"
 #include "Panels/DebugPanel.h"
 #include "Panels/DetailsPanel.h"
+#include "Panels/EditorSettingsPanel.h"
 #include "Panels/FileBrowserPanel.h"
 #include "Panels/FoliagePanel.h"
 #include "Panels/GeometryBuffersPanel.h"
@@ -195,6 +196,7 @@ EditorHUD::EditorHUD() : HUD()
 	AddPanel<ClassCreationPanel>();
 	AddPanel<DebugPanel>();
 	AddPanel<DetailsPanel>();
+	AddPanel<EditorSettingsPanel>();
 	AddPanel<FileBrowserPanel>();
 	AddPanel<FoliagePanel>();
 	AddPanel<ImageViewerPanel>();

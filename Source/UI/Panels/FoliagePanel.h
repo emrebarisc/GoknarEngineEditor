@@ -41,6 +41,23 @@ struct FoliageCellCoordHasher
 	}
 };
 
+struct FoliagePlacementSettings
+{
+	float minScale{ 1.f };
+	float maxScale{ 1.f };
+	bool randomYaw{ true };
+	float minYawDegrees{ 0.f };
+	float maxYawDegrees{ 360.f };
+	bool randomPitch{ false };
+	float minPitchDegrees{ -10.f };
+	float maxPitchDegrees{ 10.f };
+	bool randomRoll{ false };
+	float minRollDegrees{ -10.f };
+	float maxRollDegrees{ 10.f };
+	bool alignToSurfaceNormal{ true };
+	float groundOffset{ 0.f };
+};
+
 class FoliagePanel : public IEditorPanel
 {
 public:
@@ -63,11 +80,8 @@ private:
 		bool enabled{ true };
 		float spawnWeight{ 1.f };
 		float densityMultiplier{ 1.f };
-		float minScale{ 1.f };
-		float maxScale{ 1.f };
-		bool randomYaw{ true };
-		bool alignToSurfaceNormal{ true };
-		float groundOffset{ 0.f };
+		bool useIndividualPlacementSettings{ false };
+		FoliagePlacementSettings placementSettings{};
 	};
 
 	struct PlacedInstance
@@ -81,6 +95,7 @@ private:
 	{
 		std::vector<MeshEntry> meshEntries;
 		std::vector<PlacedInstance> instances;
+		FoliagePlacementSettings crowdPlacementSettings{};
 		float gridSize{ 100.f };
 	};
 
@@ -105,6 +120,7 @@ private:
 	void DrawNotes();
 	void OpenMeshSelector();
 	void OnMeshAssetSelected(const std::string& path);
+	void OnMeshAssetsSelected(const std::vector<std::string>& paths);
 	void RemoveMeshEntry(int meshIndex);
 
 	bool IsCursorInsideViewport() const;
@@ -162,6 +178,7 @@ private:
 	std::vector<MeshEntry> meshEntries_;
 	std::vector<PlacedInstance> instances_;
 	CellRuntimeMap runtimeCells_;
+	FoliagePlacementSettings crowdPlacementSettings_;
 
 	std::vector<FoliageSnapshot> undoStack_;
 	std::vector<FoliageSnapshot> redoStack_;

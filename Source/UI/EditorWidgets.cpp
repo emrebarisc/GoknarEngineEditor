@@ -183,6 +183,11 @@ bool EditorWidgets::DrawWindowWithOneTextBoxOneButton(const std::string& windowT
 
 void EditorWidgets::DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected, EditorAssetType filter)
 {
+	if (!folder)
+	{
+		return;
+	}
+
 	for (const Folder* subFolder : folder->subFolders)
 	{
 		if (!FolderContainsFilteredAssets(subFolder, filter))
@@ -213,6 +218,59 @@ void EditorWidgets::DrawFileGrid(const Folder* folder, std::string& selectedFile
 			selectedFileName = folder->path + fileName;
 			isAFileSelected = true;
 		}
+
+		ImGui::NextColumn();
+	}
+	ImGui::Columns(1, nullptr, false);
+}
+
+void EditorWidgets::DrawFileGrid(const Folder* folder, std::unordered_set<std::string>& selectedFileNames, EditorAssetType filter)
+{
+	if (!folder)
+	{
+		return;
+	}
+
+	for (const Folder* subFolder : folder->subFolders)
+	{
+		if (!FolderContainsFilteredAssets(subFolder, filter))
+		{
+			continue;
+		}
+
+		if (ImGui::TreeNode(subFolder->name.c_str()))
+		{
+			DrawFileGrid(subFolder, selectedFileNames, filter);
+			ImGui::TreePop();
+		}
+	}
+
+	ImGui::Columns(4, nullptr, false);
+	EditorContext* context = EditorContext::Get();
+	const int fileCount = (int)folder->files.size();
+	for (int fileIndex = 0; fileIndex < fileCount; ++fileIndex)
+	{
+		const std::string fileName = folder->files[fileIndex];
+		const std::string filePath = folder->path + fileName;
+		if (filter != EditorAssetType::None && context->GetAssetType(filePath) != filter)
+		{
+			continue;
+		}
+
+		ImGui::PushID(filePath.c_str());
+		const bool isSelected = selectedFileNames.find(filePath) != selectedFileNames.end();
+		if (ImGui::Selectable(fileName.c_str(), isSelected, 0, { 150.f, 30.f }))
+		{
+			if (isSelected)
+			{
+				selectedFileNames.erase(filePath);
+			}
+			else
+			{
+				selectedFileNames.insert(filePath);
+			}
+		}
+		ImGui::PopID();
 
 		ImGui::NextColumn();
 	}

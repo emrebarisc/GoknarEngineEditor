@@ -2,6 +2,8 @@
 
 #include "imgui.h"
 
+#include <algorithm>
+
 #include "UI/EditorContext.h"
 #include "UI/EditorWidgets.h"
 
@@ -36,6 +38,20 @@ AssetSelectorPanel::AssetSelectorPanel(EditorHUD* hud) :
 	isOpen_ = false;
 }
 
+void AssetSelectorPanel::SetIsOpen(bool isOpen)
+{
+	IEditorPanel::SetIsOpen(isOpen);
+	if (!isOpen)
+	{
+		ResetMultiSelectionState();
+	}
+}
+
+void AssetSelectorPanel::SetMultiSelectionEnabled(bool enabled)
+{
+	isMultiSelectionEnabled_ = enabled;
+}
+
 void AssetSelectorPanel::Draw()
 {
 	const Vector2i& windowSize = EditorContext::Get()->windowSize;
@@ -52,17 +68,66 @@ void AssetSelectorPanel::Draw()
 	ImGui::Text("Filter: %s", GetAssetTypeLabel(filter));
 	ImGui::Separator();
 
-	EditorWidgets::DrawFileGrid(EditorContext::Get()->rootFolder, selectedAssetPathFromGrid, isAFileSelected, filter);
-	
-	if (isAFileSelected)
+	if (isMultiSelectionEnabled_)
 	{
-		if (!OnAssetSelected.isNull())
+		ImGui::Text("Selected: %llu", static_cast<unsigned long long>(selectedAssetPaths_.size()));
+		ImGui::SameLine();
+		if (ImGui::Button("Add Selected") && !selectedAssetPaths_.empty())
 		{
-			OnAssetSelected(selectedAssetPathFromGrid);
-			//OnAssetSelected = nullptr;
+			std::vector<std::string> selectedAssetPaths(selectedAssetPaths_.begin(), selectedAssetPaths_.end());
+			std::sort(selectedAssetPaths.begin(), selectedAssetPaths.end());
+
+			if (!OnAssetsSelected.isNull())
+			{
+				OnAssetsSelected(selectedAssetPaths);
+			}
+
+			isOpen_ = false;
+			ResetMultiSelectionState();
 		}
-		isOpen_ = false;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Clear"))
+		{
+			selectedAssetPaths_.clear();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			isOpen_ = false;
+			ResetMultiSelectionState();
+		}
+
+		ImGui::Separator();
+		EditorWidgets::DrawFileGrid(EditorContext::Get()->rootFolder, selectedAssetPaths_, filter);
+	}
+	else
+	{
+		EditorWidgets::DrawFileGrid(EditorContext::Get()->rootFolder, selectedAssetPathFromGrid, isAFileSelected, filter);
+	
+		if (isAFileSelected)
+		{
+			if (!OnAssetSelected.isNull())
+			{
+				OnAssetSelected(selectedAssetPathFromGrid);
+				//OnAssetSelected = nullptr;
+			}
+			isOpen_ = false;
+		}
 	}
 	
 	ImGui::End();
+
+	if (!isOpen_)
+	{
+		ResetMultiSelectionState();
+	}
+}
+
+void AssetSelectorPanel::ResetMultiSelectionState()
+{
+	selectedAssetPaths_.clear();
+	isMultiSelectionEnabled_ = false;
+	OnAssetsSelected = Delegate<void(const std::vector<std::string>&)>();
 }

@@ -15,6 +15,7 @@
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/WindowManager.h"
+#include "Goknar/Renderer/Renderer.h"
 
 #include "Objects/EditorFreeCameraObject.h"
 #include "UI/EditorContext.h"

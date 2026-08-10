@@ -3,9 +3,11 @@
 #include "imgui.h"
 
 #include "UI/EditorContext.h"
+#include "UI/EditorConfigUtils.h"
 #include "UI/EditorGameProjectBuildUtils.h"
 #include "UI/EditorHUD.h"
 #include "UI/Panels/AnimationGraphPanel.h"
+#include "UI/Panels/EditorSettingsPanel.h"
 #include "UI/Panels/ViewportPanel.h"
 #include "UI/Panels/ProjectSettingsPanel.h"
 #include "UI/Panels/SaveScenePanel.h"
@@ -143,6 +145,79 @@ namespace
 		return EnsureTrailingSlash(directoryPath) + "Config/Build.ini";
 	}
 
+	bool CopyDirectoryContents(const std::filesystem::path& sourceDirectory, const std::filesystem::path& destinationDirectory, bool overwriteExistingFiles)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(sourceDirectory, errorCode) || errorCode)
+		{
+			return true;
+		}
+
+		std::filesystem::create_directories(destinationDirectory, errorCode);
+		if (errorCode)
+		{
+			GOKNAR_CORE_ERROR("Failed to create directory %s.", destinationDirectory.generic_string().c_str());
+			return false;
+		}
+
+		for (const std::filesystem::directory_entry& directoryEntry : std::filesystem::recursive_directory_iterator(sourceDirectory, errorCode))
+		{
+			if (errorCode)
+			{
+				GOKNAR_CORE_ERROR("Failed to read directory %s.", sourceDirectory.generic_string().c_str());
+				return false;
+			}
+
+			const std::filesystem::path relativePath = std::filesystem::relative(directoryEntry.path(), sourceDirectory, errorCode);
+			if (errorCode)
+			{
+				GOKNAR_CORE_ERROR("Failed to resolve relative path for %s.", directoryEntry.path().generic_string().c_str());
+				return false;
+			}
+
+			const std::filesystem::path destinationPath = destinationDirectory / relativePath;
+			if (directoryEntry.is_directory(errorCode))
+			{
+				std::filesystem::create_directories(destinationPath, errorCode);
+				if (errorCode)
+				{
+					GOKNAR_CORE_ERROR("Failed to create directory %s.", destinationPath.generic_string().c_str());
+					return false;
+				}
+				continue;
+			}
+
+			if (!directoryEntry.is_regular_file(errorCode))
+			{
+				continue;
+			}
+
+			if (!overwriteExistingFiles && std::filesystem::exists(destinationPath, errorCode) && !errorCode)
+			{
+				continue;
+			}
+
+			std::filesystem::create_directories(destinationPath.parent_path(), errorCode);
+			if (errorCode)
+			{
+				GOKNAR_CORE_ERROR("Failed to create directory %s.", destinationPath.parent_path().generic_string().c_str());
+				return false;
+			}
+
+			const std::filesystem::copy_options copyOptions = overwriteExistingFiles ?
+				std::filesystem::copy_options::overwrite_existing :
+				std::filesystem::copy_options::none;
+			std::filesystem::copy_file(directoryEntry.path(), destinationPath, copyOptions, errorCode);
+			if (errorCode)
+			{
+				GOKNAR_CORE_ERROR("Failed to copy %s to %s.", directoryEntry.path().generic_string().c_str(), destinationPath.generic_string().c_str());
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	std::string GetEngineLocationFromBuildConfig(const std::string& configPath)
 	{
 		std::ifstream buildConfig(configPath);
@@ -204,6 +279,30 @@ namespace
 		}
 
 		return GetFallbackEngineLocation();
+	}
+
+	bool CopyPostProcessingEffectsToGameContent(const std::string& projectRootPath)
+	{
+		const std::filesystem::path projectRoot(projectRootPath);
+		const std::filesystem::path destinationDirectory = projectRoot / "Content" / "Shaders" / "PostProcessing";
+
+		std::string engineLocation = GetEngineLocationFromBuildConfig(GetProjectBuildConfigPath(projectRoot.generic_string()));
+		if (engineLocation.empty() || !IsEngineLocationValid(engineLocation))
+		{
+			engineLocation = GetEditorEngineLocation();
+		}
+
+		if (!engineLocation.empty())
+		{
+			const std::filesystem::path enginePostProcessingDirectory = std::filesystem::path(engineLocation) / "EngineContent" / "Shaders" / "PostProcessing";
+			if (!CopyDirectoryContents(enginePostProcessingDirectory, destinationDirectory, false))
+			{
+				return false;
+			}
+		}
+
+		const std::filesystem::path projectEditorPostProcessingDirectory = projectRoot / "Editor" / "Shaders" / "PostProcessing";
+		return CopyDirectoryContents(projectEditorPostProcessingDirectory, destinationDirectory, true);
 	}
 
 	bool WriteBuildConfigFile(const std::string& configPath, const std::string& engineLocation, const std::string& projectName = "")
@@ -276,27 +375,18 @@ namespace
 
 	bool WriteEditorConfigFile(const std::string& configPath, const std::string& currentProjectName = "", const std::string& currentProjectPath = "")
 	{
-		std::error_code errorCode;
-		std::filesystem::create_directories(std::filesystem::path(configPath).parent_path(), errorCode);
-
-		std::ofstream editorConfig(configPath);
-		if (!editorConfig.is_open())
-		{
-			return false;
-		}
-
-		editorConfig << "[Editor]\n";
+		bool didSucceed = true;
 		if (!currentProjectName.empty())
 		{
-			editorConfig << "CurrentProject=" << currentProjectName << "\n";
+			didSucceed &= EditorConfigUtils::SetEditorConfigValue(configPath, "Editor", "CurrentProject", currentProjectName);
 		}
 
 		if (!currentProjectPath.empty())
 		{
-			editorConfig << "CurrentProjectPath=" << EnsureTrailingSlash(currentProjectPath) << "\n";
+			didSucceed &= EditorConfigUtils::SetEditorConfigValue(configPath, "Editor", "CurrentProjectPath", EnsureTrailingSlash(currentProjectPath));
 		}
 
-		return true;
+		return didSucceed;
 	}
 
 	void DrawPhysicsDebugMenu()
@@ -490,6 +580,12 @@ void MenuBarPanel::OnBuildDirectorySelected(const std::string& directoryPath)
 	const std::string normalizedProjectRootPath = projectRootPath.substr(0, projectRootPath.size() - 1);
 	const std::string normalizedOutputPath = EnsureTrailingSlash(directoryPath);
 
+	if (!CopyPostProcessingEffectsToGameContent(normalizedProjectRootPath))
+	{
+		GOKNAR_CORE_ERROR("Failed to copy post processing effects into the game content folder before publishing.");
+		return;
+	}
+
 	std::string command;
 #if GOKNAR_PLATFORM_WINDOWS
 	command = "cd /d " + QuoteCommandArgument(normalizedProjectRootPath) + " && Build.sh publish " + QuoteCommandArgument("publishDir=" + normalizedOutputPath);
@@ -571,6 +667,11 @@ void MenuBarPanel::Draw()
 			if (ImGui::MenuItem("Project Settings"))
 			{
 				hud_->ShowPanel<ProjectSettingsPanel>();
+			}
+
+			if (ImGui::MenuItem("Editor Settings"))
+			{
+				hud_->ShowPanel<EditorSettingsPanel>();
 			}
 
 			ImGui::EndMenu();

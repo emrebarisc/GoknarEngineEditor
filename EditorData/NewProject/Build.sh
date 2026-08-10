@@ -96,6 +96,82 @@ sync_directories() {
     done
 }
 
+is_absolute_path() {
+    local path="$1"
+    [[ "$path" == /* || "$path" == [A-Za-z]:* ]]
+}
+
+copy_directory_contents_overwrite() {
+    local src="$1"
+    local dest="$2"
+
+    if [ ! -d "$src" ]; then
+        return 0
+    fi
+
+    mkdir -p "$dest"
+    cp -a "$src"/. "$dest/"
+}
+
+copy_directory_contents_no_overwrite() {
+    local src="$1"
+    local dest="$2"
+
+    if [ ! -d "$src" ]; then
+        return 0
+    fi
+
+    mkdir -p "$dest"
+    cp -an "$src"/. "$dest/"
+}
+
+get_engine_post_processing_effects_directory() {
+    local engineLocation
+    engineLocation=$(grep "^EngineLocation=" "${SOURCE_PATH}/Config/Build.ini" | head -n 1 | cut -d'=' -f2- | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    engineLocation="${engineLocation//\\//}"
+
+    local engineCandidates=()
+    if [ -n "$engineLocation" ]; then
+        if is_absolute_path "$engineLocation"; then
+            engineCandidates+=("$engineLocation")
+        else
+            engineCandidates+=("${SOURCE_PATH}/${engineLocation}")
+        fi
+    fi
+
+    engineCandidates+=(
+        "${SOURCE_PATH}/GoknarEngine/Goknar"
+        "${SOURCE_PATH}/../GoknarEngine/Goknar"
+        "${SOURCE_PATH}/../Goknar"
+        "${SOURCE_PATH}/../../GoknarEngine/Goknar"
+    )
+
+    for enginePath in "${engineCandidates[@]}"; do
+        local postProcessingEffectsDirectory="${enginePath}/EngineContent/Shaders/PostProcessing"
+        if [ -d "$postProcessingEffectsDirectory" ]; then
+            printf "%s" "$postProcessingEffectsDirectory"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+stage_post_processing_effects_for_publish() {
+    local stagedContentDirectory="$1"
+    local stagedPostProcessingEffectsDirectory="${stagedContentDirectory}/Shaders/PostProcessing"
+
+    local enginePostProcessingEffectsDirectory
+    enginePostProcessingEffectsDirectory=$(get_engine_post_processing_effects_directory)
+    if [ -n "$enginePostProcessingEffectsDirectory" ]; then
+        copy_directory_contents_no_overwrite "$enginePostProcessingEffectsDirectory" "$stagedPostProcessingEffectsDirectory"
+    else
+        echo "Warning: Engine post processing effects were not found."
+    fi
+
+    copy_directory_contents_overwrite "${SOURCE_PATH}/Editor/Shaders/PostProcessing" "$stagedPostProcessingEffectsDirectory"
+}
+
 set_startup_project() {
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
         if ! grep -q "VS_STARTUP_PROJECT" "../CMakeLists.txt"; then
@@ -122,6 +198,10 @@ stage_directory_for_publish() {
 
     if [ "$directoryName" != "Build_Release" ]; then
         sync_directory_contents "../Build_Release/Output/${directoryToPackage}" "$stagedDirectory"
+    fi
+
+    if [ "$directoryToPackage" = "Content" ]; then
+        stage_post_processing_effects_for_publish "$stagedDirectory"
     fi
 }
 

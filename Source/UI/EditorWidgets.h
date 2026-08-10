@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 
 #include "imgui.h"
 
@@ -34,4 +35,5 @@ public:
 
 
 	static void DrawFileGrid(const Folder* folder, std::string& selectedFileName, bool& isAFileSelected, EditorAssetType filter = EditorAssetType::None);
+	static void DrawFileGrid(const Folder* folder, std::unordered_set<std::string>& selectedFileNames, EditorAssetType filter = EditorAssetType::None);
 };

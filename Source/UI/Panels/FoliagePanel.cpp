@@ -163,6 +163,77 @@ namespace
 		return distribution(generator);
 	}
 
+	float RandomAngleRadians(std::mt19937& generator, float minDegrees, float maxDegrees)
+	{
+		if (maxDegrees < minDegrees)
+		{
+			std::swap(minDegrees, maxDegrees);
+		}
+
+		return RandomFloat(generator, minDegrees, maxDegrees) * TO_RADIAN;
+	}
+
+	void DrawDegreeRangeControls(const char* label, float& minDegrees, float& maxDegrees)
+	{
+		float range[2] = { minDegrees, maxDegrees };
+		if (ImGui::DragFloat2(label, range, 1.f, -360.f, 360.f, "%.1f"))
+		{
+			minDegrees = GoknarMath::Clamp(range[0], -360.f, 360.f);
+			maxDegrees = GoknarMath::Clamp(range[1], -360.f, 360.f);
+		}
+
+		if (maxDegrees < minDegrees)
+		{
+			maxDegrees = minDegrees;
+		}
+	}
+
+	void ClampPlacementSettings(FoliagePlacementSettings& settings)
+	{
+		settings.minScale = GoknarMath::Max(0.001f, settings.minScale);
+		settings.maxScale = GoknarMath::Max(settings.minScale, settings.maxScale);
+	}
+
+	void DrawPlacementSettingsControls(FoliagePlacementSettings& settings)
+	{
+		ImGui::DragFloat("Min Scale", &settings.minScale, 0.01f, 0.001f, 1000.f, "%.3f");
+		ImGui::DragFloat("Max Scale", &settings.maxScale, 0.01f, 0.001f, 1000.f, "%.3f");
+		ClampPlacementSettings(settings);
+
+		ImGui::Checkbox("Random Yaw", &settings.randomYaw);
+		if (settings.randomYaw)
+		{
+			DrawDegreeRangeControls("Yaw Min/Max", settings.minYawDegrees, settings.maxYawDegrees);
+		}
+
+		ImGui::Checkbox("Random Pitch", &settings.randomPitch);
+		if (settings.randomPitch)
+		{
+			DrawDegreeRangeControls("Pitch Min/Max", settings.minPitchDegrees, settings.maxPitchDegrees);
+		}
+
+		ImGui::Checkbox("Random Roll", &settings.randomRoll);
+		if (settings.randomRoll)
+		{
+			DrawDegreeRangeControls("Roll Min/Max", settings.minRollDegrees, settings.maxRollDegrees);
+		}
+
+		ImGui::Checkbox("Align To Surface Normal", &settings.alignToSurfaceNormal);
+		ImGui::DragFloat("Ground Offset", &settings.groundOffset, 0.01f, -1000.f, 1000.f, "%.3f");
+	}
+
+	void ApplyRandomAxisRotation(
+		Quaternion& rotation,
+		const Vector3& axis,
+		std::mt19937& generator,
+		float minDegrees,
+		float maxDegrees)
+	{
+		Vector3 normalizedAxis = axis.SquareLength() > SMALLER_EPSILON ? axis.GetNormalized() : Vector3::UpVector;
+		const Quaternion axisRotation(normalizedAxis, RandomAngleRadians(generator, minDegrees, maxDegrees));
+		rotation = (axisRotation * rotation).GetNormalized();
+	}
+
 	int ClampPositiveInt(int value, int minValue, int maxValue)
 	{
 		return GoknarMath::Clamp(value, minValue, maxValue);
@@ -320,13 +391,17 @@ void FoliagePanel::DrawBrushSettings()
 		randomSeed_ = static_cast<std::uint32_t>(GoknarMath::Max(0, seed));
 		randomGenerator_.seed(randomSeed_);
 	}
+
+	ImGui::Separator();
+	ImGui::Text("Crowd Settings");
+	DrawPlacementSettingsControls(crowdPlacementSettings_);
 }
 
 void FoliagePanel::DrawMeshList()
 {
 	ImGui::Text("Meshes");
 
-	if (ImGui::Button("Add Mesh"))
+	if (ImGui::Button("Add Meshes"))
 	{
 		OpenMeshSelector();
 	}
@@ -351,6 +426,10 @@ void FoliagePanel::DrawMeshList()
 		ImGui::SameLine();
 		if (ImGui::SmallButton("Remove"))
 		{
+			if (treeOpen)
+			{
+				ImGui::TreePop();
+			}
 			RemoveMeshEntry(meshIndex);
 			ImGui::PopID();
 			--meshIndex;
@@ -366,14 +445,11 @@ void FoliagePanel::DrawMeshList()
 			ImGui::DragFloat("Density Multiplier", &entry.densityMultiplier, 0.05f, 0.f, 1000.f, "%.2f");
 			entry.densityMultiplier = GoknarMath::Max(0.f, entry.densityMultiplier);
 
-			ImGui::DragFloat("Min Scale", &entry.minScale, 0.01f, 0.001f, 1000.f, "%.3f");
-			ImGui::DragFloat("Max Scale", &entry.maxScale, 0.01f, 0.001f, 1000.f, "%.3f");
-			entry.minScale = GoknarMath::Max(0.001f, entry.minScale);
-			entry.maxScale = GoknarMath::Max(entry.minScale, entry.maxScale);
-
-			ImGui::Checkbox("Random Yaw", &entry.randomYaw);
-			ImGui::Checkbox("Align To Surface Normal", &entry.alignToSurfaceNormal);
-			ImGui::DragFloat("Ground Offset", &entry.groundOffset, 0.01f, -1000.f, 1000.f, "%.3f");
+			ImGui::Checkbox("Individual Settings", &entry.useIndividualPlacementSettings);
+			if (entry.useIndividualPlacementSettings)
+			{
+				DrawPlacementSettingsControls(entry.placementSettings);
+			}
 
 			if (!entry.mesh)
 			{
@@ -423,6 +499,9 @@ void FoliagePanel::DrawNotes()
 void FoliagePanel::OpenMeshSelector()
 {
 	EditorContext::Get()->assetSelectorFilter = EditorAssetType::StaticMesh;
+	AssetSelectorPanel::SetMultiSelectionEnabled(true);
+	AssetSelectorPanel::OnAssetsSelected =
+		Delegate<void(const std::vector<std::string>&)>::Create<FoliagePanel, &FoliagePanel::OnMeshAssetsSelected>(this);
 	AssetSelectorPanel::OnAssetSelected =
 		Delegate<void(const std::string&)>::Create<FoliagePanel, &FoliagePanel::OnMeshAssetSelected>(this);
 	hud_->ShowPanel<AssetSelectorPanel>();
@@ -453,6 +532,14 @@ void FoliagePanel::OnMeshAssetSelected(const std::string& path)
 	}
 
 	meshEntries_.push_back(entry);
+}
+
+void FoliagePanel::OnMeshAssetsSelected(const std::vector<std::string>& paths)
+{
+	for (const std::string& path : paths)
+	{
+		OnMeshAssetSelected(path);
+	}
 }
 
 void FoliagePanel::RemoveMeshEntry(int meshIndex)
@@ -578,6 +665,7 @@ void FoliagePanel::UpdateToolState()
 		instances_.clear();
 		meshEntries_.clear();
 		gridSize_ = 100.f;
+		crowdPlacementSettings_ = FoliagePlacementSettings{};
 		synchronizedScene_ = currentScene;
 		hasSynchronizedScene_ = false;
 	}
@@ -812,18 +900,44 @@ bool FoliagePanel::PaintAtHit(const BrushHit& centerHit, CellSet& outAffectedCel
 		const Vector3 hitNormal = placementHit.normal.SquareLength() > SMALLER_EPSILON ?
 			placementHit.normal.GetNormalized() :
 			Vector3::UpVector;
-		const Vector3 placementPosition = placementHit.position + hitNormal * entry->groundOffset;
-		const float scale = RandomFloat(randomGenerator_, entry->minScale, entry->maxScale);
+		const FoliagePlacementSettings& placementSettings = entry->useIndividualPlacementSettings ?
+			entry->placementSettings :
+			crowdPlacementSettings_;
+		const Vector3 placementPosition = placementHit.position + hitNormal * placementSettings.groundOffset;
+		const float scale = RandomFloat(randomGenerator_, placementSettings.minScale, placementSettings.maxScale);
 
-		Quaternion rotation = entry->alignToSurfaceNormal ?
+		Quaternion rotation = placementSettings.alignToSurfaceNormal ?
 			Quaternion::FromTwoVectors(Vector3::UpVector, hitNormal) :
 			Quaternion::Identity;
 
-		if (entry->randomYaw)
+		if (placementSettings.randomYaw)
 		{
-			const Vector3 yawAxis = entry->alignToSurfaceNormal ? hitNormal : Vector3::UpVector;
-			const Quaternion yawRotation(yawAxis, RandomFloat(randomGenerator_, 0.f, TWO_PI));
-			rotation = yawRotation * rotation;
+			ApplyRandomAxisRotation(
+				rotation,
+				rotation.GetUpVector(),
+				randomGenerator_,
+				placementSettings.minYawDegrees,
+				placementSettings.maxYawDegrees);
+		}
+
+		if (placementSettings.randomPitch)
+		{
+			ApplyRandomAxisRotation(
+				rotation,
+				rotation.GetLeftVector(),
+				randomGenerator_,
+				placementSettings.minPitchDegrees,
+				placementSettings.maxPitchDegrees);
+		}
+
+		if (placementSettings.randomRoll)
+		{
+			ApplyRandomAxisRotation(
+				rotation,
+				rotation.GetForwardVector(),
+				randomGenerator_,
+				placementSettings.minRollDegrees,
+				placementSettings.maxRollDegrees);
 		}
 
 		PlacedInstance placedInstance;
@@ -1445,6 +1559,7 @@ FoliagePanel::FoliageSnapshot FoliagePanel::CaptureSnapshot() const
 	FoliageSnapshot snapshot;
 	snapshot.meshEntries = meshEntries_;
 	snapshot.instances = instances_;
+	snapshot.crowdPlacementSettings = crowdPlacementSettings_;
 	snapshot.gridSize = gridSize_;
 	return snapshot;
 }
@@ -1470,10 +1585,13 @@ void FoliagePanel::ApplySnapshot(const FoliageSnapshot& snapshot)
 {
 	meshEntries_ = snapshot.meshEntries;
 	instances_ = snapshot.instances;
+	crowdPlacementSettings_ = snapshot.crowdPlacementSettings;
 	gridSize_ = GoknarMath::Max(1.f, snapshot.gridSize);
+	ClampPlacementSettings(crowdPlacementSettings_);
 
 	for (MeshEntry& entry : meshEntries_)
 	{
+		ClampPlacementSettings(entry.placementSettings);
 		if (!entry.mesh && !entry.meshPath.empty())
 		{
 			entry.mesh = ResolveMesh(entry.meshPath);
