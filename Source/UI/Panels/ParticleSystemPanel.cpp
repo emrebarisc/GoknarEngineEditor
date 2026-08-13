@@ -180,17 +180,34 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 
 	GPUParticleSpawnDesc spawnDesc = particleSystemComponent->GetSpawnDesc();
 
-	bool looping = spawnDesc.looping;
-	didChangeScene |= ImGui::Checkbox(("Looping" + specialPostfix).c_str(), &looping);
-	spawnDesc.looping = looping;
+	bool infiniteLifetime = spawnDesc.infiniteLifetime;
+	didChangeScene |= ImGui::Checkbox(("Infinite Lifetime" + specialPostfix).c_str(), &infiniteLifetime);
+	spawnDesc.infiniteLifetime = infiniteLifetime;
+	if (spawnDesc.infiniteLifetime && spawnDesc.looping)
+	{
+		spawnDesc.looping = false;
+		didChangeScene = true;
+	}
 
-	float spawnInterval = spawnDesc.spawnInterval;
+	bool looping = spawnDesc.looping;
+	ImGui::BeginDisabled(spawnDesc.infiniteLifetime);
+	didChangeScene |= ImGui::Checkbox(("Looping" + specialPostfix).c_str(), &looping);
+	ImGui::EndDisabled();
+	spawnDesc.looping = looping;
+	if (spawnDesc.infiniteLifetime)
+	{
+		spawnDesc.looping = false;
+	}
+
+	float spawnInterval = spawnDesc.infiniteLifetime ? 0.f : spawnDesc.spawnInterval;
 	ImGui::Text("Spawn Interval:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_SCALAR_INPUT_WIDTH);
+	ImGui::BeginDisabled(spawnDesc.infiniteLifetime);
 	didChangeScene |= EditorWidgets::DrawInputFloat("##SpawnInterval" + specialPostfix, spawnInterval);
+	ImGui::EndDisabled();
 	ImGui::PopItemWidth();
-	spawnDesc.spawnInterval = spawnInterval;
+	spawnDesc.spawnInterval = spawnDesc.infiniteLifetime ? 0.f : spawnInterval;
 
 	int spawnCountPerInterval = static_cast<int>(spawnDesc.spawnCountPerInterval);
 	ImGui::Text("Spawn Count / Interval:");
@@ -208,13 +225,24 @@ void ParticleSystemPanel::DrawParticleSystemEditor(ParticleSystemComponent* part
 	ImGui::PopItemWidth();
 	spawnDesc.spawnBoxExtents = spawnBoxExtents;
 
-	float lifetimeRange[2] = { spawnDesc.lifetime.minValue, spawnDesc.lifetime.maxValue };
-	ImGui::Text("Lifetime Range:");
+	if (!spawnDesc.infiniteLifetime)
+	{
+		float lifetimeRange[2] = { spawnDesc.lifetime.minValue, spawnDesc.lifetime.maxValue };
+		ImGui::Text("Lifetime Range:");
+		ImGui::SameLine();
+		ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
+		didChangeScene |= ImGui::DragFloat2(("##LifetimeRange" + specialPostfix).c_str(), lifetimeRange, 0.01f);
+		ImGui::PopItemWidth();
+		spawnDesc.lifetime = GPUParticleValueRange<float>(lifetimeRange[0], lifetimeRange[1]);
+	}
+
+	float initialSizeRange[2] = { spawnDesc.initialSize.minValue, spawnDesc.initialSize.maxValue };
+	ImGui::Text("Initial Size Range:");
 	ImGui::SameLine();
 	ImGui::PushItemWidth(PARTICLE_RANGE_INPUT_WIDTH);
-	didChangeScene |= ImGui::DragFloat2(("##LifetimeRange" + specialPostfix).c_str(), lifetimeRange, 0.01f);
+	didChangeScene |= ImGui::DragFloat2(("##InitialSizeRange" + specialPostfix).c_str(), initialSizeRange, 0.01f);
 	ImGui::PopItemWidth();
-	spawnDesc.lifetime = GPUParticleValueRange<float>(lifetimeRange[0], lifetimeRange[1]);
+	spawnDesc.initialSize = GPUParticleValueRange<float>(initialSizeRange[0], initialSizeRange[1]);
 
 	Vector3 initialVelocityMin = spawnDesc.initialVelocity.minValue;
 	ImGui::Text("Initial Velocity Min:");

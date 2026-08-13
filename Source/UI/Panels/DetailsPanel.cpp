@@ -3422,6 +3422,8 @@ void DetailsPanel::DrawParticleSystemComponentDetails(ParticleSystemComponent* p
 	}
 
 	ImGui::Text("Looping: %s", spawnDesc.looping ? "Yes" : "No");
+	ImGui::Text("Infinite Lifetime: %s", spawnDesc.infiniteLifetime ? "Yes" : "No");
+	ImGui::Text("Initial Size Range: %.3f - %.3f", spawnDesc.initialSize.minValue, spawnDesc.initialSize.maxValue);
 	ImGui::Text("Spawn Interval: %.3f", spawnDesc.spawnInterval);
 	ImGui::Text("Preview Burst Count: %u", particleSystemComponent->GetPreviewParticleCount());
 

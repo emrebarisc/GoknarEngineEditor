@@ -15,6 +15,7 @@
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Scene.h"
 #include "Goknar/Components/CameraComponent.h"
+#include "Goknar/Components/GPUFoliageComponent.h"
 #include "Goknar/Components/InstancedStaticMeshComponent.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Managers/InputManager.h"
@@ -149,6 +150,17 @@ namespace
 		return TryGetGridSizeFromAxis(origin.x, coord.x, outGridSize) ||
 			TryGetGridSizeFromAxis(origin.y, coord.y, outGridSize) ||
 			TryGetGridSizeFromAxis(origin.z, coord.z, outGridSize);
+	}
+
+	bool IsObjectInScene(Scene* scene, ObjectBase* object)
+	{
+		if (!scene || !object)
+		{
+			return false;
+		}
+
+		const std::vector<ObjectBase*>& sceneObjects = scene->GetObjects();
+		return std::find(sceneObjects.begin(), sceneObjects.end(), object) != sceneObjects.end();
 	}
 
 	std::string StripInstancedMeshSuffix(const std::string& path)
@@ -491,9 +503,9 @@ void FoliagePanel::DrawNotes()
 		return;
 	}
 
-	ImGui::TextWrapped("Foliage is stored as ObjectBase grid cells with InstancedStaticMeshComponent children.");
+	ImGui::TextWrapped("Foliage is stored as ObjectBase grid cells with GPUFoliageComponent children.");
 	ImGui::TextWrapped("Global Ctrl+Z is not available in the current editor; use this panel's foliage-local Undo and Redo buttons.");
-	ImGui::TextWrapped("TODO: if the engine exposes public component removal and instanced bounds APIs later, remove empty mesh components and update renderer-visible per-cell bounds directly.");
+	ImGui::TextWrapped("Older InstancedStaticMeshComponent foliage cells are migrated to GPU foliage when a cell is rebuilt.");
 }
 
 void FoliagePanel::OpenMeshSelector()
@@ -1153,8 +1165,47 @@ void FoliagePanel::SynchronizeFromScene()
 		runtime.object = object;
 
 		const Matrix& cellMatrix = object->GetWorldTransformationMatrix();
-		std::shared_ptr<std::vector<InstancedStaticMeshComponent*>> components = object->GetComponentsOfType<InstancedStaticMeshComponent>();
-		for (InstancedStaticMeshComponent* component : *components)
+		std::unordered_set<std::string> gpuMeshPaths;
+		std::shared_ptr<std::vector<GPUFoliageComponent*>> gpuComponents = object->GetComponentsOfType<GPUFoliageComponent>();
+		for (GPUFoliageComponent* component : *gpuComponents)
+		{
+			const StaticMesh* staticMesh = component ? component->GetStaticMesh() : nullptr;
+			if (!staticMesh)
+			{
+				GOKNAR_CORE_WARN("Foliage grid object %s has a GPU foliage component with no mesh.", object->GetNameWithoutId().c_str());
+				continue;
+			}
+
+			const std::string meshPath = NormalizeMeshPath(staticMesh->GetPath());
+			if (meshPath.empty())
+			{
+				GOKNAR_CORE_WARN("Foliage grid object %s has a GPU foliage component with no source mesh path.", object->GetNameWithoutId().c_str());
+				continue;
+			}
+
+			runtime.componentsByMeshPath[meshPath] = component;
+			gpuMeshPaths.insert(meshPath);
+			EnsureMeshEntryForMeshPath(meshPath);
+
+			for (const GPUFoliageInstance& localInstance : component->GetInstances())
+			{
+				Matrix worldTransform = cellMatrix * localInstance.transform;
+				Vector3 translation = Vector3::ZeroVector;
+				Vector3 scaling = Vector3(1.f);
+				Quaternion rotation = Quaternion::Identity;
+				worldTransform.Decompose(translation, scaling, rotation);
+
+				PlacedInstance instance;
+				instance.meshPath = meshPath;
+				instance.worldPosition = translation;
+				instance.worldTransform = worldTransform;
+				instance.color = localInstance.color;
+				instances_.push_back(instance);
+			}
+		}
+
+		std::shared_ptr<std::vector<InstancedStaticMeshComponent*>> legacyComponents = object->GetComponentsOfType<InstancedStaticMeshComponent>();
+		for (InstancedStaticMeshComponent* component : *legacyComponents)
 		{
 			if (!component || !component->GetMeshInstance())
 			{
@@ -1176,7 +1227,11 @@ void FoliagePanel::SynchronizeFromScene()
 				continue;
 			}
 
-			runtime.componentsByMeshPath[meshPath] = component;
+			if (gpuMeshPaths.find(meshPath) != gpuMeshPaths.end())
+			{
+				continue;
+			}
+
 			EnsureMeshEntryForMeshPath(meshPath);
 
 			for (const Matrix& localTransform : instancedMesh->GetInstanceTransformationMatrices())
@@ -1191,6 +1246,7 @@ void FoliagePanel::SynchronizeFromScene()
 				instance.meshPath = meshPath;
 				instance.worldPosition = translation;
 				instance.worldTransform = worldTransform;
+				instance.color = Vector4(1.f);
 				instances_.push_back(instance);
 			}
 		}
@@ -1289,7 +1345,7 @@ void FoliagePanel::RebuildCells(const CellSet& cells)
 
 void FoliagePanel::RebuildCell(const FoliageCellCoord& coord)
 {
-	std::unordered_map<std::string, std::vector<Matrix>> transformsByMeshPath;
+	std::unordered_map<std::string, std::vector<GPUFoliageInstance>> instancesByMeshPath;
 	const Vector3 cellOrigin = GetCellOrigin(coord);
 	const Matrix worldToCellMatrix = Matrix::GetPositionMatrix(-cellOrigin);
 
@@ -1300,32 +1356,21 @@ void FoliagePanel::RebuildCell(const FoliageCellCoord& coord)
 			continue;
 		}
 
-		transformsByMeshPath[instance.meshPath].push_back(worldToCellMatrix * instance.worldTransform);
+		GPUFoliageInstance foliageInstance;
+		foliageInstance.transform = worldToCellMatrix * instance.worldTransform;
+		foliageInstance.color = instance.color;
+		instancesByMeshPath[instance.meshPath].push_back(foliageInstance);
 	}
 
-	if (transformsByMeshPath.empty())
+	if (instancesByMeshPath.empty())
 	{
 		RemoveRuntimeCellObject(coord);
 		return;
 	}
 
-	auto runtimeIterator = runtimeCells_.find(coord);
-	if (runtimeIterator != runtimeCells_.end())
+	if (runtimeCells_.find(coord) != runtimeCells_.end())
 	{
-		bool hasStaleComponents = false;
-		for (const auto& componentPair : runtimeIterator->second.componentsByMeshPath)
-		{
-			if (transformsByMeshPath.find(componentPair.first) == transformsByMeshPath.end())
-			{
-				hasStaleComponents = true;
-				break;
-			}
-		}
-
-		if (hasStaleComponents)
-		{
-			RemoveRuntimeCellObject(coord);
-		}
+		RemoveRuntimeCellObject(coord);
 	}
 
 	CellRuntime& runtime = GetOrCreateRuntimeCell(coord);
@@ -1334,54 +1379,25 @@ void FoliagePanel::RebuildCell(const FoliageCellCoord& coord)
 		return;
 	}
 
-	std::unordered_set<std::string> activeMeshPaths;
-	for (const auto& transformsPair : transformsByMeshPath)
+	bool createdAnyComponent = false;
+	for (const auto& instancesPair : instancesByMeshPath)
 	{
-		const std::string& meshPath = transformsPair.first;
-		InstancedStaticMeshComponent* component = GetOrCreateInstancedComponent(runtime, coord, meshPath);
-		if (!component || !component->GetMeshInstance())
+		const std::string& meshPath = instancesPair.first;
+		GPUFoliageComponent* component = GetOrCreateGPUFoliageComponent(runtime, coord, meshPath);
+		if (!component)
 		{
 			continue;
 		}
 
-		InstancedStaticMesh* instancedMesh = component->GetMeshInstance()->GetMesh();
-		if (!instancedMesh)
-		{
-			continue;
-		}
-
-		instancedMesh->SetInstanceTransformations(transformsPair.second);
-		instancedMesh->UpdateAllTransforms();
+		component->SetInstances(instancesPair.second);
 		component->SetIsActive(true);
-		activeMeshPaths.insert(meshPath);
+		createdAnyComponent = true;
 	}
 
-	if (activeMeshPaths.empty())
+	if (!createdAnyComponent)
 	{
 		RemoveRuntimeCellObject(coord);
 		return;
-	}
-
-	for (auto& componentPair : runtime.componentsByMeshPath)
-	{
-		if (activeMeshPaths.find(componentPair.first) != activeMeshPaths.end())
-		{
-			continue;
-		}
-
-		InstancedStaticMeshComponent* component = componentPair.second;
-		InstancedStaticMesh* instancedMesh =
-			component && component->GetMeshInstance() ? component->GetMeshInstance()->GetMesh() : nullptr;
-		if (instancedMesh)
-		{
-			// TODO: Remove this component when ObjectBase exposes public component removal.
-			instancedMesh->SetInstanceTransformations({});
-			instancedMesh->UpdateAllTransforms();
-		}
-		if (component)
-		{
-			component->SetIsActive(false);
-		}
 	}
 
 	engine->GetResourceManager()->InitializePendingMaterials();
@@ -1398,8 +1414,7 @@ void FoliagePanel::RemoveRuntimeCellObject(const FoliageCellCoord& coord)
 
 	ObjectBase* object = runtimeIterator->second.object;
 	Scene* scene = GetCurrentScene();
-	const bool objectIsInCurrentScene = object && scene &&
-		std::find(scene->GetObjects().begin(), scene->GetObjects().end(), object) != scene->GetObjects().end();
+	const bool objectIsInCurrentScene = IsObjectInScene(scene, object);
 
 	if (objectIsInCurrentScene)
 	{
@@ -1428,6 +1443,13 @@ void FoliagePanel::RemoveRuntimeCellObject(const FoliageCellCoord& coord)
 FoliagePanel::CellRuntime& FoliagePanel::GetOrCreateRuntimeCell(const FoliageCellCoord& coord)
 {
 	CellRuntime& runtime = runtimeCells_[coord];
+	Scene* scene = GetCurrentScene();
+	if (runtime.object && !IsObjectInScene(scene, runtime.object))
+	{
+		runtime.object = nullptr;
+		runtime.componentsByMeshPath.clear();
+	}
+
 	if (runtime.object)
 	{
 		runtime.object->SetWorldPosition(GetCellOrigin(coord), false);
@@ -1437,7 +1459,6 @@ FoliagePanel::CellRuntime& FoliagePanel::GetOrCreateRuntimeCell(const FoliageCel
 		return runtime;
 	}
 
-	Scene* scene = GetCurrentScene();
 	if (!scene)
 	{
 		return runtime;
@@ -1454,9 +1475,9 @@ FoliagePanel::CellRuntime& FoliagePanel::GetOrCreateRuntimeCell(const FoliageCel
 	return runtime;
 }
 
-InstancedStaticMeshComponent* FoliagePanel::GetOrCreateInstancedComponent(
+GPUFoliageComponent* FoliagePanel::GetOrCreateGPUFoliageComponent(
 	CellRuntime& runtime,
-	const FoliageCellCoord& coord,
+	const FoliageCellCoord&,
 	const std::string& meshPath)
 {
 	auto componentIterator = runtime.componentsByMeshPath.find(meshPath);
@@ -1477,21 +1498,8 @@ InstancedStaticMeshComponent* FoliagePanel::GetOrCreateInstancedComponent(
 		return nullptr;
 	}
 
-	InstancedStaticMesh* instancedMesh = InstancedStaticMesh::CreateFromStaticMesh(
-		sourceMesh,
-		sourceMesh->GetPath() + "::Foliage_" + std::to_string(coord.x) + "_" + std::to_string(coord.y) + "_" + std::to_string(coord.z));
-	if (!instancedMesh)
-	{
-		GOKNAR_CORE_WARN("Failed to create instanced foliage mesh for %s.", meshPath.c_str());
-		return nullptr;
-	}
-
-	instancedMesh->PreInit();
-	instancedMesh->Init();
-	instancedMesh->PostInit();
-
-	InstancedStaticMeshComponent* component = runtime.object->AddSubComponent<InstancedStaticMeshComponent>();
-	component->SetMesh(instancedMesh);
+	GPUFoliageComponent* component = runtime.object->AddSubComponent<GPUFoliageComponent>();
+	component->SetStaticMesh(sourceMesh);
 	runtime.componentsByMeshPath[meshPath] = component;
 	return component;
 }

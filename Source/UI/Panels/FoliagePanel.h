@@ -12,7 +12,7 @@
 #include <unordered_set>
 #include <vector>
 
-class InstancedStaticMeshComponent;
+class GPUFoliageComponent;
 class ObjectBase;
 class Scene;
 class StaticMesh;
@@ -88,6 +88,7 @@ private:
 	{
 		std::string meshPath;
 		Matrix worldTransform{ Matrix::IdentityMatrix };
+		Vector4 color{ Vector4(1.f) };
 		Vector3 worldPosition{ Vector3::ZeroVector };
 	};
 
@@ -108,7 +109,7 @@ private:
 	struct CellRuntime
 	{
 		ObjectBase* object{ nullptr };
-		std::unordered_map<std::string, InstancedStaticMeshComponent*> componentsByMeshPath;
+		std::unordered_map<std::string, GPUFoliageComponent*> componentsByMeshPath;
 	};
 
 	using CellSet = std::unordered_set<FoliageCellCoord, FoliageCellCoordHasher>;
@@ -155,7 +156,7 @@ private:
 	void RebuildCell(const FoliageCellCoord& coord);
 	void RemoveRuntimeCellObject(const FoliageCellCoord& coord);
 	CellRuntime& GetOrCreateRuntimeCell(const FoliageCellCoord& coord);
-	InstancedStaticMeshComponent* GetOrCreateInstancedComponent(
+	GPUFoliageComponent* GetOrCreateGPUFoliageComponent(
 		CellRuntime& runtime,
 		const FoliageCellCoord& coord,
 		const std::string& meshPath);
