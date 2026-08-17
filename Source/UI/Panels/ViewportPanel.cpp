@@ -50,6 +50,139 @@ namespace
 	constexpr int TransformGizmoRingSegmentCount = 72;
 	constexpr float FocusViewPadding = 1.2f;
 	constexpr float FocusMinimumDistance = 0.1f;
+	constexpr const char* TransformGizmoStepLabels[] = {
+		"Free",
+		"0.01",
+		"0.05",
+		"0.1",
+		"0.25",
+		"0.5",
+		"1",
+		"2",
+		"5",
+		"10"
+	};
+	constexpr float TransformGizmoStepValues[] = {
+		0.f,
+		0.01f,
+		0.05f,
+		0.1f,
+		0.25f,
+		0.5f,
+		1.f,
+		2.f,
+		5.f,
+		10.f
+	};
+	constexpr int TransformGizmoStepValueCount = sizeof(TransformGizmoStepValues) / sizeof(TransformGizmoStepValues[0]);
+
+
+	bool clipSegmentToCameraNearPlane(
+		const Vector3& cameraPosition,
+		const Vector3& cameraForward,
+		float nearDistance,
+		Vector3& start,
+		Vector3& end)
+	{
+		const float startDepth = (start - cameraPosition).Dot(cameraForward);
+		const float endDepth = (end - cameraPosition).Dot(cameraForward);
+
+		const bool startInside = startDepth >= nearDistance;
+		const bool endInside = endDepth >= nearDistance;
+
+		if (!startInside && !endInside)
+		{
+			return false;
+		}
+
+		if (startInside && endInside)
+		{
+			return true;
+		}
+
+		const float depthDelta = endDepth - startDepth;
+		if (GoknarMath::Abs(depthDelta) <= SMALLER_EPSILON)
+		{
+			return false;
+		}
+
+		const float t = (nearDistance - startDepth) / depthDelta;
+		const Vector3 intersection = start + (end - start) * t;
+
+		if (!startInside)
+		{
+			start = intersection;
+		}
+		else
+		{
+			end = intersection;
+		}
+
+		return true;
+	}
+
+	bool clipScreenLineToViewport(
+		const ImVec2& clipMin,
+		const ImVec2& clipMax,
+		ImVec2& start,
+		ImVec2& end)
+	{
+		const float dx = end.x - start.x;
+		const float dy = end.y - start.y;
+
+		float tMin = 0.f;
+		float tMax = 1.f;
+
+		auto clip = [&tMin, &tMax](float p, float q) -> bool
+			{
+				if (GoknarMath::Abs(p) <= SMALLER_EPSILON)
+				{
+					return q >= 0.f;
+				}
+
+				const float r = q / p;
+
+				if (p < 0.f)
+				{
+					if (r > tMax)
+					{
+						return false;
+					}
+
+					tMin = GoknarMath::Max(tMin, r);
+				}
+				else
+				{
+					if (r < tMin)
+					{
+						return false;
+					}
+
+					tMax = GoknarMath::Min(tMax, r);
+				}
+
+				return tMin <= tMax;
+			};
+
+		if (!clip(-dx, start.x - clipMin.x) ||
+			!clip(dx, clipMax.x - start.x) ||
+			!clip(-dy, start.y - clipMin.y) ||
+			!clip(dy, clipMax.y - start.y))
+		{
+			return false;
+		}
+
+		const ImVec2 clippedStart(
+			start.x + dx * tMin,
+			start.y + dy * tMin);
+		const ImVec2 clippedEnd(
+			start.x + dx * tMax,
+			start.y + dy * tMax);
+
+		start = clippedStart;
+		end = clippedEnd;
+		return true;
+	}
 
 	bool ShouldSkipObject(const ObjectBase* object)
 	{
@@ -98,6 +231,26 @@ namespace
 		default:
 			return IM_COL32(255, 255, 255, 255);
 		}
+	}
+
+	float GetTransformGizmoStepValue(int stepIndex)
+	{
+		if (stepIndex <= 0 || TransformGizmoStepValueCount <= stepIndex)
+		{
+			return 0.f;
+		}
+
+		return TransformGizmoStepValues[stepIndex];
+	}
+
+	float SnapTransformGizmoDelta(float delta, float step)
+	{
+		if (step <= SMALLER_EPSILON)
+		{
+			return delta;
+		}
+
+		return std::round(delta / step) * step;
 	}
 
 	bool GetTransformGizmoRingBasis(const Vector3& axisDirection, Vector3& outTangent, Vector3& outBitangent)
@@ -551,7 +704,7 @@ namespace
 	}
 }
 
-ViewportPanel::ViewportPanel(EditorHUD* hud) : 
+ViewportPanel::ViewportPanel(EditorHUD* hud) :
 	IEditorPanel("Viewport", hud)
 {
 	size_ = Vector2(1024, 768);
@@ -566,7 +719,7 @@ void ViewportPanel::Init()
 	Camera* renderTargetCamera = EditorContext::Get()->viewportCameraObject->GetCameraComponent()->GetCamera();
 	EditorContext::Get()->viewportRenderTarget->SetCamera(renderTargetCamera);
 
-    debugPanel_ = static_cast<DebugPanel*>(hud_->GetPanel<DebugPanel>());
+	debugPanel_ = static_cast<DebugPanel*>(hud_->GetPanel<DebugPanel>());
 }
 
 void ViewportPanel::Draw()
@@ -1110,7 +1263,8 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 		}
 
 		const Vector2 cursorDelta = currentCursorPosition - dragStartCursorPosition_;
-		const float scaleDelta = (cursorDelta.x - cursorDelta.y) * TransformGizmoUniformScaleScreenSensitivity;
+		const float rawScaleDelta = (cursorDelta.x - cursorDelta.y) * TransformGizmoUniformScaleScreenSensitivity;
+		const float scaleDelta = SnapTransformGizmoDelta(rawScaleDelta, GetTransformGizmoStep(EditorTransformGizmoMode::Scale));
 		const float positionScale = GoknarMath::Max(TransformGizmoMinimumObjectScale, 1.f + scaleDelta);
 		const bool useCollectivePivot = ShouldUseCollectiveTransformPivot();
 		for (size_t objectIndex = 0; objectIndex < draggedTransformGizmoObjects_.size(); ++objectIndex)
@@ -1157,7 +1311,10 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 			return;
 		}
 
-		const float rotationDelta = GetSignedAngleAroundAxis(dragStartRotationDirection_, currentRotationDirection, axisDirection);
+		const float rawRotationDelta = GetSignedAngleAroundAxis(dragStartRotationDirection_, currentRotationDirection, axisDirection);
+		const float rotationDelta = SnapTransformGizmoDelta(
+			rawRotationDelta,
+			GetTransformGizmoStep(EditorTransformGizmoMode::Rotate) * TO_RADIAN);
 		const Quaternion rotationDeltaQuaternion = Quaternion::FromAxisAngle(axisDirection, rotationDelta);
 		const bool useCollectivePivot = ShouldUseCollectiveTransformPivot();
 		for (size_t objectIndex = 0; objectIndex < draggedTransformGizmoObjects_.size(); ++objectIndex)
@@ -1187,8 +1344,9 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 	if (transformGizmoMode_ == EditorTransformGizmoMode::Scale)
 	{
 		const unsigned axisIndex = GetTransformGizmoAxisIndex(selectedTransformGizmoAxis_);
-		const float scaleDelta = ((currentAxisParameter - dragStartAxisParameter_) * TransformGizmoScaleSensitivity) /
+		const float rawScaleDelta = ((currentAxisParameter - dragStartAxisParameter_) * TransformGizmoScaleSensitivity) /
 			GoknarMath::Max(transformGizmoScale_, SMALLER_EPSILON);
+		const float scaleDelta = SnapTransformGizmoDelta(rawScaleDelta, GetTransformGizmoStep(EditorTransformGizmoMode::Scale));
 		Vector3 positionScale(1.f);
 		positionScale[axisIndex] = GoknarMath::Max(TransformGizmoMinimumObjectScale, 1.f + scaleDelta);
 		const bool useCollectivePivot = ShouldUseCollectiveTransformPivot();
@@ -1215,7 +1373,9 @@ void ViewportPanel::UpdateTransformGizmoDrag()
 		return;
 	}
 
-	const Vector3 dragDelta = axisDirection * (currentAxisParameter - dragStartAxisParameter_);
+	const float rawAxisDelta = currentAxisParameter - dragStartAxisParameter_;
+	const float axisDelta = SnapTransformGizmoDelta(rawAxisDelta, GetTransformGizmoStep(EditorTransformGizmoMode::Translate));
+	const Vector3 dragDelta = axisDirection * axisDelta;
 	for (size_t objectIndex = 0; objectIndex < draggedTransformGizmoObjects_.size(); ++objectIndex)
 	{
 		ObjectBase* draggedObject = draggedTransformGizmoObjects_[objectIndex];
@@ -1467,6 +1627,21 @@ Vector3 ViewportPanel::GetTransformGizmoAxisVector(EditorTransformGizmoAxis axis
 	}
 }
 
+float ViewportPanel::GetTransformGizmoStep(EditorTransformGizmoMode mode) const
+{
+	switch (mode)
+	{
+	case EditorTransformGizmoMode::Translate:
+		return GetTransformGizmoStepValue(transformGizmoTranslateStepIndex_);
+	case EditorTransformGizmoMode::Rotate:
+		return GetTransformGizmoStepValue(transformGizmoRotateStepIndex_);
+	case EditorTransformGizmoMode::Scale:
+		return GetTransformGizmoStepValue(transformGizmoScaleStepIndex_);
+	default:
+		return 0.f;
+	}
+}
+
 void ViewportPanel::SetTransformGizmoMode(EditorTransformGizmoMode mode)
 {
 	if (transformGizmoMode_ == mode)
@@ -1651,6 +1826,42 @@ void ViewportPanel::DrawTransformGizmoModeToolbar()
 	ImGui::SameLine();
 	drawModeButton("Scale", EditorTransformGizmoMode::Scale);
 
+	auto drawStepCombo = [](const char* label, const char* id, int& stepIndex)
+		{
+			ImGui::TextUnformatted(label);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(64.f);
+			if (ImGui::Combo(id, &stepIndex, TransformGizmoStepLabels, TransformGizmoStepValueCount))
+			{
+				stepIndex = GoknarMath::Clamp(stepIndex, 0, TransformGizmoStepValueCount - 1);
+			}
+		};
+
+	const char* activeStepLabel = "Move Step";
+	const char* activeStepId = "##MoveStep";
+	int* activeStepIndex = &transformGizmoTranslateStepIndex_;
+	switch (transformGizmoMode_)
+	{
+	case EditorTransformGizmoMode::Rotate:
+		activeStepLabel = "Rotate Step";
+		activeStepId = "##RotateStep";
+		activeStepIndex = &transformGizmoRotateStepIndex_;
+		break;
+	case EditorTransformGizmoMode::Scale:
+		activeStepLabel = "Scale Step";
+		activeStepId = "##ScaleStep";
+		activeStepIndex = &transformGizmoScaleStepIndex_;
+		break;
+	case EditorTransformGizmoMode::Translate:
+	default:
+		break;
+	}
+
+	ImGui::SameLine();
+	ImGui::Dummy(ImVec2(8.f, 0.f));
+	ImGui::SameLine();
+	drawStepCombo(activeStepLabel, activeStepId, *activeStepIndex);
+
 	EditorContext* context = EditorContext::Get();
 	const bool shouldDrawPivotMode = context &&
 		context->selectedObjectType == EditorSelectionType::Object &&
@@ -1705,7 +1916,8 @@ void ViewportPanel::DrawTransformGizmo(Camera* camera) const
 	if (!camera ||
 		!context ||
 		context->selectedObjectType != EditorSelectionType::Object ||
-		context->GetSelectedObjects().empty())
+		context->GetSelectedObjects().empty() ||
+		!context->viewportCameraObject)
 	{
 		return;
 	}
@@ -1715,6 +1927,22 @@ void ViewportPanel::DrawTransformGizmo(Camera* camera) const
 	const float axisLength = TransformGizmoAxisLength * gizmoScale;
 	const float ringRadius = TransformGizmoRotationRadius * gizmoScale;
 
+	const Vector3 cameraPosition = camera->GetPosition();
+	const Vector3 cameraForward =
+		context->viewportCameraObject->GetForwardVector().GetNormalized();
+	if (cameraForward.SquareLength() <= SMALLER_EPSILON)
+	{
+		return;
+	}
+
+	const float nearDistance =
+		GoknarMath::Max(camera->GetNearDistance(), SMALLER_EPSILON);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	const ImVec2 clipMin((float)position_.x, (float)position_.y);
+	const ImVec2 clipMax((float)(position_.x + size_.x), (float)(position_.y + size_.y));
+	drawList->PushClipRect(clipMin, clipMax, true);
+
 	auto getScreenPosition = [this, camera](const Vector3& worldPosition)
 		{
 			const Vector2i screenPosition = camera->GetScreenPositionOfWorldPosition(worldPosition);
@@ -1723,29 +1951,83 @@ void ViewportPanel::DrawTransformGizmo(Camera* camera) const
 				(float)(position_.y + size_.y - screenPosition.y));
 		};
 
-	ImDrawList* drawList = ImGui::GetWindowDrawList();
-	const ImVec2 clipMin((float)position_.x, (float)position_.y);
-	const ImVec2 clipMax((float)(position_.x + size_.x), (float)(position_.y + size_.y));
-	drawList->PushClipRect(clipMin, clipMax, true);
+	auto isWorldPointInFrontOfCamera =
+		[&](const Vector3& worldPosition)
+		{
+			return (worldPosition - cameraPosition).Dot(cameraForward) >= nearDistance;
+		};
+
+	auto drawWorldLine =
+		[&](const Vector3& worldStart,
+			const Vector3& worldEnd,
+			ImU32 shadowColor,
+			float shadowThickness,
+			ImU32 color,
+			float thickness)
+		{
+			Vector3 clippedStart = worldStart;
+			Vector3 clippedEnd = worldEnd;
+
+			if (!clipSegmentToCameraNearPlane(
+				cameraPosition,
+				cameraForward,
+				nearDistance,
+				clippedStart,
+				clippedEnd))
+			{
+				return;
+			}
+
+			ImVec2 start = getScreenPosition(clippedStart);
+			ImVec2 end = getScreenPosition(clippedEnd);
+			if (!clipScreenLineToViewport(clipMin, clipMax, start, end))
+			{
+				return;
+			}
+
+			drawList->AddLine(start, end, shadowColor, shadowThickness);
+			drawList->AddLine(start, end, color, thickness);
+		};
 
 	auto isAxisActive = [this](EditorTransformGizmoAxis axis)
 		{
 			return isDraggingTransformGizmo_ && selectedTransformGizmoAxis_ == axis;
 		};
 
-	auto drawAxis = [this, drawList, &getScreenPosition, &isAxisActive, gizmoOrigin, axisLength](EditorTransformGizmoAxis axis, bool drawScaleHandle)
+	auto drawAxis =
+		[&](EditorTransformGizmoAxis axis, bool drawScaleHandle)
 		{
 			const Vector3 axisEnd = gizmoOrigin + GetTransformGizmoAxisVector(axis) * axisLength;
-			const ImVec2 start = getScreenPosition(gizmoOrigin);
-			const ImVec2 end = getScreenPosition(axisEnd);
 			const ImU32 color = GetTransformGizmoAxisColor(axis, isAxisActive(axis));
-			drawList->AddLine(start, end, IM_COL32(0, 0, 0, 220), 5.f);
-			drawList->AddLine(start, end, color, 3.f);
+
+			drawWorldLine(
+				gizmoOrigin,
+				axisEnd,
+				IM_COL32(0, 0, 0, 220),
+				5.f,
+				color,
+				3.f);
+
+			if (!isWorldPointInFrontOfCamera(axisEnd))
+			{
+				return;
+			}
+
+			ImVec2 end = getScreenPosition(axisEnd);
+			if (end.x < clipMin.x || end.x > clipMax.x ||
+				end.y < clipMin.y || end.y > clipMax.y)
+			{
+				return;
+			}
 
 			if (drawScaleHandle)
 			{
-				const ImVec2 shadowMin(end.x - TransformGizmoScaleHandleSize - 1.f, end.y - TransformGizmoScaleHandleSize - 1.f);
-				const ImVec2 shadowMax(end.x + TransformGizmoScaleHandleSize + 1.f, end.y + TransformGizmoScaleHandleSize + 1.f);
+				const ImVec2 shadowMin(
+					end.x - TransformGizmoScaleHandleSize - 1.f,
+					end.y - TransformGizmoScaleHandleSize - 1.f);
+				const ImVec2 shadowMax(
+					end.x + TransformGizmoScaleHandleSize + 1.f,
+					end.y + TransformGizmoScaleHandleSize + 1.f);
 				drawList->AddRectFilled(shadowMin, shadowMax, IM_COL32(0, 0, 0, 220));
 				drawList->AddRectFilled(
 					ImVec2(end.x - TransformGizmoScaleHandleSize, end.y - TransformGizmoScaleHandleSize),
@@ -1758,14 +2040,29 @@ void ViewportPanel::DrawTransformGizmo(Camera* camera) const
 			}
 		};
 
-	auto drawScaleCenterHandle = [this, drawList, &getScreenPosition, &isAxisActive, gizmoOrigin]()
+	auto drawScaleCenterHandle = [&]()
 		{
+			if (!isWorldPointInFrontOfCamera(gizmoOrigin))
+			{
+				return;
+			}
+
 			const ImVec2 center = getScreenPosition(gizmoOrigin);
+			if (center.x < clipMin.x || center.x > clipMax.x ||
+				center.y < clipMin.y || center.y > clipMax.y)
+			{
+				return;
+			}
+
 			const ImU32 color = isAxisActive(EditorTransformGizmoAxis::Center) ?
 				IM_COL32(255, 255, 255, 255) :
 				IM_COL32(255, 220, 70, 255);
-			const ImVec2 shadowMin(center.x - TransformGizmoCenterHandleSize - 1.f, center.y - TransformGizmoCenterHandleSize - 1.f);
-			const ImVec2 shadowMax(center.x + TransformGizmoCenterHandleSize + 1.f, center.y + TransformGizmoCenterHandleSize + 1.f);
+			const ImVec2 shadowMin(
+				center.x - TransformGizmoCenterHandleSize - 1.f,
+				center.y - TransformGizmoCenterHandleSize - 1.f);
+			const ImVec2 shadowMax(
+				center.x + TransformGizmoCenterHandleSize + 1.f,
+				center.y + TransformGizmoCenterHandleSize + 1.f);
 			drawList->AddRectFilled(shadowMin, shadowMax, IM_COL32(0, 0, 0, 220));
 			drawList->AddRectFilled(
 				ImVec2(center.x - TransformGizmoCenterHandleSize, center.y - TransformGizmoCenterHandleSize),
@@ -1773,7 +2070,7 @@ void ViewportPanel::DrawTransformGizmo(Camera* camera) const
 				color);
 		};
 
-	auto drawRotationRing = [this, drawList, &getScreenPosition, &isAxisActive, gizmoOrigin, ringRadius](EditorTransformGizmoAxis axis)
+	auto drawRotationRing = [&](EditorTransformGizmoAxis axis)
 		{
 			const Vector3 axisDirection = GetTransformGizmoAxisVector(axis);
 			Vector3 tangent;
@@ -1790,10 +2087,25 @@ void ViewportPanel::DrawTransformGizmo(Camera* camera) const
 				const float angle = (TWO_PI * static_cast<float>(segmentIndex)) / static_cast<float>(TransformGizmoRingSegmentCount);
 				const Vector3 currentRingPoint = gizmoOrigin +
 					(tangent * std::cos(angle) + bitangent * std::sin(angle)) * ringRadius;
-				const ImVec2 start = getScreenPosition(previousRingPoint);
-				const ImVec2 end = getScreenPosition(currentRingPoint);
-				drawList->AddLine(start, end, IM_COL32(0, 0, 0, 220), 4.f);
-				drawList->AddLine(start, end, color, 2.f);
+
+				Vector3 clippedStart = previousRingPoint;
+				Vector3 clippedEnd = currentRingPoint;
+				if (clipSegmentToCameraNearPlane(
+					cameraPosition,
+					cameraForward,
+					nearDistance,
+					clippedStart,
+					clippedEnd))
+				{
+					ImVec2 start = getScreenPosition(clippedStart);
+					ImVec2 end = getScreenPosition(clippedEnd);
+					if (clipScreenLineToViewport(clipMin, clipMax, start, end))
+					{
+						drawList->AddLine(start, end, IM_COL32(0, 0, 0, 220), 4.f);
+						drawList->AddLine(start, end, color, 2.f);
+					}
+				}
+
 				previousRingPoint = currentRingPoint;
 			}
 		};
@@ -1847,7 +2159,7 @@ void ViewportPanel::DrawSelectedObjectHighlight() const
 
 void ViewportPanel::DrawMeshColliderHighlight(Camera* camera, const EditorCollisionGameObjectPair& collisionGameObjectPair) const
 {
-	if (!collisionGameObjectPair.meshUnit)
+	if (!camera || !collisionGameObjectPair.meshUnit)
 	{
 		return;
 	}
@@ -1859,22 +2171,57 @@ void ViewportPanel::DrawMeshColliderHighlight(Camera* camera, const EditorCollis
 		return;
 	}
 
+	EditorContext* context = EditorContext::Get();
+	if (!context || !context->viewportCameraObject)
+	{
+		return;
+	}
+
+	const Vector3 cameraPosition = camera->GetPosition();
+	const Vector3 cameraForward = context->viewportCameraObject->GetForwardVector().GetNormalized();
+	if (cameraForward.SquareLength() <= SMALLER_EPSILON)
+	{
+		return;
+	}
+
+	const float nearDistance = GoknarMath::Max(camera->GetNearDistance(), SMALLER_EPSILON);
+
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImVec2 clipMin((float)position_.x, (float)position_.y);
 	const ImVec2 clipMax((float)(position_.x + size_.x), (float)(position_.y + size_.y));
 	drawList->PushClipRect(clipMin, clipMax, true);
 
-	auto getScreenPosition = [this, camera, &collisionGameObjectPair](const Vector3& localPosition)
+	auto getScreenPosition = [this, camera](const Vector3& worldPosition)
 		{
-			const Vector3 worldPosition = TransformPoint(collisionGameObjectPair.transformationMatrix, localPosition);
 			const Vector2i screenPosition = camera->GetScreenPositionOfWorldPosition(worldPosition);
 			return ImVec2(
 				(float)(position_.x + screenPosition.x),
 				(float)(position_.y + size_.y - screenPosition.y));
 		};
 
-	auto drawEdge = [drawList](const ImVec2& start, const ImVec2& end)
+	auto drawEdge =
+		[&](const Vector3& localStart, const Vector3& localEnd)
 		{
+			Vector3 worldStart = TransformPoint(collisionGameObjectPair.transformationMatrix, localStart);
+			Vector3 worldEnd = TransformPoint(collisionGameObjectPair.transformationMatrix, localEnd);
+
+			if (!clipSegmentToCameraNearPlane(
+				cameraPosition,
+				cameraForward,
+				nearDistance,
+				worldStart,
+				worldEnd))
+			{
+				return;
+			}
+
+			ImVec2 start = getScreenPosition(worldStart);
+			ImVec2 end = getScreenPosition(worldEnd);
+			if (!clipScreenLineToViewport(clipMin, clipMax, start, end))
+			{
+				return;
+			}
+
 			drawList->AddLine(start, end, SelectedObjectShadowColor, 3.f);
 			drawList->AddLine(start, end, SelectedObjectHighlightColor, 1.f);
 		};
@@ -1895,26 +2242,35 @@ void ViewportPanel::DrawMeshColliderHighlight(Camera* camera, const EditorCollis
 			continue;
 		}
 
-		const ImVec2 vertex0 = getScreenPosition(vertices->at(face.vertexIndices[0]).position);
-		const ImVec2 vertex1 = getScreenPosition(vertices->at(face.vertexIndices[1]).position);
-		const ImVec2 vertex2 = getScreenPosition(vertices->at(face.vertexIndices[2]).position);
+		const Vector3& vertex0 = vertices->at(face.vertexIndices[0]).position;
+		const Vector3& vertex1 = vertices->at(face.vertexIndices[1]).position;
+		const Vector3& vertex2 = vertices->at(face.vertexIndices[2]).position;
 
-		if ((edgeIndex++ % edgeStep) == 0 && drawnEdgeCount++ < MaxMeshHighlightEdges)
+		if ((edgeIndex++ % edgeStep) == 0)
 		{
 			drawEdge(vertex0, vertex1);
-		}
-		if ((edgeIndex++ % edgeStep) == 0 && drawnEdgeCount++ < MaxMeshHighlightEdges)
-		{
-			drawEdge(vertex1, vertex2);
-		}
-		if ((edgeIndex++ % edgeStep) == 0 && drawnEdgeCount++ < MaxMeshHighlightEdges)
-		{
-			drawEdge(vertex2, vertex0);
+			if (++drawnEdgeCount >= MaxMeshHighlightEdges)
+			{
+				break;
+			}
 		}
 
-		if (MaxMeshHighlightEdges <= drawnEdgeCount)
+		if ((edgeIndex++ % edgeStep) == 0)
 		{
-			break;
+			drawEdge(vertex1, vertex2);
+			if (++drawnEdgeCount >= MaxMeshHighlightEdges)
+			{
+				break;
+			}
+		}
+
+		if ((edgeIndex++ % edgeStep) == 0)
+		{
+			drawEdge(vertex2, vertex0);
+			if (++drawnEdgeCount >= MaxMeshHighlightEdges)
+			{
+				break;
+			}
 		}
 	}
 
