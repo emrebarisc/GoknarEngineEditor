@@ -94,6 +94,7 @@ private:
 	Vector3 GetTransformGizmoOrigin() const;
 	float GetTransformGizmoScale(const Vector3& origin) const;
 	Vector3 GetTransformGizmoAxisVector(EditorTransformGizmoAxis axis) const;
+	float GetTransformGizmoStep(EditorTransformGizmoMode mode) const;
 	void SetTransformGizmoMode(EditorTransformGizmoMode mode);
 	void SetTransformGizmoPivotMode(EditorTransformGizmoPivotMode mode);
 	bool ShouldUseCollectiveTransformPivot() const;
@@ -123,6 +124,11 @@ private:
 	std::vector<EditorCollisionGameObjectPair> collisionGameObjectPairs_;
 	std::unordered_map<ObjectBase*, EditorCollisionGameObjectPair> selectedCollisionGameObjectPairsByObject_;
 	EditorCollisionGameObjectPair selectedCollisionGameObjectPair_{};
+
+	int transformGizmoTranslateStepIndex_{ 0 };
+	int transformGizmoRotateStepIndex_{ 0 };
+	int transformGizmoScaleStepIndex_{ 0 };
+
 	bool hasSelectedCollisionGameObjectPair_{ false };
 	bool showDebugOverlay_{ true };
 	bool isHovered_{ false };
