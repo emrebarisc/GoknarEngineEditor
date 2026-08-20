@@ -1367,6 +1367,9 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 				if (staticMeshComponent)
 				{
 					staticMeshComponent->SetMesh(newStaticMesh);
+					staticMeshComponent->PreInit();
+					staticMeshComponent->Init();
+					staticMeshComponent->PostInit();
 				}
 			}
 			MarkSceneDirty("Static mesh changed");
@@ -1405,6 +1408,9 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 				if (skeletalMeshComponent)
 				{
 					skeletalMeshComponent->SetMesh(newSkeletalMesh);
+					skeletalMeshComponent->PreInit();
+					skeletalMeshComponent->Init();
+					skeletalMeshComponent->PostInit();
 				}
 			}
 			MarkSceneDirty("Skeletal mesh changed");
