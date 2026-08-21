@@ -1,6 +1,8 @@
 #include "EditorSceneSerializer.h"
 
+#include <sstream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -12,6 +14,7 @@
 #include "Goknar/Debug/DebugDrawer.h"
 #include "Goknar/Engine.h"
 #include "Goknar/Factories/DynamicObjectFactory.h"
+#include "Goknar/Helpers/ContentPathUtils.h"
 #include "Goknar/Helpers/SceneParser.h"
 #include "Goknar/Lights/DirectionalLight.h"
 #include "Goknar/Lights/PointLight.h"
@@ -27,6 +30,8 @@
 namespace
 {
 	constexpr const char* kConstructorOwnedComponentsOmittedAttribute = "EditorReflectedComponentsOmitted";
+	std::unordered_map<const DirectionalLight*, Vector3> authoredDirectionalLightDirections;
+	std::unordered_map<const SpotLight*, Vector3> authoredSpotLightDirections;
 
 	bool ShouldWriteObject(Scene* scene, ObjectBase* object)
 	{
@@ -56,6 +61,24 @@ namespace
 	std::string SerializeVector3(const Vector3& vector)
 	{
 		return std::to_string(vector.x) + " " + std::to_string(vector.y) + " " + std::to_string(vector.z);
+	}
+
+	bool ReadVector3Element(const tinyxml2::XMLElement* element, Vector3& outValue)
+	{
+		if (!element || !element->GetText())
+		{
+			return false;
+		}
+
+		std::istringstream stream(element->GetText());
+		Vector3 value;
+		if (!(stream >> value.x >> value.y >> value.z))
+		{
+			return false;
+		}
+
+		outValue = value;
+		return true;
 	}
 
 	void WriteVectorElement(tinyxml2::XMLDocument& document, tinyxml2::XMLElement* parentElement, const char* elementName, const Vector3& value)
@@ -280,6 +303,144 @@ namespace
 			});
 	}
 
+	template <typename TLight, typename TMap, typename TIsReferenced>
+	void RegisterAuthoredLightDirectionsFromXml(
+		tinyxml2::XMLElement* lightsElement,
+		const char* elementName,
+		const std::vector<TLight*>& lights,
+		TIsReferenced isReferenced,
+		TMap& authoredDirections)
+	{
+		tinyxml2::XMLElement* lightElement = lightsElement ? lightsElement->FirstChildElement(elementName) : nullptr;
+		for (TLight* light : lights)
+		{
+			if (!ShouldWriteLight(light, isReferenced(light)))
+			{
+				continue;
+			}
+
+			if (!lightElement)
+			{
+				break;
+			}
+
+			Vector3 direction;
+			if (ReadVector3Element(lightElement->FirstChildElement("Direction"), direction))
+			{
+				authoredDirections[light] = direction;
+			}
+
+			lightElement = lightElement->NextSiblingElement(elementName);
+		}
+	}
+
+	void RegisterAuthoredLightDirectionsFromSceneFile(Scene* scene, const std::string& filePath)
+	{
+		authoredDirectionalLightDirections.clear();
+		authoredSpotLightDirections.clear();
+
+		tinyxml2::XMLDocument document;
+		if (!scene || document.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS)
+		{
+			return;
+		}
+
+		tinyxml2::XMLElement* rootElement = document.RootElement();
+		tinyxml2::XMLElement* lightsElement = rootElement ? rootElement->FirstChildElement("Lights") : nullptr;
+		if (!lightsElement)
+		{
+			return;
+		}
+
+		RegisterAuthoredLightDirectionsFromXml(
+			lightsElement,
+			"DirectionalLight",
+			scene->GetDirectionalLights(),
+			[scene](DirectionalLight* light)
+			{
+				return scene->GetIsDirectionalLightFromReferencedScene(light);
+			},
+			authoredDirectionalLightDirections);
+
+		RegisterAuthoredLightDirectionsFromXml(
+			lightsElement,
+			"SpotLight",
+			scene->GetSpotLights(),
+			[scene](SpotLight* light)
+			{
+				return scene->GetIsSpotLightFromReferencedScene(light);
+			},
+			authoredSpotLightDirections);
+	}
+
+	template <typename TLight, typename TMap, typename TIsReferenced>
+	void ApplyAuthoredLightDirections(
+		tinyxml2::XMLElement* lightsElement,
+		const char* elementName,
+		const std::vector<TLight*>& lights,
+		TIsReferenced isReferenced,
+		const TMap& authoredDirections)
+	{
+		tinyxml2::XMLElement* lightElement = lightsElement ? lightsElement->FirstChildElement(elementName) : nullptr;
+		for (TLight* light : lights)
+		{
+			if (!ShouldWriteLight(light, isReferenced(light)))
+			{
+				continue;
+			}
+
+			if (!lightElement)
+			{
+				break;
+			}
+
+			const auto authoredDirectionIterator = authoredDirections.find(light);
+			if (authoredDirectionIterator != authoredDirections.end())
+			{
+				tinyxml2::XMLElement* directionElement = lightElement->FirstChildElement("Direction");
+				if (!directionElement)
+				{
+					directionElement = lightElement->GetDocument()->NewElement("Direction");
+					lightElement->InsertFirstChild(directionElement);
+				}
+
+				directionElement->SetText(SerializeVector3(authoredDirectionIterator->second).c_str());
+			}
+
+			lightElement = lightElement->NextSiblingElement(elementName);
+		}
+	}
+
+	void ApplyAuthoredLightDirections(Scene* scene, tinyxml2::XMLDocument& document)
+	{
+		tinyxml2::XMLElement* rootElement = document.RootElement();
+		tinyxml2::XMLElement* lightsElement = rootElement ? rootElement->FirstChildElement("Lights") : nullptr;
+		if (!scene || !lightsElement)
+		{
+			return;
+		}
+
+		ApplyAuthoredLightDirections(
+			lightsElement,
+			"DirectionalLight",
+			scene->GetDirectionalLights(),
+			[scene](DirectionalLight* light)
+			{
+				return scene->GetIsDirectionalLightFromReferencedScene(light);
+			},
+			authoredDirectionalLightDirections);
+
+		ApplyAuthoredLightDirections(
+			lightsElement,
+			"SpotLight",
+			scene->GetSpotLights(),
+			[scene](SpotLight* light)
+			{
+				return scene->GetIsSpotLightFromReferencedScene(light);
+			},
+			authoredSpotLightDirections);
+	}
+
 	void ApplyEditorComponentSerialization(ObjectBase* object, tinyxml2::XMLDocument& document, tinyxml2::XMLElement* componentsElement)
 	{
 		if (!object || !componentsElement)
@@ -388,6 +549,13 @@ bool EditorSceneSerializer::OpenScene(const std::string& path)
 {
 	EditorRuntimeDynamicObjectFactoryRegistrar::ClearConstructorOwnedComponentMarkers();
 	const bool didOpenScene = engine->GetApplication()->OpenScene(path);
+	if (didOpenScene)
+	{
+		RegisterAuthoredLightDirectionsFromSceneFile(
+			engine->GetApplication()->GetMainScene(),
+			ContentPathUtils::ToAbsoluteContentPath(path));
+	}
+
 	return didOpenScene;
 }
 
@@ -407,6 +575,47 @@ void EditorSceneSerializer::SaveScene(Scene* scene, const std::string& filePath)
 	}
 
 	ApplyRegisteredObjectClassNames(scene, document);
+	ApplyAuthoredLightDirections(scene, document);
 	RemoveComponentOwnedLights(scene, document);
 	document.SaveFile(filePath.c_str());
+}
+
+bool EditorSceneSerializer::GetAuthoredDirection(const DirectionalLight* light, Vector3& outDirection)
+{
+	const auto authoredDirectionIterator = authoredDirectionalLightDirections.find(light);
+	if (authoredDirectionIterator == authoredDirectionalLightDirections.end())
+	{
+		return false;
+	}
+
+	outDirection = authoredDirectionIterator->second;
+	return true;
+}
+
+bool EditorSceneSerializer::GetAuthoredDirection(const SpotLight* light, Vector3& outDirection)
+{
+	const auto authoredDirectionIterator = authoredSpotLightDirections.find(light);
+	if (authoredDirectionIterator == authoredSpotLightDirections.end())
+	{
+		return false;
+	}
+
+	outDirection = authoredDirectionIterator->second;
+	return true;
+}
+
+void EditorSceneSerializer::SetAuthoredDirection(const DirectionalLight* light, const Vector3& direction)
+{
+	if (light)
+	{
+		authoredDirectionalLightDirections[light] = direction;
+	}
+}
+
+void EditorSceneSerializer::SetAuthoredDirection(const SpotLight* light, const Vector3& direction)
+{
+	if (light)
+	{
+		authoredSpotLightDirections[light] = direction;
+	}
 }

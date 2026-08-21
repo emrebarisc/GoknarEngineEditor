@@ -411,11 +411,11 @@ bool MeshAssetViewerPanelBase::RebuildMaterialForSubMesh(MeshUnit* subMesh, cons
 	}
 
 	MaterialSerializer::Deserialize(materialPath, material);
-	AssetParser::RegisterMaterialTexturesToTextureAtlas(material);
 	material->Build(subMesh);
 	material->PreInit();
 	material->Init();
 	material->PostInit();
+	AssetParser::RegisterMaterialTexturesToTextureAtlas(material);
 
 	return true;
 }
@@ -428,11 +428,11 @@ void MeshAssetViewerPanelBase::InitializeMaterialForSubMesh(MeshUnit* subMesh) c
 		return;
 	}
 
-	AssetParser::RegisterMaterialTexturesToTextureAtlas(material);
 	material->Build(subMesh);
 	material->PreInit();
 	material->Init();
 	material->PostInit();
+	AssetParser::RegisterMaterialTexturesToTextureAtlas(material);
 }
 
 Vector4 MeshAssetViewerPanelBase::GetMaterialSlotVisualizerColor(size_t subMeshIndex) const

@@ -39,6 +39,7 @@
 #include "UI/EditorAssetPathUtils.h"
 #include "UI/EditorHUD.h"
 #include "UI/EditorRuntimeDynamicObjectFactoryRegistrar.h"
+#include "UI/EditorSceneSerializer.h"
 #include "UI/EditorWidgets.h"
 #include "UI/Panels/AssetSelectorPanel.h"
 #include "UI/Panels/ParticleSystemPanel.h"
@@ -1536,6 +1537,12 @@ void DetailsPanel::Draw()
 void DetailsPanel::DrawTransform()
 {
 	ObjectBase* object = EditorContext::Get()->GetSelectionAs<ObjectBase>();
+	if (!object)
+	{
+		return;
+	}
+
+	ImGui::PushID(object);
 
 	Vector3 position = object->GetWorldPosition();
 	Vector3 rotation = object->GetWorldRotation().ToEulerDegrees();
@@ -1569,11 +1576,19 @@ void DetailsPanel::DrawTransform()
 	{
 		MarkSceneDirty("Object transform changed");
 	}
+
+	ImGui::PopID();
 }
 
 void DetailsPanel::DrawObjectDetails()
 {
 	ObjectBase* object = EditorContext::Get()->GetSelectionAs<ObjectBase>();
+	if (!object)
+	{
+		return;
+	}
+
+	ImGui::PushID(object);
 
 	Vector3 selectedObjectWorldPosition = object->GetWorldPosition();
 	Vector3 selectedObjectWorldRotationEulerDegrees = object->GetWorldRotation().ToEulerDegrees();
@@ -1957,6 +1972,7 @@ void DetailsPanel::DrawObjectDetails()
 	}
 
 	ImGui::PopItemWidth();
+	ImGui::PopID();
 }
 
 void DetailsPanel::DrawMultipleObjectDetails()
@@ -2847,6 +2863,8 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 		return;
 	}
 
+	ImGui::PushID(component);
+
 	ParticleSystemComponent* particleSystemComponent{ nullptr };
 	DirectionalLightComponent* directionalLightComponent{ nullptr };
 	PointLightComponent* pointLightComponent{ nullptr };
@@ -3055,6 +3073,7 @@ void DetailsPanel::DrawComponentDetails(ObjectBase*, Component* component)
 	}
 
 	ImGui::EndDisabled();
+	ImGui::PopID();
 }
 
 void DetailsPanel::DrawDirectionalLightComponentDetails(DirectionalLightComponent* directionalLightComponent)
@@ -3741,10 +3760,17 @@ void DetailsPanel::DrawAddComponentOptions(ObjectBase* object)
 void DetailsPanel::DrawDirectionalLightDetails()
 {
 	DirectionalLight* light = EditorContext::Get()->GetSelectionAs<DirectionalLight>();
+	if (!light)
+	{
+		return;
+	}
 
-	static Vector3 lightPosition = light->GetPosition();
-	static Vector3 lightDirection = light->GetDirection();
-	static Vector3 lightColor = light->GetColor();
+	ImGui::PushID(light);
+
+	Vector3 lightPosition = light->GetPosition();
+	Vector3 lightDirection = light->GetDirection();
+	EditorSceneSerializer::GetAuthoredDirection(light, lightDirection);
+	Vector3 lightColor = light->GetColor();
 	float lightIntensity = light->GetIntensity();
 	float lightShadowIntensity = light->GetShadowIntensity();
 	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
@@ -3754,32 +3780,51 @@ void DetailsPanel::DrawDirectionalLightDetails()
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", lightPosition);
-	light->SetPosition(lightPosition);
+	if (positionChanged)
+	{
+		light->SetPosition(lightPosition);
+	}
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
 	const bool directionChanged = EditorWidgets::DrawInputVector3("##Direction", lightDirection);
-	light->SetDirection(lightDirection);
+	if (directionChanged)
+	{
+		EditorSceneSerializer::SetAuthoredDirection(light, lightDirection);
+		light->SetDirection(lightDirection);
+	}
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
 	const bool intensityChanged = EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
-	light->SetIntensity(lightIntensity);
+	if (intensityChanged)
+	{
+		light->SetIntensity(lightIntensity);
+	}
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
 	const bool colorChanged = EditorWidgets::DrawInputVector3("##Color", lightColor);
-	light->SetColor(lightColor);
+	if (colorChanged)
+	{
+		light->SetColor(lightColor);
+	}
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
 	const bool shadowEnabledChanged = ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
-	light->SetIsShadowEnabled(lightIsShadowEnabled);
+	if (shadowEnabledChanged)
+	{
+		light->SetIsShadowEnabled(lightIsShadowEnabled);
+	}
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
 	const bool shadowIntensityChanged = EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
-	light->SetShadowIntensity(lightShadowIntensity);
+	if (shadowIntensityChanged)
+	{
+		light->SetShadowIntensity(lightShadowIntensity);
+	}
 
 	if (positionChanged || directionChanged || intensityChanged || colorChanged || shadowEnabledChanged || shadowIntensityChanged)
 	{
@@ -3787,11 +3832,18 @@ void DetailsPanel::DrawDirectionalLightDetails()
 	}
 
 	ImGui::PopItemWidth();
+	ImGui::PopID();
 }
 
 void DetailsPanel::DrawPointLightDetails()
 {
 	PointLight* light = EditorContext::Get()->GetSelectionAs<PointLight>();
+	if (!light)
+	{
+		return;
+	}
+
+	ImGui::PushID(light);
 
 	Vector3 lightPosition = light->GetPosition();
 	Vector3 lightColor = light->GetColor();
@@ -3805,32 +3857,50 @@ void DetailsPanel::DrawPointLightDetails()
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", lightPosition);
-	light->SetPosition(lightPosition);
+	if (positionChanged)
+	{
+		light->SetPosition(lightPosition);
+	}
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
 	const bool intensityChanged = EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
-	light->SetIntensity(lightIntensity);
+	if (intensityChanged)
+	{
+		light->SetIntensity(lightIntensity);
+	}
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
 	const bool colorChanged = EditorWidgets::DrawInputVector3("##Color", lightColor);
-	light->SetColor(lightColor);
+	if (colorChanged)
+	{
+		light->SetColor(lightColor);
+	}
 
 	ImGui::Text("Radius: ");
 	ImGui::SameLine();
 	const bool radiusChanged = EditorWidgets::DrawInputFloat("##Radius", lightRadius);
-	light->SetRadius(lightRadius);
+	if (radiusChanged)
+	{
+		light->SetRadius(lightRadius);
+	}
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
 	const bool shadowEnabledChanged = ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
-	light->SetIsShadowEnabled(lightIsShadowEnabled);
+	if (shadowEnabledChanged)
+	{
+		light->SetIsShadowEnabled(lightIsShadowEnabled);
+	}
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
 	const bool shadowIntensityChanged = EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
-	light->SetShadowIntensity(lightShadowIntensity);
+	if (shadowIntensityChanged)
+	{
+		light->SetShadowIntensity(lightShadowIntensity);
+	}
 
 	if (positionChanged || intensityChanged || colorChanged || radiusChanged || shadowEnabledChanged || shadowIntensityChanged)
 	{
@@ -3838,18 +3908,25 @@ void DetailsPanel::DrawPointLightDetails()
 	}
 
 	ImGui::PopItemWidth();
+	ImGui::PopID();
 }
 
 void DetailsPanel::DrawSpotLightDetails()
 {
 	SpotLight* light = EditorContext::Get()->GetSelectionAs<SpotLight>();
+	if (!light)
+	{
+		return;
+	}
 
-	static Vector3 lightDirection = light->GetDirection();
-	static Vector3 lightColor = light->GetColor();
-	static float lightFalloffAngle = light->GetFalloffAngle();
-	static float lightCoverageAngle = light->GetCoverageAngle();
+	ImGui::PushID(light);
 
 	Vector3 lightPosition = light->GetPosition();
+	Vector3 lightDirection = light->GetDirection();
+	EditorSceneSerializer::GetAuthoredDirection(light, lightDirection);
+	Vector3 lightColor = light->GetColor();
+	float lightFalloffAngle = RADIAN_TO_DEGREE(light->GetFalloffAngle());
+	float lightCoverageAngle = RADIAN_TO_DEGREE(light->GetCoverageAngle());
 	float lightIntensity = light->GetIntensity();
 	float lightShadowIntensity = light->GetShadowIntensity();
 	bool lightIsShadowEnabled = light->GetIsShadowEnabled();
@@ -3859,42 +3936,67 @@ void DetailsPanel::DrawSpotLightDetails()
 	ImGui::Text("Position: ");
 	ImGui::SameLine();
 	const bool positionChanged = EditorWidgets::DrawInputVector3("##Position", lightPosition);
-	light->SetPosition(lightPosition);
+	if (positionChanged)
+	{
+		light->SetPosition(lightPosition);
+	}
 
 	ImGui::Text("Direction: ");
 	ImGui::SameLine();
 	const bool directionChanged = EditorWidgets::DrawInputVector3("##Direction", lightDirection);
-	light->SetDirection(lightDirection.GetNormalized());
+	if (directionChanged)
+	{
+		EditorSceneSerializer::SetAuthoredDirection(light, lightDirection);
+		light->SetDirection(lightDirection);
+	}
 
 	ImGui::Text("FalloffAngle: ");
 	ImGui::SameLine();
 	const bool falloffChanged = EditorWidgets::DrawInputFloat("##FalloffAngle", lightFalloffAngle);
-	light->SetFalloffAngle(lightFalloffAngle);
+	if (falloffChanged)
+	{
+		light->SetFalloffAngle(lightFalloffAngle);
+	}
 
 	ImGui::Text("CoverageAngle: ");
 	ImGui::SameLine();
 	const bool coverageChanged = EditorWidgets::DrawInputFloat("##CoverageAngle", lightCoverageAngle);
-	light->SetCoverageAngle(lightCoverageAngle);
+	if (coverageChanged)
+	{
+		light->SetCoverageAngle(lightCoverageAngle);
+	}
 
 	ImGui::Text("Intensity: ");
 	ImGui::SameLine();
 	const bool intensityChanged = EditorWidgets::DrawInputFloat("##Intensity", lightIntensity);
-	light->SetIntensity(lightIntensity);
+	if (intensityChanged)
+	{
+		light->SetIntensity(lightIntensity);
+	}
 
 	ImGui::Text("Color: ");
 	ImGui::SameLine();
 	const bool colorChanged = EditorWidgets::DrawInputVector3("##Color", lightColor);
-	light->SetColor(lightColor);
+	if (colorChanged)
+	{
+		light->SetColor(lightColor);
+	}
 
 	ImGui::Text("Cast shadow: ");
 	ImGui::SameLine();
 	const bool shadowEnabledChanged = ImGui::Checkbox("##IsCastingShadow", &lightIsShadowEnabled);
-	light->SetIsShadowEnabled(lightIsShadowEnabled);
+	if (shadowEnabledChanged)
+	{
+		light->SetIsShadowEnabled(lightIsShadowEnabled);
+	}
 
 	ImGui::Text("Shadow Intensity: ");
 	ImGui::SameLine();
 	const bool shadowIntensityChanged = EditorWidgets::DrawInputFloat("##Shadow Intensity", lightShadowIntensity);
-	light->SetShadowIntensity(lightShadowIntensity);
+	if (shadowIntensityChanged)
+	{
+		light->SetShadowIntensity(lightShadowIntensity);
+	}
 
 	if (positionChanged || directionChanged || falloffChanged || coverageChanged || intensityChanged || colorChanged || shadowEnabledChanged || shadowIntensityChanged)
 	{
@@ -3902,4 +4004,5 @@ void DetailsPanel::DrawSpotLightDetails()
 	}
 
 	ImGui::PopItemWidth();
+	ImGui::PopID();
 }
