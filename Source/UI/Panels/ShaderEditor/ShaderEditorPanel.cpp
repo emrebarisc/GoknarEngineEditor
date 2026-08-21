@@ -6,6 +6,7 @@
 #include <functional>
 #include <unordered_set>
 #include <cctype>
+#include <cfloat>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -52,6 +53,40 @@ namespace
 	constexpr const char* kWorldRotationGetterNodeName = "World Rotation";
 	constexpr const char* kWorldScalingGetterNodeName = "World Scaling";
 	constexpr int kMaxMaterialArraySize = 64;
+
+	float DistanceSquared(const ImVec2& a, const ImVec2& b)
+	{
+		const float dx = a.x - b.x;
+		const float dy = a.y - b.y;
+		return dx * dx + dy * dy;
+	}
+
+	ImVec2 CubicBezierPoint(const ImVec2& p0, const ImVec2& p1, const ImVec2& p2, const ImVec2& p3, float t)
+	{
+		const float u = 1.0f - t;
+		const float tt = t * t;
+		const float uu = u * u;
+		const float uuu = uu * u;
+		const float ttt = tt * t;
+
+		return ImVec2(
+			uuu * p0.x + 3.0f * uu * t * p1.x + 3.0f * u * tt * p2.x + ttt * p3.x,
+			uuu * p0.y + 3.0f * uu * t * p1.y + 3.0f * u * tt * p2.y + ttt * p3.y);
+	}
+
+	float DistanceSquaredToCubicBezier(const ImVec2& point, const ImVec2& p0, const ImVec2& p1, const ImVec2& p2, const ImVec2& p3)
+	{
+		constexpr int segmentCount = 32;
+		float closestDistanceSquared = FLT_MAX;
+
+		for (int segmentIndex = 0; segmentIndex <= segmentCount; ++segmentIndex)
+		{
+			const float t = static_cast<float>(segmentIndex) / static_cast<float>(segmentCount);
+			closestDistanceSquared = std::min(closestDistanceSquared, DistanceSquared(point, CubicBezierPoint(p0, p1, p2, p3, t)));
+		}
+
+		return closestDistanceSquared;
+	}
 
 	std::string GetAssetBrowserDirectory(const std::string& currentAssetPath)
 	{
@@ -2511,27 +2546,54 @@ void ShaderEditorPanel::DrawNodeCanvas()
 
 	draw_list->ChannelsSplit(2);
 
+	auto getLinkCurve = [&](const ShaderLink& link, ImVec2& startPos, ImVec2& cp1, ImVec2& cp2, ImVec2& endPos) -> bool
+		{
+			ShaderPin* startPin = FindPin(link.startPinId);
+			ShaderPin* endPin = FindPin(link.endPinId);
+			ShaderNode* startNode = startPin ? FindNode(startPin->nodeId) : nullptr;
+			ShaderNode* endNode = endPin ? FindNode(endPin->nodeId) : nullptr;
+			if ((startNode && IsHiddenCanvasNodeCategory(startNode->typeCategory)) ||
+				(endNode && IsHiddenCanvasNodeCategory(endNode->typeCategory)) ||
+				!startPin ||
+				!endPin)
+			{
+				return false;
+			}
+
+			ImVec2 startLocal = GetPinPosition(link.startPinId);
+			ImVec2 endLocal = GetPinPosition(link.endPinId);
+
+			startPos = ImVec2(offset.x + startLocal.x * scale_, offset.y + startLocal.y * scale_);
+			endPos = ImVec2(offset.x + endLocal.x * scale_, offset.y + endLocal.y * scale_);
+			cp1 = ImVec2(startPos.x + 50.0f * scale_, startPos.y);
+			cp2 = ImVec2(endPos.x - 50.0f * scale_, endPos.y);
+			return true;
+		};
+
+	int hoveredLinkId = -1;
+	float hoveredLinkDistanceSquared = FLT_MAX;
+	const ImVec2 mousePos = ImGui::GetMousePos();
+	const float linkHitThreshold = std::max(6.0f, 8.0f * scale_);
+	const float linkHitThresholdSquared = linkHitThreshold * linkHitThreshold;
+
 	draw_list->ChannelsSetCurrent(0);
 	for (auto& link : links_)
 	{
-		ShaderPin* startPin = FindPin(link.startPinId);
-		ShaderPin* endPin = FindPin(link.endPinId);
-		ShaderNode* startNode = startPin ? FindNode(startPin->nodeId) : nullptr;
-		ShaderNode* endNode = endPin ? FindNode(endPin->nodeId) : nullptr;
-		if ((startNode && IsHiddenCanvasNodeCategory(startNode->typeCategory)) ||
-			(endNode && IsHiddenCanvasNodeCategory(endNode->typeCategory)))
+		ImVec2 startPos;
+		ImVec2 cp1;
+		ImVec2 cp2;
+		ImVec2 endPos;
+		if (!getLinkCurve(link, startPos, cp1, cp2, endPos))
 		{
 			continue;
 		}
 
-		ImVec2 startLocal = GetPinPosition(link.startPinId);
-		ImVec2 endLocal = GetPinPosition(link.endPinId);
-
-		ImVec2 startPos = ImVec2(offset.x + startLocal.x * scale_, offset.y + startLocal.y * scale_);
-		ImVec2 endPos = ImVec2(offset.x + endLocal.x * scale_, offset.y + endLocal.y * scale_);
-
-		ImVec2 cp1 = ImVec2(startPos.x + 50.0f * scale_, startPos.y);
-		ImVec2 cp2 = ImVec2(endPos.x - 50.0f * scale_, endPos.y);
+		const float linkDistanceSquared = DistanceSquaredToCubicBezier(mousePos, startPos, cp1, cp2, endPos);
+		if (linkDistanceSquared <= linkHitThresholdSquared && linkDistanceSquared < hoveredLinkDistanceSquared)
+		{
+			hoveredLinkDistanceSquared = linkDistanceSquared;
+			hoveredLinkId = link.id;
+		}
 
 		ImU32 color = (selectedLinkId_ == link.id) ? IM_COL32(255, 200, 0, 255) : IM_COL32(200, 200, 200, 255);
 		draw_list->AddBezierCubic(startPos, cp1, cp2, endPos, color, 3.0f * scale_);
@@ -2615,6 +2677,7 @@ void ShaderEditorPanel::DrawNodeCanvas()
 
 		if (ImGui::IsItemClicked(0))
 		{
+			selectedLinkId_ = -1;
 			if (ImGui::GetIO().KeyCtrl)
 			{
 				if (isSelected) selectedNodeIds_.erase(node.id);
@@ -2710,14 +2773,17 @@ void ShaderEditorPanel::DrawNodeCanvas()
 
 			ImGui::SetCursorScreenPos(ImVec2(pinPos.x - 10.0f * scale_, pinPos.y - 10.0f * scale_));
 			ImGui::InvisibleButton((std::string("in_") + std::to_string(input.id)).c_str(), ImVec2(20.0f * scale_, 20.0f * scale_));
+			if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0))
+			{
+				isDraggingLink_ = true;
+				draggingStartPinId_ = input.id;
+			}
 
 			if (isDraggingLink_ && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseReleased(0))
 			{
-				links_.erase(std::remove_if(links_.begin(), links_.end(),
-					[&input](const ShaderLink& link) { return link.endPinId == input.id; }), links_.end());
-
-				links_.push_back({ nextId_++, draggingStartPinId_, input.id });
+				TryConnectPins(draggingStartPinId_, input.id);
 				isDraggingLink_ = false;
+				draggingStartPinId_ = -1;
 			}
 			pinY += 25.0f * scale_;
 		}
@@ -2742,6 +2808,12 @@ void ShaderEditorPanel::DrawNodeCanvas()
 				isDraggingLink_ = true;
 				draggingStartPinId_ = output.id;
 			}
+			if (isDraggingLink_ && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseReleased(0))
+			{
+				TryConnectPins(draggingStartPinId_, output.id);
+				isDraggingLink_ = false;
+				draggingStartPinId_ = -1;
+			}
 			pinY += 25.0f * scale_;
 		}
 
@@ -2752,16 +2824,25 @@ void ShaderEditorPanel::DrawNodeCanvas()
 
 	if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
 	{
-		if (!ImGui::GetIO().KeyCtrl)
+		if (hoveredLinkId != -1)
 		{
 			selectedNodeIds_.clear();
+			selectedLinkId_ = hoveredLinkId;
+			isBackgroundClicked_ = false;
 		}
-		selectedLinkId_ = -1;
+		else
+		{
+			if (!ImGui::GetIO().KeyCtrl)
+			{
+				selectedNodeIds_.clear();
+			}
+			selectedLinkId_ = -1;
 
-		isBackgroundClicked_ = true;
-		selectionStart_ = ImVec2((ImGui::GetMousePos().x - offset.x) / scale_,
-			(ImGui::GetMousePos().y - offset.y) / scale_);
-		preDragSelection_ = selectedNodeIds_;
+			isBackgroundClicked_ = true;
+			selectionStart_ = ImVec2((ImGui::GetMousePos().x - offset.x) / scale_,
+				(ImGui::GetMousePos().y - offset.y) / scale_);
+			preDragSelection_ = selectedNodeIds_;
+		}
 	}
 
 	if (isBackgroundClicked_ && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 5.0f))
@@ -2818,10 +2899,23 @@ void ShaderEditorPanel::DrawNodeCanvas()
 
 	if (isDraggingLink_)
 	{
-		ImVec2 startLocal = GetPinPosition(draggingStartPinId_);
-		ImVec2 startPos = ImVec2(offset.x + startLocal.x * scale_, offset.y + startLocal.y * scale_);
-		ImVec2 endPos = ImGui::GetMousePos();
-		draw_list->AddBezierCubic(startPos, ImVec2(startPos.x + 50.0f * scale_, startPos.y), ImVec2(endPos.x - 50.0f * scale_, endPos.y), endPos, IM_COL32(255, 255, 255, 200), 3.0f * scale_);
+		ShaderPin* draggingPin = FindPin(draggingStartPinId_);
+		if (draggingPin)
+		{
+			ImVec2 pinLocal = GetPinPosition(draggingStartPinId_);
+			ImVec2 pinPos = ImVec2(offset.x + pinLocal.x * scale_, offset.y + pinLocal.y * scale_);
+			ImVec2 mouseLinkPos = ImGui::GetMousePos();
+
+			ImVec2 startPos = draggingPin->kind == ShaderPinKind::Output ? pinPos : mouseLinkPos;
+			ImVec2 endPos = draggingPin->kind == ShaderPinKind::Output ? mouseLinkPos : pinPos;
+			draw_list->AddBezierCubic(
+				startPos,
+				ImVec2(startPos.x + 50.0f * scale_, startPos.y),
+				ImVec2(endPos.x - 50.0f * scale_, endPos.y),
+				endPos,
+				IM_COL32(255, 255, 255, 200),
+				3.0f * scale_);
+		}
 
 		if (ImGui::IsMouseReleased(0))
 		{
@@ -2831,6 +2925,7 @@ void ShaderEditorPanel::DrawNodeCanvas()
 				autoConnectStartPinId_ = draggingStartPinId_;
 			}
 			isDraggingLink_ = false;
+			draggingStartPinId_ = -1;
 		}
 	}
 
@@ -2842,10 +2937,30 @@ void ShaderEditorPanel::DrawNodeCanvas()
 
 	if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered())
 	{
-		ImGui::OpenPopup("CanvasMenu");
+		if (hoveredLinkId != -1)
+		{
+			selectedNodeIds_.clear();
+			selectedLinkId_ = hoveredLinkId;
+			ImGui::OpenPopup("LinkContextMenu");
+		}
+		else
+		{
+			ImGui::OpenPopup("CanvasMenu");
+		}
 	}
 
 	size_t nodeCountBefore = nodes_.size();
+
+	if (ImGui::BeginPopup("LinkContextMenu"))
+	{
+		if (ImGui::MenuItem("Delete Connection") && selectedLinkId_ != -1)
+		{
+			links_.erase(std::remove_if(links_.begin(), links_.end(),
+				[this](const ShaderLink& link) { return link.id == selectedLinkId_; }), links_.end());
+			selectedLinkId_ = -1;
+		}
+		ImGui::EndPopup();
+	}
 
 	if (ImGui::BeginPopup("CanvasMenu"))
 	{
@@ -3131,9 +3246,14 @@ void ShaderEditorPanel::DrawNodeCanvas()
 	if (nodes_.size() > nodeCountBefore && autoConnectStartPinId_ != -1)
 	{
 		ShaderNode& newNode = nodes_.back();
-		if (!newNode.inputs.empty())
+		ShaderPin* autoConnectPin = FindPin(autoConnectStartPinId_);
+		if (autoConnectPin && autoConnectPin->kind == ShaderPinKind::Output && !newNode.inputs.empty())
 		{
-			links_.push_back({ nextId_++, autoConnectStartPinId_, newNode.inputs[0].id });
+			TryConnectPins(autoConnectStartPinId_, newNode.inputs[0].id);
+		}
+		else if (autoConnectPin && autoConnectPin->kind == ShaderPinKind::Input && !newNode.outputs.empty())
+		{
+			TryConnectPins(autoConnectStartPinId_, newNode.outputs[0].id);
 		}
 		autoConnectStartPinId_ = -1;
 	}
@@ -4289,6 +4409,26 @@ ShaderNode* ShaderEditorPanel::FindNode(int nodeId)
 		if (node.id == nodeId) return &node;
 	}
 	return nullptr;
+}
+
+bool ShaderEditorPanel::TryConnectPins(int firstPinId, int secondPinId)
+{
+	ShaderPin* firstPin = FindPin(firstPinId);
+	ShaderPin* secondPin = FindPin(secondPinId);
+	if (!firstPin || !secondPin || firstPin->kind == secondPin->kind)
+	{
+		return false;
+	}
+
+	const int outputPinId = firstPin->kind == ShaderPinKind::Output ? firstPin->id : secondPin->id;
+	const int inputPinId = firstPin->kind == ShaderPinKind::Input ? firstPin->id : secondPin->id;
+
+	links_.erase(std::remove_if(links_.begin(), links_.end(),
+		[inputPinId](const ShaderLink& link) { return link.endPinId == inputPinId; }), links_.end());
+
+	links_.push_back({ nextId_++, outputPinId, inputPinId });
+	selectedLinkId_ = -1;
+	return true;
 }
 
 void ShaderEditorPanel::CompileGraphToMaterial(MaterialInitializationData* outMaterialData)

@@ -2,11 +2,13 @@
 
 #include "imgui.h"
 
+#include "Goknar/Engine.h"
 #include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
+#include "Goknar/Renderer/Renderer.h"
 
 namespace
 {
@@ -191,6 +193,23 @@ void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialIn
 	}
 
 	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
+}
+
+void SkeletalMeshViewerPanel::RefreshPreviewRenderData()
+{
+	if (!skeletalMeshComponent_ || !targetSkeletalMesh_ || !IsCurrentMeshReadyToView())
+	{
+		return;
+	}
+
+	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
+	if (!meshInstance || !meshInstance->GetMesh())
+	{
+		return;
+	}
+
+	engine->GetRenderer()->RemoveSkeletalMeshInstance(meshInstance);
+	engine->GetRenderer()->AddSkeletalMeshInstance(meshInstance);
 }
 
 const char* SkeletalMeshViewerPanel::GetNoMeshSelectedText() const

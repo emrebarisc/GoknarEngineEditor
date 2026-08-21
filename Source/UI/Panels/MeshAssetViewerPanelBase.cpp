@@ -518,6 +518,10 @@ void MeshAssetViewerPanelBase::InitializeCurrentMeshMaterials()
 {
 }
 
+void MeshAssetViewerPanelBase::RefreshPreviewRenderData()
+{
+}
+
 void MeshAssetViewerPanelBase::DrawAdditionalSidePanelContent()
 {
 }
@@ -737,6 +741,8 @@ void MeshAssetViewerPanelBase::RefreshPreviewMaterialOverrides()
 	{
 		SetPreviewMaterial(subMeshIndex, CreatePreviewMaterialInstance(subMeshIndex));
 	}
+
+	RefreshPreviewRenderData();
 }
 
 void MeshAssetViewerPanelBase::SetPreviewRenderActive(bool active)

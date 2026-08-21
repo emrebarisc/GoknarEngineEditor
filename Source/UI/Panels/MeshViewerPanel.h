@@ -27,6 +27,7 @@ private:
 	bool RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath) override;
 	MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const override;
 	void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
+	void RefreshPreviewRenderData() override;
 	const char* GetNoMeshSelectedText() const override;
 	const char* GetMeshNotReadyText() const override;
 	void InitializeCurrentMeshMaterials() override;

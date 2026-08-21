@@ -1,11 +1,13 @@
 #include "MeshViewerPanel.h"
 
+#include "Goknar/Engine.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
 #include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
+#include "Goknar/Renderer/Renderer.h"
 
 namespace
 {
@@ -190,6 +192,23 @@ void MeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* 
 	}
 
 	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
+}
+
+void MeshViewerPanel::RefreshPreviewRenderData()
+{
+	if (!staticMeshComponent_ || !targetStaticMesh_ || !IsCurrentMeshReadyToView())
+	{
+		return;
+	}
+
+	StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance();
+	if (!meshInstance || !meshInstance->GetMesh())
+	{
+		return;
+	}
+
+	engine->GetRenderer()->RemoveStaticMeshInstance(meshInstance);
+	engine->GetRenderer()->AddStaticMeshInstance(meshInstance);
 }
 
 const char* MeshViewerPanel::GetNoMeshSelectedText() const

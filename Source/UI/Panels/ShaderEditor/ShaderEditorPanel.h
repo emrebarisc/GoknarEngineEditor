@@ -120,6 +120,7 @@ private:
     ImVec2 GetPinPosition(int pinId);
     ShaderPin* FindPin(int pinId);
     ShaderNode* FindNode(int nodeId);
+    bool TryConnectPins(int firstPinId, int secondPinId);
 
     std::vector<ShaderNode> nodes_;
     std::vector<ShaderLink> links_;

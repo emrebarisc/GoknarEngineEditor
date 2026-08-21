@@ -80,6 +80,7 @@ private:
 	virtual bool RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath) = 0;
 	virtual MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const = 0;
 	virtual void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) = 0;
+	virtual void RefreshPreviewRenderData();
 	virtual const char* GetNoMeshSelectedText() const = 0;
 	virtual const char* GetMeshNotReadyText() const;
 	virtual void InitializeCurrentMeshMaterials();
