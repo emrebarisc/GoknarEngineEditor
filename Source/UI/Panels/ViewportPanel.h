@@ -2,6 +2,7 @@
 
 #include "EditorPanel.h"
 #include "DebugPanel.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Math/GoknarMath.h"
 #include "Goknar/Math/Matrix.h"
 #include "Goknar/Math/Quaternion.h"
@@ -12,7 +13,6 @@
 class Camera;
 class MeshUnit;
 class ObjectBase;
-class StaticMesh;
 
 enum class EditorTransformGizmoAxis
 {
@@ -106,7 +106,7 @@ private:
 	void DrawMeshColliderHighlight(Camera* camera, const EditorCollisionGameObjectPair& collisionGameObjectPair) const;
 
 	DebugPanel* debugPanel_{ nullptr };
-	StaticMesh* transformGizmoMesh_{ nullptr };
+	StaticMeshContainer* transformGizmoMesh_{ nullptr };
 	EditorTransformGizmoMode transformGizmoMode_{ EditorTransformGizmoMode::Translate };
 	EditorTransformGizmoPivotMode transformGizmoPivotMode_{ EditorTransformGizmoPivotMode::CollectiveWorldCenter };
 	EditorTransformGizmoAxis selectedTransformGizmoAxis_{ EditorTransformGizmoAxis::None };

@@ -2,6 +2,7 @@
 
 #include "Goknar/Engine.h"
 #include "Goknar/Managers/ResourceManager.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 
@@ -9,7 +10,7 @@ AxisObject::AxisObject() : ObjectBase()
 {
 	staticMeshComponent_ = AddSubComponent<StaticMeshComponent>();
 
-	StaticMesh* axisStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>("Meshes/SM_Axis.fbx");
+	StaticMeshContainer* axisStaticMesh = engine->GetResourceManager()->GetContent<StaticMeshContainer>("Meshes/SM_Axis.fbx");
 	staticMeshComponent_->SetMesh(axisStaticMesh);
 
 	SetWorldPosition(Vector3::ZeroVector);

@@ -21,6 +21,7 @@
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Camera.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
 #include "Goknar/Engine.h"
@@ -940,7 +941,7 @@ ShaderEditorPanel::ShaderEditorPanel(EditorHUD* hud)
 	staticMeshComponent_ = viewedObject_->AddSubComponent<StaticMeshComponent>();
 	staticMeshComponent_->GetMeshInstance()->SetRenderMask(SHADER_EDITOR_RENDER_MASK);
 
-	StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_MaterialSphere.fbx");
+	StaticMeshContainer* previewMesh = EditorUtils::GetEditorContent<StaticMeshContainer>("Meshes/SM_MaterialSphere.fbx");
 	if (previewMesh)
 	{
 		staticMeshComponent_->SetMesh(previewMesh);

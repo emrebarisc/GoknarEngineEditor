@@ -16,6 +16,7 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Contents/Image.h"
 #include "Goknar/Renderer/Texture.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Materials/MaterialFunction.h"
@@ -725,7 +726,7 @@ void FileBrowserPanel::DrawGrid()
 				else if (resourceType == ResourceType::Model)
 				{
 					const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
-					if (SkeletalMesh* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
+					if (SkeletalMeshContainer* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMeshContainer>(contentRelativePath))
 					{
 						SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
 						if (viewer)
@@ -734,7 +735,7 @@ void FileBrowserPanel::DrawGrid()
 							viewer->SetIsOpen(true);
 						}
 					}
-					else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
+					else if (StaticMeshContainer* staticMesh = engine->GetResourceManager()->GetContent<StaticMeshContainer>(contentRelativePath))
 					{
 						StaticMeshViewerPanel* viewer = (StaticMeshViewerPanel*)hud_->GetPanel<StaticMeshViewerPanel>();
 						if (viewer)

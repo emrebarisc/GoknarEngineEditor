@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 
 #include "imgui.h"
@@ -46,14 +47,31 @@ namespace
 		return contentRelativePath.empty() ? assetPath : contentRelativePath;
 	}
 
+	float GetFrameCoveragePercent(float frameCoverage)
+	{
+		if (frameCoverage >= 1.f)
+		{
+			return 100.f;
+		}
+
+		return std::max(0.f, std::min(100.f, frameCoverage * 100.f));
+	}
+
+	std::string FormatFrameCoveragePercent(float frameCoverage)
+	{
+		char buffer[32];
+		std::snprintf(buffer, sizeof(buffer), "%.2f%%", GetFrameCoveragePercent(frameCoverage));
+		return buffer;
+	}
+
 	std::vector<std::string> ResolveMaterialPathsForSubMeshes(std::vector<std::string> materialPaths, size_t subMeshCount)
 	{
-	if (materialPaths.size() == 1 && !materialPaths[0].empty() && 1 < subMeshCount)
-	{
-		const std::string sharedMaterialPath = materialPaths[0];
-		materialPaths.assign(subMeshCount, sharedMaterialPath);
-		return materialPaths;
-	}
+		if (materialPaths.size() == 1 && !materialPaths[0].empty() && 1 < subMeshCount)
+		{
+			const std::string sharedMaterialPath = materialPaths[0];
+			materialPaths.assign(subMeshCount, sharedMaterialPath);
+			return materialPaths;
+		}
 
 		materialPaths.resize(subMeshCount);
 		return materialPaths;
@@ -334,8 +352,11 @@ void MeshAssetViewerPanelBase::Draw()
 
 void MeshAssetViewerPanelBase::OnTargetMeshChanged()
 {
+	pendingMaterialSelectionLODIndex_ = -1;
 	pendingMaterialSelectionSubMeshIndex_ = -1;
 	selectedMaterialPaths_.clear();
+	selectedLODIndex_ = 0;
+	isLODSelectionAutomatic_ = true;
 
 	if (!HasCurrentMesh())
 	{
@@ -344,9 +365,18 @@ void MeshAssetViewerPanelBase::OnTargetMeshChanged()
 	}
 
 	const std::string meshPath = GetCurrentMeshPath();
-	selectedMaterialPaths_ = ResolveMaterialPathsForSubMeshes(
-		meshPath.empty() ? std::vector<std::string>{} : AssetParser::GetMeshMaterialPaths(meshPath),
-		GetSubMeshCount());
+	if (!meshPath.empty())
+	{
+		const size_t LODCount = GetLODCount();
+		for (size_t LODIndex = 0; LODIndex < LODCount; ++LODIndex)
+		{
+			SetLODFrameCoverage(
+				LODIndex,
+				AssetParser::GetMeshLODFrameCoverage(meshPath, LODIndex, GetLODFrameCoverage(LODIndex)));
+		}
+	}
+
+	ReloadCurrentLODMaterialPaths();
 
 	for (size_t subMeshIndex = 0; subMeshIndex < selectedMaterialPaths_.size(); ++subMeshIndex)
 	{
@@ -549,17 +579,19 @@ void MeshAssetViewerPanelBase::DrawViewport()
 		return;
 	}
 
+	if (viewportSize_.x != availableSize.x || viewportSize_.y != availableSize.y)
+	{
+		viewportSize_ = EditorUtils::ToVector2(availableSize);
+		renderTarget_->SetFrameSize(viewportSize_);
+	}
+
+	UpdateCurrentLODFromFrameCoverage();
+
 	if (!IsCurrentMeshReadyToView())
 	{
 		DrawEmptyViewportMessage(GetMeshNotReadyText());
 		ImGui::EndChild();
 		return;
-	}
-
-	if (viewportSize_.x != availableSize.x || viewportSize_.y != availableSize.y)
-	{
-		viewportSize_ = EditorUtils::ToVector2(availableSize);
-		renderTarget_->SetFrameSize(viewportSize_);
 	}
 
 	Texture* renderTargetTexture = renderTarget_->GetTexture();
@@ -577,10 +609,99 @@ void MeshAssetViewerPanelBase::DrawViewport()
 		ImVec2{ 1.f, 0.f });
 
 	const bool viewportHovered = ImGui::IsItemHovered();
-	cameraObject_->GetController()->SetIsActive(viewportHovered);
 	EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
+	DrawViewportLODStats(cursorScreenPosition);
+	const bool scrollSpeedControlHovered = DrawViewportScrollSpeedControl(cursorScreenPosition, availableSize);
+
+	cameraObject_->GetController()->SetIsActive(viewportHovered && !scrollSpeedControlHovered);
 
 	ImGui::EndChild();
+}
+
+void MeshAssetViewerPanelBase::DrawViewportLODStats(const ImVec2& viewportMin) const
+{
+	size_t vertexCount = 0;
+	size_t faceCount = 0;
+	const size_t subMeshCount = GetSubMeshCount();
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	{
+		vertexCount += GetSubMeshVertexCount(subMeshIndex);
+		faceCount += GetSubMeshFaceCount(subMeshIndex);
+	}
+
+	const std::array<std::string, 4> lines =
+	{
+		"[LOD" + std::to_string(selectedLODIndex_) + "]",
+		"Frame coverage: " + FormatFrameCoveragePercent(currentFrameCoverage_),
+		"Vertex count: " + std::to_string(vertexCount),
+		"Face count: " + std::to_string(faceCount)
+	};
+
+	ImVec2 textSize(0.f, 0.f);
+	const float lineHeight = ImGui::GetTextLineHeight();
+	for (const std::string& line : lines)
+	{
+		const ImVec2 lineSize = ImGui::CalcTextSize(line.c_str());
+		textSize.x = std::max(textSize.x, lineSize.x);
+		textSize.y += lineHeight;
+	}
+
+	const float padding = 8.f;
+	const ImVec2 textMin(viewportMin.x + 12.f, viewportMin.y + 12.f);
+	const ImVec2 backgroundMin(textMin.x - padding, textMin.y - padding);
+	const ImVec2 backgroundMax(textMin.x + textSize.x + padding, textMin.y + textSize.y + padding);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	drawList->AddRectFilled(backgroundMin, backgroundMax, IM_COL32(10, 12, 16, 190), 4.f);
+
+	ImVec2 textPosition = textMin;
+	for (const std::string& line : lines)
+	{
+		drawList->AddText(textPosition, IM_COL32(235, 238, 242, 255), line.c_str());
+		textPosition.y += lineHeight;
+	}
+}
+
+bool MeshAssetViewerPanelBase::DrawViewportScrollSpeedControl(const ImVec2& viewportMin, const ImVec2& viewportSize)
+{
+	MeshViewerCameraController* controller = cameraObject_ ? cameraObject_->GetController() : nullptr;
+	if (!controller || viewportSize.x < 220.f || viewportSize.y < 64.f)
+	{
+		return false;
+	}
+
+	const float outerPadding = 12.f;
+	const float innerPadding = 8.f;
+	const float controlWidth = 180.f;
+	const float textHeight = ImGui::GetTextLineHeight();
+	const float sliderHeight = ImGui::GetFrameHeight();
+	const ImVec2 backgroundSize(controlWidth + innerPadding * 2.f, textHeight + sliderHeight + innerPadding * 3.f);
+	const ImVec2 backgroundMin(viewportMin.x + viewportSize.x - backgroundSize.x - outerPadding, viewportMin.y + outerPadding);
+	const ImVec2 backgroundMax(backgroundMin.x + backgroundSize.x, backgroundMin.y + backgroundSize.y);
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	drawList->AddRectFilled(backgroundMin, backgroundMax, IM_COL32(10, 12, 16, 190), 4.f);
+
+	ImGui::PushID("MeshViewerScrollSpeed");
+	ImGui::SetCursorScreenPos(ImVec2(backgroundMin.x + innerPadding, backgroundMin.y + innerPadding));
+	ImGui::TextUnformatted("Scroll Speed");
+
+	float zoomSpeed = controller->GetZoomSpeed();
+	ImGui::SetCursorScreenPos(ImVec2(backgroundMin.x + innerPadding, backgroundMin.y + innerPadding + textHeight + innerPadding));
+	ImGui::SetNextItemWidth(controlWidth);
+	if (ImGui::SliderFloat("##ScrollSpeed", &zoomSpeed, 0.05f, 20.f, "%.2f"))
+	{
+		controller->SetZoomSpeed(zoomSpeed);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Mouse wheel zoom speed");
+	}
+
+	ImGui::PopID();
+
+	return ImGui::IsMouseHoveringRect(backgroundMin, backgroundMax);
 }
 
 void MeshAssetViewerPanelBase::DrawSidePanel()
@@ -623,39 +744,124 @@ void MeshAssetViewerPanelBase::DrawMeshProperties()
 
 	const size_t subMeshCount = GetSubMeshCount();
 	ImGui::Spacing();
+	DrawLODSelector();
 	ImGui::Text("Sub Meshes: %d", static_cast<int>(subMeshCount));
-
-	size_t vertexCount = 0;
-	size_t faceCount = 0;
-	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
-	{
-		vertexCount += GetSubMeshVertexCount(subMeshIndex);
-		faceCount += GetSubMeshFaceCount(subMeshIndex);
-	}
-	ImGui::Text("Vertices: %d", static_cast<int>(vertexCount));
-	ImGui::Text("Faces: %d", static_cast<int>(faceCount));
 
 	ImGui::Spacing();
 	ImGui::Separator();
-	ImGui::Text("Materials");
+	DrawLODSettings();
+}
+
+void MeshAssetViewerPanelBase::DrawLODSelector()
+{
+	const size_t LODCount = GetLODCount();
+	if (LODCount == 0)
+	{
+		return;
+	}
+
+	ImGui::Text("LOD Selection");
+	if (ImGui::Selectable("LOD Auto", isLODSelectionAutomatic_))
+	{
+		SelectAutomaticLOD();
+	}
+
+	for (size_t LODIndex = 0; LODIndex < LODCount; ++LODIndex)
+	{
+		ImGui::PushID(static_cast<int>(LODIndex));
+
+		std::string label = "LOD " + std::to_string(LODIndex);
+		if (isLODSelectionAutomatic_ && selectedLODIndex_ == LODIndex)
+		{
+			label += " (Current)";
+		}
+
+		if (ImGui::Selectable(label.c_str(), !isLODSelectionAutomatic_ && selectedLODIndex_ == LODIndex))
+		{
+			isLODSelectionAutomatic_ = false;
+			SelectLOD(LODIndex, true);
+		}
+
+		ImGui::PopID();
+	}
+
+	ImGui::Spacing();
+}
+
+void MeshAssetViewerPanelBase::DrawLODSettings()
+{
+	const size_t LODCount = GetLODCount();
+	if (LODCount == 0)
+	{
+		return;
+	}
+
+	ImGui::Text("LOD Settings");
 	if (ImGui::Checkbox("Visualize Material Slots", &materialSlotVisualizerEnabled_))
 	{
 		RefreshPreviewMaterialOverrides();
 	}
 
-	selectedMaterialPaths_.resize(subMeshCount);
-	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	const std::string meshPath = GetCurrentMeshPath();
+	ImGui::PushID("LODSettings");
+	for (size_t LODIndex = 0; LODIndex < LODCount; ++LODIndex)
 	{
-		DrawMaterialSelector(subMeshIndex);
+		ImGui::PushID(static_cast<int>(LODIndex));
+
+		const std::string label = "LOD " + std::to_string(LODIndex);
+		const ImGuiTreeNodeFlags flags = selectedLODIndex_ == LODIndex ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+		if (ImGui::TreeNodeEx(label.c_str(), flags))
+		{
+			float frameCoveragePercent = GetFrameCoveragePercent(GetLODFrameCoverage(LODIndex));
+			ImGui::Text("Frame Coverage:");
+			ImGui::SameLine();
+			if (LODIndex == 0)
+			{
+				ImGui::Text("%s", FormatFrameCoveragePercent(GetLODFrameCoverage(LODIndex)).c_str());
+			}
+			else if (ImGui::DragFloat("##FrameCoverage", &frameCoveragePercent, 0.1f, 0.f, 100.f, "%.2f%%"))
+			{
+				const float frameCoverage = std::max(0.f, std::min(100.f, frameCoveragePercent)) * 0.01f;
+				SetLODFrameCoverage(LODIndex, frameCoverage);
+
+				if (!meshPath.empty())
+				{
+					AssetParser::SetMeshLODFrameCoverage(meshPath, LODIndex, frameCoverage);
+				}
+
+				if (isLODSelectionAutomatic_)
+				{
+					UpdateCurrentLODFromFrameCoverage(true);
+				}
+			}
+
+			const size_t subMeshCount = GetLODSubMeshCount(LODIndex);
+			ImGui::Text("Sub Meshes: %d", static_cast<int>(subMeshCount));
+			ImGui::Text("Materials");
+
+			std::vector<std::string> materialPaths = ResolveMaterialPathsForSubMeshes(
+				meshPath.empty() ? std::vector<std::string>{} : AssetParser::GetMeshLODMaterialPaths(meshPath, LODIndex),
+				subMeshCount);
+
+			for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+			{
+				DrawLODMaterialSelector(LODIndex, subMeshIndex, materialPaths);
+			}
+
+			ImGui::TreePop();
+		}
+
+		ImGui::PopID();
 	}
+	ImGui::PopID();
 }
 
-void MeshAssetViewerPanelBase::DrawMaterialSelector(size_t subMeshIndex)
+void MeshAssetViewerPanelBase::DrawLODMaterialSelector(size_t LODIndex, size_t subMeshIndex, std::vector<std::string>& materialPaths)
 {
 	ImGui::PushID(static_cast<int>(subMeshIndex));
 	ImGui::Spacing();
 
-	const std::string subMeshName = GetSubMeshName(subMeshIndex);
+	const std::string subMeshName = GetLODSubMeshName(LODIndex, subMeshIndex);
 	const Vector4 slotColor = GetMaterialSlotVisualizerColor(subMeshIndex);
 	if (materialSlotVisualizerEnabled_)
 	{
@@ -680,11 +886,13 @@ void MeshAssetViewerPanelBase::DrawMaterialSelector(size_t subMeshIndex)
 		ImGui::TextWrapped("Material Slot %d: %s", static_cast<int>(subMeshIndex), subMeshName.c_str());
 	}
 
-	const std::string& materialPath = selectedMaterialPaths_[subMeshIndex];
+	materialPaths.resize(std::max(materialPaths.size(), subMeshIndex + 1));
+	const std::string& materialPath = materialPaths[subMeshIndex];
 	ImGui::TextWrapped("%s", materialPath.empty() ? "Grid default material (unset)" : materialPath.c_str());
 
 	if (ImGui::Button("Select Asset"))
 	{
+		pendingMaterialSelectionLODIndex_ = static_cast<int>(LODIndex);
 		pendingMaterialSelectionSubMeshIndex_ = static_cast<int>(subMeshIndex);
 		EditorContext::Get()->assetSelectorFilter = EditorAssetType::Material;
 		AssetSelectorPanel::OnAssetSelected =
@@ -745,6 +953,57 @@ void MeshAssetViewerPanelBase::RefreshPreviewMaterialOverrides()
 	RefreshPreviewRenderData();
 }
 
+void MeshAssetViewerPanelBase::ReloadCurrentLODMaterialPaths()
+{
+	const std::string meshPath = GetCurrentMeshPath();
+	selectedMaterialPaths_ = ResolveMaterialPathsForSubMeshes(
+		meshPath.empty() ? std::vector<std::string>{} : AssetParser::GetMeshLODMaterialPaths(meshPath, selectedLODIndex_),
+		GetSubMeshCount());
+}
+
+void MeshAssetViewerPanelBase::SelectAutomaticLOD()
+{
+	if (isLODSelectionAutomatic_)
+	{
+		return;
+	}
+
+	isLODSelectionAutomatic_ = true;
+	UpdateCurrentLODFromFrameCoverage(true);
+}
+
+void MeshAssetViewerPanelBase::SelectLOD(size_t LODIndex, bool forceRefresh)
+{
+	if ((!forceRefresh && LODIndex == selectedLODIndex_) || GetLODCount() <= LODIndex)
+	{
+		return;
+	}
+
+	pendingMaterialSelectionLODIndex_ = -1;
+	pendingMaterialSelectionSubMeshIndex_ = -1;
+	selectedMaterialPaths_.clear();
+
+	if (!SetCurrentLODIndex(LODIndex))
+	{
+		SetPreviewRenderActive(false);
+		return;
+	}
+
+	selectedLODIndex_ = LODIndex;
+	ReloadCurrentLODMaterialPaths();
+	for (size_t subMeshIndex = 0; subMeshIndex < selectedMaterialPaths_.size(); ++subMeshIndex)
+	{
+		if (!selectedMaterialPaths_[subMeshIndex].empty())
+		{
+			RebuildCurrentMaterial(subMeshIndex, selectedMaterialPaths_[subMeshIndex]);
+		}
+	}
+
+	InitializeCurrentMeshMaterials();
+	RefreshPreviewMaterialOverrides();
+	SetPreviewRenderActive(isOpen_);
+}
+
 void MeshAssetViewerPanelBase::SetPreviewRenderActive(bool active)
 {
 	const bool shouldRender = active && CanRenderCurrentMesh();
@@ -764,12 +1023,16 @@ void MeshAssetViewerPanelBase::OnMaterialSelected(const std::string& path)
 {
 	EditorContext::Get()->assetSelectorFilter = EditorAssetType::None;
 
+	const int selectedLODIndex = pendingMaterialSelectionLODIndex_;
 	const int selectedSubMeshIndex = pendingMaterialSelectionSubMeshIndex_;
+	pendingMaterialSelectionLODIndex_ = -1;
 	pendingMaterialSelectionSubMeshIndex_ = -1;
 
 	if (!CanRenderCurrentMesh() ||
+		selectedLODIndex < 0 ||
+		selectedLODIndex >= static_cast<int>(GetLODCount()) ||
 		selectedSubMeshIndex < 0 ||
-		selectedSubMeshIndex >= static_cast<int>(GetSubMeshCount()))
+		selectedSubMeshIndex >= static_cast<int>(GetLODSubMeshCount(static_cast<size_t>(selectedLODIndex))))
 	{
 		return;
 	}
@@ -780,21 +1043,62 @@ void MeshAssetViewerPanelBase::OnMaterialSelected(const std::string& path)
 		return;
 	}
 
-	if (!RebuildCurrentMaterial(static_cast<size_t>(selectedSubMeshIndex), relativeMaterialPath))
+	if (!RebuildMaterial(static_cast<size_t>(selectedLODIndex), static_cast<size_t>(selectedSubMeshIndex), relativeMaterialPath))
 	{
 		return;
 	}
 
-	selectedMaterialPaths_.resize(GetSubMeshCount());
-	selectedMaterialPaths_[selectedSubMeshIndex] = relativeMaterialPath;
-
 	const std::string meshPath = GetCurrentMeshPath();
+	std::vector<std::string> materialPaths = ResolveMaterialPathsForSubMeshes(
+		meshPath.empty() ? std::vector<std::string>{} : AssetParser::GetMeshLODMaterialPaths(meshPath, static_cast<size_t>(selectedLODIndex)),
+		GetLODSubMeshCount(static_cast<size_t>(selectedLODIndex)));
+	materialPaths.resize(std::max(materialPaths.size(), static_cast<size_t>(selectedSubMeshIndex + 1)));
+	materialPaths[selectedSubMeshIndex] = relativeMaterialPath;
+
 	if (!meshPath.empty())
 	{
-		AssetParser::SetMeshMaterialPaths(meshPath, selectedMaterialPaths_);
+		AssetParser::SetMeshLODMaterialPaths(meshPath, static_cast<size_t>(selectedLODIndex), materialPaths);
 	}
 
-	RefreshPreviewMaterialOverrides();
+	if (static_cast<size_t>(selectedLODIndex) == selectedLODIndex_)
+	{
+		selectedMaterialPaths_ = materialPaths;
+		RefreshPreviewMaterialOverrides();
+	}
+}
+
+void MeshAssetViewerPanelBase::UpdateCurrentLODFromFrameCoverage(bool forceRefresh)
+{
+	currentFrameCoverage_ = 0.f;
+
+	Camera* camera = cameraObject_ ? cameraObject_->GetCameraComponent()->GetCamera() : nullptr;
+	const Box* meshBounds = GetCurrentMeshCoverageBounds();
+	const Matrix* meshTransformationMatrix = GetCurrentMeshWorldTransformationMatrix();
+	if (!camera || !meshBounds || !meshTransformationMatrix)
+	{
+		return;
+	}
+
+	currentFrameCoverage_ = camera->GetAABBFrameCoverage(*meshBounds, *meshTransformationMatrix);
+
+	if (!isLODSelectionAutomatic_)
+	{
+		return;
+	}
+
+	const size_t LODCount = GetLODCount();
+	if (LODCount == 0)
+	{
+		return;
+	}
+
+	size_t LODIndex = GetLODIndexForFrameCoverage(currentFrameCoverage_);
+	if (LODCount <= LODIndex)
+	{
+		LODIndex = LODCount - 1;
+	}
+
+	SelectLOD(LODIndex, forceRefresh);
 }
 
 bool MeshAssetViewerPanelBase::CanRenderCurrentMesh() const

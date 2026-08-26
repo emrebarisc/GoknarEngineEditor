@@ -6,6 +6,7 @@
 #include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
 #include "Goknar/Renderer/Renderer.h"
@@ -61,28 +62,31 @@ SkeletalMeshViewerPanel::~SkeletalMeshViewerPanel()
 	ClearMaterialSlotVisualizerMaterial();
 }
 
-void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMesh* skeletalMesh)
+void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMeshContainer* skeletalMeshContainer)
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
 	ClearMaterialSlotVisualizerMaterial();
+	targetSkeletalMeshContainer_ = nullptr;
 	targetSkeletalMesh_ = nullptr;
 
-	if (!skeletalMesh)
+	if (!skeletalMeshContainer)
 	{
 		skeletalMeshComponent_->SetIsActive(false);
 		OnTargetMeshChanged();
 		return;
 	}
 
-	targetSkeletalMesh_ = skeletalMesh;
+	targetSkeletalMeshContainer_ = skeletalMeshContainer;
+	targetSkeletalMesh_ = skeletalMeshContainer->GetLOD(0);
 
 	if (IsSkeletalMeshReadyForPreview(targetSkeletalMesh_))
 	{
-		skeletalMeshComponent_->SetMesh(skeletalMesh);
+		skeletalMeshComponent_->SetMesh(skeletalMeshContainer);
 		skeletalMeshComponent_->SetIsActive(true);
 		skeletalMeshComponent_->GetMeshInstance()->SetRenderMask(GetRenderMask());
 		skeletalMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
+		skeletalMeshComponent_->GetMeshInstance()->SetForcedLODIndex(-1);
 	}
 	else
 	{
@@ -104,12 +108,65 @@ bool SkeletalMeshViewerPanel::IsCurrentMeshReadyToView() const
 
 std::string SkeletalMeshViewerPanel::GetCurrentMeshPath() const
 {
-	return targetSkeletalMesh_ ? targetSkeletalMesh_->GetPath() : "";
+	return targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetPath() : "";
 }
 
 const Box* SkeletalMeshViewerPanel::GetCurrentMeshBounds() const
 {
 	return targetSkeletalMesh_ ? &targetSkeletalMesh_->GetAABB() : nullptr;
+}
+
+const Box* SkeletalMeshViewerPanel::GetCurrentMeshCoverageBounds() const
+{
+	return targetSkeletalMeshContainer_ ? &targetSkeletalMeshContainer_->GetAABB() : nullptr;
+}
+
+const Matrix* SkeletalMeshViewerPanel::GetCurrentMeshWorldTransformationMatrix() const
+{
+	return skeletalMeshComponent_ ? &skeletalMeshComponent_->GetComponentToWorldTransformationMatrix() : nullptr;
+}
+
+size_t SkeletalMeshViewerPanel::GetLODCount() const
+{
+	return targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetLODCount() : 0;
+}
+
+size_t SkeletalMeshViewerPanel::GetLODIndexForFrameCoverage(float frameCoverage) const
+{
+	return targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetLODIndex(frameCoverage) : 0;
+}
+
+float SkeletalMeshViewerPanel::GetLODFrameCoverage(size_t LODIndex) const
+{
+	return targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetLODFrameCoverage((int)LODIndex) : 0.f;
+}
+
+void SkeletalMeshViewerPanel::SetLODFrameCoverage(size_t LODIndex, float frameCoverage)
+{
+	if (targetSkeletalMeshContainer_)
+	{
+		targetSkeletalMeshContainer_->SetLODFrameCoverage((int)LODIndex, frameCoverage);
+	}
+}
+
+bool SkeletalMeshViewerPanel::SetCurrentLODIndex(size_t LODIndex)
+{
+	if (!targetSkeletalMeshContainer_)
+	{
+		targetSkeletalMesh_ = nullptr;
+		return false;
+	}
+
+	ClearPreviewMaterialOverrides();
+	targetSkeletalMesh_ = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
+
+	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_ ? skeletalMeshComponent_->GetMeshInstance() : nullptr;
+	if (meshInstance)
+	{
+		meshInstance->SetForcedLODIndex(IsLODSelectionAutomatic() ? -1 : static_cast<int>(LODIndex));
+	}
+
+	return targetSkeletalMesh_ != nullptr;
 }
 
 size_t SkeletalMeshViewerPanel::GetSubMeshCount() const
@@ -135,15 +192,48 @@ size_t SkeletalMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 	return subMesh ? subMesh->GetFaceCount() : 0;
 }
 
-bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
+size_t SkeletalMeshViewerPanel::GetLODSubMeshCount(size_t LODIndex) const
 {
-	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
-	if (!HasCurrentMesh() || !subMesh || !DoesMaterialAssetExist(materialPath))
+	if (!targetSkeletalMeshContainer_ || GetLODCount() <= LODIndex)
+	{
+		return 0;
+	}
+
+	SkeletalMesh* LODMesh = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
+	return LODMesh ? LODMesh->GetSubMeshes().size() : 0;
+}
+
+std::string SkeletalMeshViewerPanel::GetLODSubMeshName(size_t LODIndex, size_t subMeshIndex) const
+{
+	SkeletalMeshUnit* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
+	return subMesh ? subMesh->GetName() : "";
+}
+
+bool SkeletalMeshViewerPanel::RebuildMaterial(size_t LODIndex, size_t subMeshIndex, const std::string& materialPath)
+{
+	SkeletalMeshUnit* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
+	if (!targetSkeletalMeshContainer_ || !subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
 	}
 
-	return RebuildMaterialForSubMesh(subMesh, materialPath);
+	if (LODIndex == GetSelectedLODIndex())
+	{
+		RestorePreviewSourceMaterials();
+	}
+
+	const bool rebuilt = RebuildMaterialForSubMesh(subMesh, materialPath);
+	if (rebuilt && LODIndex == GetSelectedLODIndex() && subMeshIndex < previewSourceMaterials_.size())
+	{
+		previewSourceMaterials_[subMeshIndex] = subMesh->GetMaterial();
+	}
+
+	return rebuilt;
+}
+
+bool SkeletalMeshViewerPanel::RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath)
+{
+	return RebuildMaterial(GetSelectedLODIndex(), subMeshIndex, materialPath);
 }
 
 MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t subMeshIndex) const
@@ -154,7 +244,12 @@ MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t 
 	}
 
 	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
-	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
+	Material* material = GetPreviewSourceMaterial(subMeshIndex);
+	if (!material && subMesh)
+	{
+		material = subMesh->GetMaterial();
+	}
+
 	if (IsMaterialSlotVisualizerEnabled())
 	{
 		return CreateMaterialSlotVisualizerMaterialInstance(
@@ -168,7 +263,12 @@ MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t 
 		return CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
 	}
 
-	return material ? MaterialInstance::Create(material) : CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
+	if (material)
+	{
+		return MaterialInstance::Create(material);
+	}
+
+	return CreatePreviewDefaultMaterialInstance(GetPreviewDefaultMaterial(subMesh));
 }
 
 void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance)
@@ -183,7 +283,9 @@ void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialIn
 	}
 
 	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
-	if (!meshInstance || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
+	if (!meshInstance ||
+		subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size() ||
+		subMeshIndex >= meshInstance->GetMaterials().size())
 	{
 		if (materialInstance)
 		{
@@ -192,7 +294,15 @@ void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialIn
 		return;
 	}
 
+	CapturePreviewSourceMaterialsIfNeeded();
+
 	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
+
+	if (SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex))
+	{
+		Material* parentMaterial = materialInstance ? materialInstance->GetParentMaterial() : nullptr;
+		subMesh->SetMaterial(parentMaterial ? parentMaterial : GetPreviewSourceMaterial(subMeshIndex));
+	}
 }
 
 void SkeletalMeshViewerPanel::RefreshPreviewRenderData()
@@ -263,7 +373,14 @@ void SkeletalMeshViewerPanel::DrawAdditionalSidePanelContent()
 		return;
 	}
 
-	const auto& animationsMap = targetSkeletalMesh_->GetAnimationsMap();
+	SkeletalMesh* animationMesh = targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetLOD(0) : targetSkeletalMesh_;
+	if (!animationMesh)
+	{
+		ImGui::TextDisabled("No animations found.");
+		return;
+	}
+
+	const auto& animationsMap = animationMesh->GetAnimationsMap();
 	if (animationsMap.empty())
 	{
 		ImGui::TextDisabled("No animations found.");
@@ -293,17 +410,20 @@ void SkeletalMeshViewerPanel::ClearPreviewMaterialOverrides()
 	}
 
 	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
-	SkeletalMesh* currentMesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+	SkeletalMeshContainer* currentMeshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+	SkeletalMesh* currentMesh = currentMeshContainer ? currentMeshContainer->GetLOD(0) : nullptr;
 	if (!meshInstance || !currentMesh)
 	{
 		return;
 	}
 
-	const size_t subMeshCount = currentMesh->GetSubMeshes().size();
-	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	for (size_t subMeshIndex = 0; subMeshIndex < meshInstance->GetMaterials().size(); ++subMeshIndex)
 	{
 		meshInstance->SetMaterial(static_cast<int>(subMeshIndex), nullptr);
 	}
+
+	RestorePreviewSourceMaterials();
+	previewSourceMaterials_.clear();
 }
 
 void SkeletalMeshViewerPanel::ClearPreviewDefaultMaterial()
@@ -316,6 +436,59 @@ void SkeletalMeshViewerPanel::ClearMaterialSlotVisualizerMaterial()
 	DestroyPreviewDefaultMaterial(materialSlotVisualizerMaterial_);
 }
 
+void SkeletalMeshViewerPanel::CapturePreviewSourceMaterialsIfNeeded()
+{
+	if (previewMaterialsApplied_ || !targetSkeletalMesh_)
+	{
+		return;
+	}
+
+	const size_t subMeshCount = targetSkeletalMesh_->GetSubMeshes().size();
+	previewSourceMaterials_.resize(subMeshCount, nullptr);
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
+	{
+		SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+		previewSourceMaterials_[subMeshIndex] = subMesh ? subMesh->GetMaterial() : nullptr;
+	}
+
+	previewMaterialsApplied_ = true;
+}
+
+void SkeletalMeshViewerPanel::RestorePreviewSourceMaterials()
+{
+	if (!previewMaterialsApplied_ || !targetSkeletalMesh_)
+	{
+		return;
+	}
+
+	const size_t subMeshCount = targetSkeletalMesh_->GetSubMeshes().size();
+	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount && subMeshIndex < previewSourceMaterials_.size(); ++subMeshIndex)
+	{
+		if (SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex))
+		{
+			subMesh->SetMaterial(previewSourceMaterials_[subMeshIndex]);
+		}
+	}
+
+	previewMaterialsApplied_ = false;
+}
+
+SkeletalMeshUnit* SkeletalMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const
+{
+	if (!targetSkeletalMeshContainer_ || GetLODCount() <= LODIndex)
+	{
+		return nullptr;
+	}
+
+	SkeletalMesh* LODMesh = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
+	if (!LODMesh || subMeshIndex >= LODMesh->GetSubMeshes().size())
+	{
+		return nullptr;
+	}
+
+	return LODMesh->GetSubMeshes()[subMeshIndex];
+}
+
 SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetSkeletalMesh_ || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
@@ -324,6 +497,16 @@ SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 	}
 
 	return targetSkeletalMesh_->GetSubMeshes()[subMeshIndex];
+}
+
+Material* SkeletalMeshViewerPanel::GetPreviewSourceMaterial(size_t subMeshIndex) const
+{
+	if (subMeshIndex < previewSourceMaterials_.size())
+	{
+		return previewSourceMaterials_[subMeshIndex];
+	}
+
+	return nullptr;
 }
 
 Material* SkeletalMeshViewerPanel::GetPreviewDefaultMaterial(SkeletalMeshUnit* subMesh) const

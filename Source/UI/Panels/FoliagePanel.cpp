@@ -22,6 +22,7 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Model/InstancedStaticMesh.h"
 #include "Goknar/Model/InstancedStaticMeshInstance.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Renderer/RenderTarget.h"
@@ -714,7 +715,7 @@ void FoliagePanel::EnsureBrushPreview()
 		return;
 	}
 
-	StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_UnitSphere.fbx");
+	StaticMeshContainer* previewMesh = EditorUtils::GetEditorContent<StaticMeshContainer>("Meshes/SM_UnitSphere.fbx");
 	if (!previewMesh)
 	{
 		GOKNAR_CORE_WARN("Foliage brush preview mesh EditorContent/Meshes/SM_UnitSphere.fbx could not be loaded.");
@@ -1212,7 +1213,8 @@ void FoliagePanel::SynchronizeFromScene()
 				continue;
 			}
 
-			InstancedStaticMesh* instancedMesh = component->GetMeshInstance()->GetMesh();
+			InstancedStaticMeshContainer* instancedMeshContainer = component->GetMeshInstance()->GetMesh();
+			InstancedStaticMesh* instancedMesh = instancedMeshContainer ? instancedMeshContainer->GetLOD(0) : nullptr;
 			if (!instancedMesh)
 			{
 				GOKNAR_CORE_WARN("Foliage grid object %s has an instanced mesh component with no mesh.", object->GetNameWithoutId().c_str());
@@ -1549,7 +1551,8 @@ StaticMesh* FoliagePanel::ResolveMesh(const std::string& meshPath) const
 		return nullptr;
 	}
 
-	return engine->GetResourceManager()->GetContent<StaticMesh>(NormalizeMeshPath(meshPath));
+	StaticMeshContainer* meshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(NormalizeMeshPath(meshPath));
+	return meshContainer ? meshContainer->GetLOD(0) : nullptr;
 }
 
 std::size_t FoliagePanel::GetInstanceCount() const

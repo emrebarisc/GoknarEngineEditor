@@ -17,6 +17,7 @@
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Contents/Image.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
@@ -83,6 +84,20 @@ namespace
 
 		const NavMeshSettings defaultSettings;
 		scene->RebuildNavigationMesh(defaultSettings);
+	}
+
+	StaticMesh* GetStaticMeshLOD0(StaticMeshComponent* staticMeshComponent)
+	{
+		StaticMeshInstance* meshInstance = staticMeshComponent ? staticMeshComponent->GetMeshInstance() : nullptr;
+		StaticMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+		return meshContainer ? meshContainer->GetLOD(0) : nullptr;
+	}
+
+	SkeletalMesh* GetSkeletalMeshLOD0(SkeletalMeshComponent* skeletalMeshComponent)
+	{
+		SkeletalMeshInstance* meshInstance = skeletalMeshComponent ? skeletalMeshComponent->GetMeshInstance() : nullptr;
+		SkeletalMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+		return meshContainer ? meshContainer->GetLOD(0) : nullptr;
 	}
 
 	bool ObjectHasNavigationTreeComponent(ObjectBase* object)
@@ -1281,7 +1296,7 @@ void DetailsPanel::SetupReflections()
 			}
 
 			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
-			StaticMesh* staticMesh = staticMeshComponent && staticMeshComponent->GetMeshInstance() ? staticMeshComponent->GetMeshInstance()->GetMesh() : nullptr;
+			StaticMesh* staticMesh = GetStaticMeshLOD0(staticMeshComponent);
 			if (staticMesh && staticMesh->GetAABB().GetSize() != Vector3::ZeroVector)
 			{
 				boxCollisionComponent->SetHalfSize(staticMesh->GetAABB().GetSize() * 0.5f);
@@ -1310,7 +1325,7 @@ void DetailsPanel::SetupReflections()
 			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
 			if (staticMeshComponent)
 			{
-				movingTriangleMeshCollisionComponent->SetMesh(staticMeshComponent->GetMeshInstance()->GetMesh());
+				movingTriangleMeshCollisionComponent->SetMesh(GetStaticMeshLOD0(staticMeshComponent));
 			}
 		};
 	physicsReflections_["NonMovingTriangleMeshCollisionComponent"] =
@@ -1321,7 +1336,7 @@ void DetailsPanel::SetupReflections()
 			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
 			if (staticMeshComponent)
 			{
-				nonMovingTriangleMeshCollisionComponent->SetMesh(staticMeshComponent->GetMeshInstance()->GetMesh());
+				nonMovingTriangleMeshCollisionComponent->SetMesh(GetStaticMeshLOD0(staticMeshComponent));
 			}
 		};
 }
@@ -1359,15 +1374,15 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		break;
 	case DetailsAssetSelectionTarget::StaticMesh:
 	{
-		StaticMesh* newStaticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(normalizedPath);
-		if (newStaticMesh)
+		StaticMeshContainer* newStaticMeshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(normalizedPath);
+		if (newStaticMeshContainer)
 		{
 			for (void* assetSelectionComponent : assetSelectionComponents)
 			{
 				StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent;
 				if (staticMeshComponent)
 				{
-					staticMeshComponent->SetMesh(newStaticMesh);
+					staticMeshComponent->SetMesh(newStaticMeshContainer);
 					staticMeshComponent->PreInit();
 					staticMeshComponent->Init();
 					staticMeshComponent->PostInit();
@@ -1384,8 +1399,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent;
 			std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
 
-			StaticMeshInstance* meshInstance = staticMeshComponent ? staticMeshComponent->GetMeshInstance() : nullptr;
-			StaticMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+			StaticMesh* mesh = GetStaticMeshLOD0(staticMeshComponent);
 			const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
 
 			if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
@@ -1400,15 +1414,15 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 	}
 	case DetailsAssetSelectionTarget::SkeletalMesh:
 	{
-		SkeletalMesh* newSkeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(normalizedPath);
-		if (newSkeletalMesh)
+		SkeletalMeshContainer* newSkeletalMeshContainer = engine->GetResourceManager()->GetContent<SkeletalMeshContainer>(normalizedPath);
+		if (newSkeletalMeshContainer)
 		{
 			for (void* assetSelectionComponent : assetSelectionComponents)
 			{
 				SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent;
 				if (skeletalMeshComponent)
 				{
-					skeletalMeshComponent->SetMesh(newSkeletalMesh);
+					skeletalMeshComponent->SetMesh(newSkeletalMeshContainer);
 					skeletalMeshComponent->PreInit();
 					skeletalMeshComponent->Init();
 					skeletalMeshComponent->PostInit();
@@ -1425,8 +1439,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent;
 			std::vector<std::string> materialPaths = SceneParser::GetSkeletalMeshComponentMaterialPaths(skeletalMeshComponent);
 
-			SkeletalMeshInstance* meshInstance = skeletalMeshComponent ? skeletalMeshComponent->GetMeshInstance() : nullptr;
-			SkeletalMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
+			SkeletalMesh* mesh = GetSkeletalMeshLOD0(skeletalMeshComponent);
 			const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
 
 			if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
@@ -2338,8 +2351,8 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				[](StaticMeshComponent* staticMeshComponent)
 				{
 					StaticMeshInstance* meshInstance = staticMeshComponent->GetMeshInstance();
-					StaticMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
-					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
+					StaticMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+					return meshContainer ? ToDisplayContentPath(meshContainer->GetPath()) : std::string();
 				});
 
 			if (ImGui::Button("Select asset##MultiStaticMeshAsset"))
@@ -2383,8 +2396,8 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				[](SkeletalMeshComponent* skeletalMeshComponent)
 				{
 					SkeletalMeshInstance* meshInstance = skeletalMeshComponent->GetMeshInstance();
-					SkeletalMesh* mesh = meshInstance ? meshInstance->GetMesh() : nullptr;
-					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
+					SkeletalMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+					return meshContainer ? ToDisplayContentPath(meshContainer->GetPath()) : std::string();
 				});
 
 			if (ImGui::Button("Select asset##MultiSkeletalMeshAsset"))
@@ -3174,8 +3187,10 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 	ImGui::Text("Mesh: ");
 
 	ImGui::SameLine();
-	StaticMesh* staticMesh = staticMeshComponent->GetMeshInstance()->GetMesh();
-	ImGui::Text(staticMesh ? staticMesh->GetPath().substr(ContentDir.size()).c_str() : "");
+	StaticMeshInstance* staticMeshInstance = staticMeshComponent->GetMeshInstance();
+	StaticMeshContainer* staticMeshContainer = staticMeshInstance ? staticMeshInstance->GetMesh() : nullptr;
+	StaticMesh* staticMesh = staticMeshContainer ? staticMeshContainer->GetLOD(0) : nullptr;
+	ImGui::Text(staticMeshContainer ? staticMeshContainer->GetPath().substr(ContentDir.size()).c_str() : "");
 
 	std::string specialName = std::string("Select asset") + specialPostfix;
 
@@ -3194,7 +3209,6 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 
 	ImGui::Text("Default Materials:");
 
-	StaticMeshInstance* staticMeshInstance = staticMeshComponent->GetMeshInstance();
 	const std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
 	const size_t subMeshCount = staticMesh ? staticMesh->GetSubMeshes().size() : 0;
 	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
@@ -3260,8 +3274,9 @@ void DetailsPanel::DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* skele
 
 	ImGui::SameLine();
 	SkeletalMeshInstance* skeletalMeshInstance = skeletalMeshComponent->GetMeshInstance();
-	SkeletalMesh* skeletalMesh = skeletalMeshInstance ? skeletalMeshInstance->GetMesh() : nullptr;
-	ImGui::Text(skeletalMesh ? skeletalMesh->GetPath().substr(ContentDir.size()).c_str() : "");
+	SkeletalMeshContainer* skeletalMeshContainer = skeletalMeshInstance ? skeletalMeshInstance->GetMesh() : nullptr;
+	SkeletalMesh* skeletalMesh = skeletalMeshContainer ? skeletalMeshContainer->GetLOD(0) : nullptr;
+	ImGui::Text(skeletalMeshContainer ? skeletalMeshContainer->GetPath().substr(ContentDir.size()).c_str() : "");
 
 	std::string specialName = std::string("Select asset") + specialPostfix;
 

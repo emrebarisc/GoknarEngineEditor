@@ -22,6 +22,16 @@ public:
 		UpdateCameraTransform();
 	}
 
+	float GetZoomSpeed() const
+	{
+		return zoomSpeed_;
+	}
+
+	void SetZoomSpeed(float zoomSpeed)
+	{
+		zoomSpeed_ = GoknarMath::Max(0.01f, zoomSpeed);
+	}
+
 	void ResetViewWithBoundingBox(ObjectBase* viewedObject, const Box& aabb);
 
 	void ResetView();

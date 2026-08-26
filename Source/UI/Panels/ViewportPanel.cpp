@@ -15,6 +15,7 @@
 #include "Goknar/Geometry/Box.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Model/InstancedStaticMesh.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/ObjectBase.h"
@@ -288,7 +289,8 @@ namespace
 				continue;
 			}
 
-			auto* mesh = meshInstance->GetMesh();
+			auto* meshContainer = meshInstance->GetMesh();
+			auto* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
 			if (!mesh)
 			{
 				continue;
@@ -334,7 +336,8 @@ namespace
 				continue;
 			}
 
-			InstancedStaticMesh* mesh = meshInstance->GetMesh();
+			InstancedStaticMeshContainer* meshContainer = meshInstance->GetMesh();
+			InstancedStaticMesh* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
 			if (!mesh)
 			{
 				continue;
@@ -441,7 +444,8 @@ namespace
 				continue;
 			}
 
-			auto* mesh = meshInstance->GetMesh();
+			auto* meshContainer = meshInstance->GetMesh();
+			auto* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
 			if (!mesh)
 			{
 				continue;
@@ -481,7 +485,8 @@ namespace
 				continue;
 			}
 
-			InstancedStaticMesh* mesh = meshInstance->GetMesh();
+			InstancedStaticMeshContainer* meshContainer = meshInstance->GetMesh();
+			InstancedStaticMesh* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
 			if (!mesh)
 			{
 				continue;
@@ -1205,7 +1210,7 @@ void ViewportPanel::LoadTransformGizmoMesh()
 		return;
 	}
 
-	transformGizmoMesh_ = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_Gizmo.fbx");
+	transformGizmoMesh_ = EditorUtils::GetEditorContent<StaticMeshContainer>("Meshes/SM_Gizmo.fbx");
 }
 
 void ViewportPanel::UpdateTransformGizmo()

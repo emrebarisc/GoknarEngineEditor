@@ -2,9 +2,10 @@
 
 #include "MeshAssetViewerPanelBase.h"
 
+#include "Goknar/Model/MeshContainer.h"
+
 class MaterialInstance;
 class MeshUnit;
-class StaticMesh;
 class StaticMeshComponent;
 
 class StaticMeshViewerPanel : public MeshAssetViewerPanelBase
@@ -13,17 +14,27 @@ public:
 	explicit StaticMeshViewerPanel(EditorHUD* hud);
 	~StaticMeshViewerPanel() override;
 
-	void SetTargetStaticMesh(StaticMesh* staticMesh);
+	void SetTargetStaticMesh(StaticMeshContainer* staticMeshContainer);
 
 private:
 	bool HasCurrentMesh() const override;
 	bool IsCurrentMeshReadyToView() const override;
 	std::string GetCurrentMeshPath() const override;
 	const Box* GetCurrentMeshBounds() const override;
+	const Box* GetCurrentMeshCoverageBounds() const override;
+	const Matrix* GetCurrentMeshWorldTransformationMatrix() const override;
+	size_t GetLODCount() const override;
+	size_t GetLODIndexForFrameCoverage(float frameCoverage) const override;
+	float GetLODFrameCoverage(size_t LODIndex) const override;
+	void SetLODFrameCoverage(size_t LODIndex, float frameCoverage) override;
+	bool SetCurrentLODIndex(size_t LODIndex) override;
 	size_t GetSubMeshCount() const override;
 	std::string GetSubMeshName(size_t subMeshIndex) const override;
 	size_t GetSubMeshVertexCount(size_t subMeshIndex) const override;
 	size_t GetSubMeshFaceCount(size_t subMeshIndex) const override;
+	size_t GetLODSubMeshCount(size_t LODIndex) const override;
+	std::string GetLODSubMeshName(size_t LODIndex, size_t subMeshIndex) const override;
+	bool RebuildMaterial(size_t LODIndex, size_t subMeshIndex, const std::string& materialPath) override;
 	bool RebuildCurrentMaterial(size_t subMeshIndex, const std::string& materialPath) override;
 	MaterialInstance* CreatePreviewMaterialInstance(size_t subMeshIndex) const override;
 	void SetPreviewMaterial(size_t subMeshIndex, MaterialInstance* materialInstance) override;
@@ -35,11 +46,13 @@ private:
 	void ClearPreviewMaterialOverrides();
 	void ClearPreviewDefaultMaterial();
 	void ClearMaterialSlotVisualizerMaterial();
+	MeshUnit* GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const;
 	MeshUnit* GetSubMesh(size_t subMeshIndex) const;
 	Material* GetPreviewDefaultMaterial(MeshUnit* subMesh) const;
 	Material* GetMaterialSlotVisualizerMaterial(MeshUnit* subMesh) const;
 
 	StaticMeshComponent* staticMeshComponent_{ nullptr };
+	StaticMeshContainer* targetStaticMeshContainer_{ nullptr };
 	StaticMesh* targetStaticMesh_{ nullptr };
 	mutable Material* previewDefaultMaterial_{ nullptr };
 	mutable Material* materialSlotVisualizerMaterial_{ nullptr };

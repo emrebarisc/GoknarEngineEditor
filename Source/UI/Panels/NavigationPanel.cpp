@@ -467,15 +467,15 @@ NavigationPanel::NavigationPanel(EditorHUD* hud) :
 		return;
 	}
 
-	triangleMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_Triangle.fbx");
-	lineMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_Line.fbx");
-	cornerSphereMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_LowPolyUnitSphere.fbx");
-	gizmoArrowMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_LowPolyArrow.fbx");
+	triangleMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_Triangle.fbx");
+	lineMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_Line.fbx");
+	cornerSphereMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_LowPolyUnitSphere.fbx");
+	gizmoArrowMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_LowPolyArrow.fbx");
 
-	CreateNavigationDebugMaterials(triangleMesh_, kDefaultNodeColor, triangleSourceMaterials_);
-	CreateNavigationDebugMaterials(lineMesh_, kLineColor, lineSourceMaterials_);
-	CreateNavigationDebugMaterials(cornerSphereMesh_, kCornerHandleColor, cornerSphereSourceMaterials_);
-	CreateNavigationDebugMaterials(gizmoArrowMesh_, kGizmoXAxisColor, gizmoArrowSourceMaterials_);
+	CreateNavigationDebugMaterials(triangleMesh_ ? triangleMesh_->GetLOD(0) : nullptr, kDefaultNodeColor, triangleSourceMaterials_);
+	CreateNavigationDebugMaterials(lineMesh_ ? lineMesh_->GetLOD(0) : nullptr, kLineColor, lineSourceMaterials_);
+	CreateNavigationDebugMaterials(cornerSphereMesh_ ? cornerSphereMesh_->GetLOD(0) : nullptr, kCornerHandleColor, cornerSphereSourceMaterials_);
+	CreateNavigationDebugMaterials(gizmoArrowMesh_ ? gizmoArrowMesh_->GetLOD(0) : nullptr, kGizmoXAxisColor, gizmoArrowSourceMaterials_);
 }
 
 NavigationPanel::~NavigationPanel()

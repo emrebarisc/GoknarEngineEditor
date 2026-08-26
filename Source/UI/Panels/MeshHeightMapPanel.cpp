@@ -10,6 +10,7 @@
 #include "Goknar/Geometry/Box.h"
 #include "Goknar/IO/IOManager.h"
 #include "Goknar/Managers/ResourceManager.h"
+#include "Goknar/Model/MeshContainer.h"
 #include "Goknar/Model/MeshUnit.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Physics/Components/HeightMapCollisionComponent.h"
@@ -196,7 +197,8 @@ void MeshHeightMapPanel::Draw()
 void MeshHeightMapPanel::OnSourceMeshSelected(const std::string& path)
 {
 	sourceMeshPath_ = EditorAssetPathUtils::ToContentRelativePath(path);
-	sourceMesh_ = engine->GetResourceManager()->GetContent<StaticMesh>(sourceMeshPath_);
+	StaticMeshContainer* sourceMeshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(sourceMeshPath_);
+	sourceMesh_ = sourceMeshContainer ? sourceMeshContainer->GetLOD(0) : nullptr;
 	SetDefaultOutputPathForMesh(sourceMeshPath_);
 
 	statusMessage_ = sourceMesh_ ? "Mesh selected." : "Failed to load selected static mesh.";
@@ -223,7 +225,8 @@ void MeshHeightMapPanel::ConvertSelectedMesh()
 {
 	if (!sourceMesh_ && !sourceMeshPath_.empty())
 	{
-		sourceMesh_ = engine->GetResourceManager()->GetContent<StaticMesh>(sourceMeshPath_);
+		StaticMeshContainer* sourceMeshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(sourceMeshPath_);
+		sourceMesh_ = sourceMeshContainer ? sourceMeshContainer->GetLOD(0) : nullptr;
 	}
 
 	std::string error;
