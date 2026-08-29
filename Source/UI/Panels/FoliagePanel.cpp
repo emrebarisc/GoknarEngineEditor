@@ -22,7 +22,7 @@
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Model/InstancedStaticMesh.h"
 #include "Goknar/Model/InstancedStaticMeshInstance.h"
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Physics/PhysicsWorld.h"
 #include "Goknar/Renderer/RenderTarget.h"
@@ -528,7 +528,7 @@ void FoliagePanel::OnMeshAssetSelected(const std::string& path)
 		return;
 	}
 
-	StaticMesh* mesh = ResolveMesh(meshPath);
+	StaticMeshLOD* mesh = ResolveMesh(meshPath);
 	if (!mesh)
 	{
 		GOKNAR_CORE_WARN("Foliage mesh %s could not be loaded.", meshPath.c_str());
@@ -715,7 +715,7 @@ void FoliagePanel::EnsureBrushPreview()
 		return;
 	}
 
-	StaticMeshContainer* previewMesh = EditorUtils::GetEditorContent<StaticMeshContainer>("Meshes/SM_UnitSphere.fbx");
+	StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_UnitSphere.fbx");
 	if (!previewMesh)
 	{
 		GOKNAR_CORE_WARN("Foliage brush preview mesh EditorContent/Meshes/SM_UnitSphere.fbx could not be loaded.");
@@ -1170,14 +1170,14 @@ void FoliagePanel::SynchronizeFromScene()
 		std::shared_ptr<std::vector<GPUFoliageComponent*>> gpuComponents = object->GetComponentsOfType<GPUFoliageComponent>();
 		for (GPUFoliageComponent* component : *gpuComponents)
 		{
-			const StaticMesh* staticMesh = component ? component->GetStaticMesh() : nullptr;
-			if (!staticMesh)
+			const StaticMesh* staticMeshContainer = component ? component->GetStaticMesh() : nullptr;
+			if (!staticMeshContainer)
 			{
 				GOKNAR_CORE_WARN("Foliage grid object %s has a GPU foliage component with no mesh.", object->GetNameWithoutId().c_str());
 				continue;
 			}
 
-			const std::string meshPath = NormalizeMeshPath(staticMesh->GetPath());
+			const std::string meshPath = NormalizeMeshPath(staticMeshContainer->GetPath());
 			if (meshPath.empty())
 			{
 				GOKNAR_CORE_WARN("Foliage grid object %s has a GPU foliage component with no source mesh path.", object->GetNameWithoutId().c_str());
@@ -1213,8 +1213,8 @@ void FoliagePanel::SynchronizeFromScene()
 				continue;
 			}
 
-			InstancedStaticMeshContainer* instancedMeshContainer = component->GetMeshInstance()->GetMesh();
-			InstancedStaticMesh* instancedMesh = instancedMeshContainer ? instancedMeshContainer->GetLOD(0) : nullptr;
+			InstancedStaticMesh* instancedMeshContainer = component->GetMeshInstance()->GetMesh();
+			InstancedStaticMeshLOD* instancedMesh = instancedMeshContainer ? instancedMeshContainer->GetLOD(0) : nullptr;
 			if (!instancedMesh)
 			{
 				GOKNAR_CORE_WARN("Foliage grid object %s has an instanced mesh component with no mesh.", object->GetNameWithoutId().c_str());
@@ -1493,15 +1493,15 @@ GPUFoliageComponent* FoliagePanel::GetOrCreateGPUFoliageComponent(
 		return nullptr;
 	}
 
-	StaticMesh* sourceMesh = ResolveMesh(meshPath);
-	if (!sourceMesh)
+	StaticMesh* sourceMeshContainer = ResolveMeshContainer(meshPath);
+	if (!sourceMeshContainer)
 	{
 		GOKNAR_CORE_WARN("Skipping foliage mesh %s because it could not be loaded.", meshPath.c_str());
 		return nullptr;
 	}
 
 	GPUFoliageComponent* component = runtime.object->AddSubComponent<GPUFoliageComponent>();
-	component->SetStaticMesh(sourceMesh);
+	component->SetStaticMesh(sourceMeshContainer);
 	runtime.componentsByMeshPath[meshPath] = component;
 	return component;
 }
@@ -1544,14 +1544,19 @@ std::string FoliagePanel::NormalizeMeshPath(const std::string& path) const
 	return EditorAssetPathUtils::NormalizePath(EditorAssetPathUtils::ToContentRelativePath(strippedPath));
 }
 
-StaticMesh* FoliagePanel::ResolveMesh(const std::string& meshPath) const
+StaticMesh* FoliagePanel::ResolveMeshContainer(const std::string& meshPath) const
 {
 	if (!engine || !engine->GetResourceManager() || meshPath.empty())
 	{
 		return nullptr;
 	}
 
-	StaticMeshContainer* meshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(NormalizeMeshPath(meshPath));
+	return engine->GetResourceManager()->GetContent<StaticMesh>(NormalizeMeshPath(meshPath));
+}
+
+StaticMeshLOD* FoliagePanel::ResolveMesh(const std::string& meshPath) const
+{
+	StaticMesh* meshContainer = ResolveMeshContainer(meshPath);
 	return meshContainer ? meshContainer->GetLOD(0) : nullptr;
 }
 

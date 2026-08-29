@@ -10,8 +10,8 @@
 #include "Goknar/Geometry/Box.h"
 #include "Goknar/IO/IOManager.h"
 #include "Goknar/Managers/ResourceManager.h"
-#include "Goknar/Model/MeshContainer.h"
-#include "Goknar/Model/MeshUnit.h"
+#include "Goknar/Model/Mesh.h"
+#include "Goknar/Model/MeshGeometry.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Physics/Components/HeightMapCollisionComponent.h"
 
@@ -197,7 +197,7 @@ void MeshHeightMapPanel::Draw()
 void MeshHeightMapPanel::OnSourceMeshSelected(const std::string& path)
 {
 	sourceMeshPath_ = EditorAssetPathUtils::ToContentRelativePath(path);
-	StaticMeshContainer* sourceMeshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(sourceMeshPath_);
+	StaticMesh* sourceMeshContainer = engine->GetResourceManager()->GetContent<StaticMesh>(sourceMeshPath_);
 	sourceMesh_ = sourceMeshContainer ? sourceMeshContainer->GetLOD(0) : nullptr;
 	SetDefaultOutputPathForMesh(sourceMeshPath_);
 
@@ -225,7 +225,7 @@ void MeshHeightMapPanel::ConvertSelectedMesh()
 {
 	if (!sourceMesh_ && !sourceMeshPath_.empty())
 	{
-		StaticMeshContainer* sourceMeshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(sourceMeshPath_);
+		StaticMesh* sourceMeshContainer = engine->GetResourceManager()->GetContent<StaticMesh>(sourceMeshPath_);
 		sourceMesh_ = sourceMeshContainer ? sourceMeshContainer->GetLOD(0) : nullptr;
 	}
 
@@ -265,7 +265,7 @@ void MeshHeightMapPanel::ConvertSelectedMesh()
 	statusMessage_ = statusStream.str();
 }
 
-bool MeshHeightMapPanel::BuildHeightMap(StaticMesh* mesh, ConversionResult& outResult, std::string& outError) const
+bool MeshHeightMapPanel::BuildHeightMap(StaticMeshLOD* mesh, ConversionResult& outResult, std::string& outError) const
 {
 	if (!mesh)
 	{
@@ -294,7 +294,7 @@ bool MeshHeightMapPanel::BuildHeightMap(StaticMesh* mesh, ConversionResult& outR
 	const float gridScaleX = static_cast<float>(heightStickWidth - 1) / meshWidth;
 	const float gridScaleY = static_cast<float>(heightStickLength - 1) / meshLength;
 
-	for (const MeshUnit* subMesh : mesh->GetSubMeshes())
+	for (const MeshGeometry* subMesh : mesh->GetSubMeshes())
 	{
 		if (!subMesh || !subMesh->GetVerticesPointer() || !subMesh->GetFacesPointer())
 		{

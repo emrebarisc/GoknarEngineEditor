@@ -4,6 +4,7 @@
 
 #include "Goknar/Math/GoknarMath.h"
 #include "Goknar/Math/Matrix.h"
+#include "Goknar/Model/Mesh.h"
 
 #include <cstdint>
 #include <random>
@@ -16,6 +17,7 @@ class GPUFoliageComponent;
 class ObjectBase;
 class Scene;
 class StaticMesh;
+class StaticMeshLOD;
 class StaticMeshComponent;
 
 struct FoliageCellCoord
@@ -76,7 +78,7 @@ private:
 	struct MeshEntry
 	{
 		std::string meshPath;
-		StaticMesh* mesh{ nullptr };
+		StaticMeshLOD* mesh{ nullptr };
 		bool enabled{ true };
 		float spawnWeight{ 1.f };
 		float densityMultiplier{ 1.f };
@@ -165,7 +167,8 @@ private:
 	Vector3 GetCellOrigin(const FoliageCellCoord& coord) const;
 	std::string GetCellObjectName(const FoliageCellCoord& coord) const;
 	std::string NormalizeMeshPath(const std::string& path) const;
-	StaticMesh* ResolveMesh(const std::string& meshPath) const;
+	StaticMesh* ResolveMeshContainer(const std::string& meshPath) const;
+	StaticMeshLOD* ResolveMesh(const std::string& meshPath) const;
 	std::size_t GetInstanceCount() const;
 	Scene* GetCurrentScene() const;
 

@@ -21,7 +21,7 @@
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Camera.h"
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
 #include "Goknar/Engine.h"
@@ -941,7 +941,7 @@ ShaderEditorPanel::ShaderEditorPanel(EditorHUD* hud)
 	staticMeshComponent_ = viewedObject_->AddSubComponent<StaticMeshComponent>();
 	staticMeshComponent_->GetMeshInstance()->SetRenderMask(SHADER_EDITOR_RENDER_MASK);
 
-	StaticMeshContainer* previewMesh = EditorUtils::GetEditorContent<StaticMeshContainer>("Meshes/SM_MaterialSphere.fbx");
+	StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_MaterialSphere.fbx");
 	if (previewMesh)
 	{
 		staticMeshComponent_->SetMesh(previewMesh);
@@ -1769,10 +1769,7 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 		{
 			GOKNAR_INFO("ShaderEditorPanel: Texture '%s' not found at path '%s'. Injecting fallback uniform.", tex.name.c_str(), tex.path.c_str());
 			missingTextureUniformDeclarations += "uniform sampler2D " + tex.name + ";\n";
-			if (tex.useTextureAtlas)
-			{
-				missingTextureUniformDeclarations += "uniform vec4 " + tex.name + "_UVTransform;\n";
-			}
+			missingTextureUniformDeclarations += "uniform vec4 " + tex.name + "_UVTransform;\n";
 		}
 	}
 

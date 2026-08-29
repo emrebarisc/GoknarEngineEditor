@@ -7,7 +7,7 @@
 #include <vector>
 
 class Image;
-class StaticMesh;
+class StaticMeshLOD;
 
 class MeshHeightMapPanel : public IEditorPanel
 {
@@ -35,14 +35,14 @@ private:
 	void OnSourceMeshSelected(const std::string& path);
 	void SetDefaultOutputPathForMesh(const std::string& meshPath);
 	void ConvertSelectedMesh();
-	bool BuildHeightMap(StaticMesh* mesh, ConversionResult& outResult, std::string& outError) const;
+	bool BuildHeightMap(StaticMeshLOD* mesh, ConversionResult& outResult, std::string& outError) const;
 	bool WriteHeightMapPng(const ConversionResult& result, const std::string& outputRelativePath, std::string& outAbsolutePath, std::string& outError) const;
 	Image* CreateGeneratedHeightMapImage(const std::string& outputRelativePath, const ConversionResult& result) const;
 	void ApplyResultToSelectedHeightMapComponent(const ConversionResult& result, Image* image);
 	void UpsertHeightMapAssetMetadata(const std::string& outputRelativePath) const;
 	std::string GetNormalizedOutputRelativePath() const;
 
-	StaticMesh* sourceMesh_{ nullptr };
+	StaticMeshLOD* sourceMesh_{ nullptr };
 	std::string sourceMeshPath_;
 	std::array<char, 260> outputPathBuffer_{};
 	int heightStickWidth_{ 129 };

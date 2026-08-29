@@ -17,7 +17,7 @@
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
 #include "Goknar/Materials/MaterialSerializer.h"
-#include "Goknar/Model/MeshUnit.h"
+#include "Goknar/Model/MeshGeometry.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Renderer/RenderTarget.h"
 #include "Goknar/Renderer/Texture.h"
@@ -215,7 +215,7 @@ namespace
 		initData->emissiveColor.result = "editorPreviewGridResult.rgb;";
 	}
 
-	Material* CreateInitializedGridMaterial(MeshUnit* subMesh, const char* materialName, const Vector4& materialColor)
+	Material* CreateInitializedGridMaterial(MeshGeometry* subMesh, const char* materialName, const Vector4& materialColor)
 	{
 		if (!subMesh)
 		{
@@ -422,7 +422,7 @@ bool MeshAssetViewerPanelBase::IsMaterialSlotUnset(size_t subMeshIndex) const
 	return !HasMaterialAssetOverride(subMeshIndex);
 }
 
-bool MeshAssetViewerPanelBase::RebuildMaterialForSubMesh(MeshUnit* subMesh, const std::string& materialPath) const
+bool MeshAssetViewerPanelBase::RebuildMaterialForSubMesh(MeshGeometry* subMesh, const std::string& materialPath) const
 {
 	if (!subMesh || !DoesMaterialAssetExist(materialPath))
 	{
@@ -450,7 +450,7 @@ bool MeshAssetViewerPanelBase::RebuildMaterialForSubMesh(MeshUnit* subMesh, cons
 	return true;
 }
 
-void MeshAssetViewerPanelBase::InitializeMaterialForSubMesh(MeshUnit* subMesh) const
+void MeshAssetViewerPanelBase::InitializeMaterialForSubMesh(MeshGeometry* subMesh) const
 {
 	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
 	if (!material || material->GetIsInitialized())
@@ -470,12 +470,12 @@ Vector4 MeshAssetViewerPanelBase::GetMaterialSlotVisualizerColor(size_t subMeshI
 	return GetMaterialSlotColor(subMeshIndex);
 }
 
-Material* MeshAssetViewerPanelBase::CreateInitializedPreviewDefaultMaterial(MeshUnit* subMesh, const char* materialName) const
+Material* MeshAssetViewerPanelBase::CreateInitializedPreviewDefaultMaterial(MeshGeometry* subMesh, const char* materialName) const
 {
 	return CreateInitializedGridMaterial(subMesh, materialName ? materialName : "__Editor__MeshViewerDefaultGridMaterial", GetPreviewDefaultMaterialColor());
 }
 
-Material* MeshAssetViewerPanelBase::CreateInitializedMaterialSlotVisualizerMaterial(MeshUnit* subMesh, const char* materialName) const
+Material* MeshAssetViewerPanelBase::CreateInitializedMaterialSlotVisualizerMaterial(MeshGeometry* subMesh, const char* materialName) const
 {
 	return CreateInitializedGridMaterial(subMesh, materialName ? materialName : "__Editor__MeshViewerMaterialSlotVisualizer", Vector4(1.f));
 }

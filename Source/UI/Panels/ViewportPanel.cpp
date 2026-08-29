@@ -15,8 +15,8 @@
 #include "Goknar/Geometry/Box.h"
 #include "Goknar/Managers/InputManager.h"
 #include "Goknar/Model/InstancedStaticMesh.h"
-#include "Goknar/Model/MeshContainer.h"
-#include "Goknar/Model/MeshUnit.h"
+#include "Goknar/Model/Mesh.h"
+#include "Goknar/Model/MeshGeometry.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/ObjectBase.h"
 #include "Goknar/Renderer/RenderTarget.h"
@@ -192,7 +192,7 @@ namespace
 			object->GetName().find("__Editor__") != std::string::npos;
 	}
 
-	bool HasMeshColliderData(const MeshUnit* meshUnit)
+	bool HasMeshColliderData(const MeshGeometry* meshUnit)
 	{
 		const VertexArray* vertices = meshUnit ? meshUnit->GetVerticesPointer() : nullptr;
 		const FaceArray* faces = meshUnit ? meshUnit->GetFacesPointer() : nullptr;
@@ -298,7 +298,7 @@ namespace
 
 			const Matrix& transformationMatrix = meshComponent->GetComponentToWorldTransformationMatrix();
 			const auto& subMeshes = mesh->GetSubMeshes();
-			for (const MeshUnit* subMesh : subMeshes)
+			for (const MeshGeometry* subMesh : subMeshes)
 			{
 				if (!HasMeshColliderData(subMesh))
 				{
@@ -336,8 +336,8 @@ namespace
 				continue;
 			}
 
-			InstancedStaticMeshContainer* meshContainer = meshInstance->GetMesh();
-			InstancedStaticMesh* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
+			InstancedStaticMesh* meshContainer = meshInstance->GetMesh();
+			InstancedStaticMeshLOD* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
 			if (!mesh)
 			{
 				continue;
@@ -348,7 +348,7 @@ namespace
 			{
 				const Matrix transformationMatrix = mesh->GetInstanceTransformationAt(instanceIndex) * componentTransformationMatrix;
 				const auto& subMeshes = mesh->GetSubMeshes();
-				for (const MeshUnit* subMesh : subMeshes)
+				for (const MeshGeometry* subMesh : subMeshes)
 				{
 					if (!HasMeshColliderData(subMesh))
 					{
@@ -453,7 +453,7 @@ namespace
 
 			const Matrix& transformationMatrix = meshComponent->GetComponentToWorldTransformationMatrix();
 			const auto& subMeshes = mesh->GetSubMeshes();
-			for (const MeshUnit* subMesh : subMeshes)
+			for (const MeshGeometry* subMesh : subMeshes)
 			{
 				if (subMesh)
 				{
@@ -485,8 +485,8 @@ namespace
 				continue;
 			}
 
-			InstancedStaticMeshContainer* meshContainer = meshInstance->GetMesh();
-			InstancedStaticMesh* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
+			InstancedStaticMesh* meshContainer = meshInstance->GetMesh();
+			InstancedStaticMeshLOD* mesh = meshContainer ? meshContainer->GetLOD(0) : nullptr;
 			if (!mesh)
 			{
 				continue;
@@ -497,7 +497,7 @@ namespace
 			{
 				const Matrix transformationMatrix = mesh->GetInstanceTransformationAt(instanceIndex) * componentTransformationMatrix;
 				const auto& subMeshes = mesh->GetSubMeshes();
-				for (const MeshUnit* subMesh : subMeshes)
+				for (const MeshGeometry* subMesh : subMeshes)
 				{
 					if (subMesh)
 					{
@@ -1210,7 +1210,7 @@ void ViewportPanel::LoadTransformGizmoMesh()
 		return;
 	}
 
-	transformGizmoMesh_ = EditorUtils::GetEditorContent<StaticMeshContainer>("Meshes/SM_Gizmo.fbx");
+	transformGizmoMesh_ = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_Gizmo.fbx");
 }
 
 void ViewportPanel::UpdateTransformGizmo()

@@ -414,7 +414,7 @@ namespace
 		return true;
 	}
 
-	void CreateNavigationDebugMaterials(StaticMesh* mesh, const Vector4& baseColor, std::vector<Material*>& outMaterials)
+	void CreateNavigationDebugMaterials(StaticMeshLOD* mesh, const Vector4& baseColor, std::vector<Material*>& outMaterials)
 	{
 		outMaterials.clear();
 		if (!mesh)
@@ -422,9 +422,9 @@ namespace
 			return;
 		}
 
-		const std::vector<MeshUnit*>& subMeshes = mesh->GetSubMeshes();
+		const std::vector<MeshGeometry*>& subMeshes = mesh->GetSubMeshes();
 		outMaterials.reserve(subMeshes.size());
-		for (MeshUnit* subMesh : subMeshes)
+		for (MeshGeometry* subMesh : subMeshes)
 		{
 			if (!subMesh)
 			{
@@ -467,10 +467,10 @@ NavigationPanel::NavigationPanel(EditorHUD* hud) :
 		return;
 	}
 
-	triangleMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_Triangle.fbx");
-	lineMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_Line.fbx");
-	cornerSphereMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_LowPolyUnitSphere.fbx");
-	gizmoArrowMesh_ = resourceManager->GetEngineContent<StaticMeshContainer>("Navigation/Meshes/SM_LowPolyArrow.fbx");
+	triangleMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_Triangle.fbx");
+	lineMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_Line.fbx");
+	cornerSphereMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_LowPolyUnitSphere.fbx");
+	gizmoArrowMesh_ = resourceManager->GetEngineContent<StaticMesh>("Navigation/Meshes/SM_LowPolyArrow.fbx");
 
 	CreateNavigationDebugMaterials(triangleMesh_ ? triangleMesh_->GetLOD(0) : nullptr, kDefaultNodeColor, triangleSourceMaterials_);
 	CreateNavigationDebugMaterials(lineMesh_ ? lineMesh_->GetLOD(0) : nullptr, kLineColor, lineSourceMaterials_);

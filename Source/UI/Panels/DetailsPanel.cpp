@@ -17,7 +17,7 @@
 #include "Goknar/Managers/ConfigManager.h"
 #include "Goknar/Managers/ResourceManager.h"
 #include "Goknar/Contents/Image.h"
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
@@ -86,17 +86,17 @@ namespace
 		scene->RebuildNavigationMesh(defaultSettings);
 	}
 
-	StaticMesh* GetStaticMeshLOD0(StaticMeshComponent* staticMeshComponent)
+	StaticMeshLOD* GetStaticMeshLOD0(StaticMeshComponent* staticMeshComponent)
 	{
 		StaticMeshInstance* meshInstance = staticMeshComponent ? staticMeshComponent->GetMeshInstance() : nullptr;
-		StaticMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+		StaticMesh* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
 		return meshContainer ? meshContainer->GetLOD(0) : nullptr;
 	}
 
-	SkeletalMesh* GetSkeletalMeshLOD0(SkeletalMeshComponent* skeletalMeshComponent)
+	SkeletalMeshLOD* GetSkeletalMeshLOD0(SkeletalMeshComponent* skeletalMeshComponent)
 	{
 		SkeletalMeshInstance* meshInstance = skeletalMeshComponent ? skeletalMeshComponent->GetMeshInstance() : nullptr;
-		SkeletalMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+		SkeletalMesh* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
 		return meshContainer ? meshContainer->GetLOD(0) : nullptr;
 	}
 
@@ -1081,7 +1081,7 @@ namespace
 	}
 
 	void DrawTriangleMeshCollisionDebug(
-		const StaticMesh* mesh,
+		const StaticMeshLOD* mesh,
 		const Vector3& position,
 		const Quaternion& rotation,
 		const Vector3& scaling,
@@ -1094,7 +1094,7 @@ namespace
 
 		DebugObject* collisionObject = new DebugObject();
 		collisionObject->SetName("DebugObject_TriangleMeshCollisionComponent");
-		DebugDrawer::DrawMeshUnit(mesh->GetSubMeshes()[0], Colorf::Blue, 1.f, -1.f, collisionObject);
+		DebugDrawer::DrawMeshGeometry(mesh->GetSubMeshes()[0], Colorf::Blue, 1.f, -1.f, collisionObject);
 		collisionObject->SetWorldPosition(position, false);
 		collisionObject->SetWorldRotation(rotation, false);
 		collisionObject->SetWorldScaling(scaling);
@@ -1296,7 +1296,7 @@ void DetailsPanel::SetupReflections()
 			}
 
 			StaticMeshComponent* staticMeshComponent = physicsObject->GetFirstComponentOfType<StaticMeshComponent>();
-			StaticMesh* staticMesh = GetStaticMeshLOD0(staticMeshComponent);
+			StaticMeshLOD* staticMesh = GetStaticMeshLOD0(staticMeshComponent);
 			if (staticMesh && staticMesh->GetAABB().GetSize() != Vector3::ZeroVector)
 			{
 				boxCollisionComponent->SetHalfSize(staticMesh->GetAABB().GetSize() * 0.5f);
@@ -1374,7 +1374,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 		break;
 	case DetailsAssetSelectionTarget::StaticMesh:
 	{
-		StaticMeshContainer* newStaticMeshContainer = engine->GetResourceManager()->GetContent<StaticMeshContainer>(normalizedPath);
+		StaticMesh* newStaticMeshContainer = engine->GetResourceManager()->GetContent<StaticMesh>(normalizedPath);
 		if (newStaticMeshContainer)
 		{
 			for (void* assetSelectionComponent : assetSelectionComponents)
@@ -1399,7 +1399,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			StaticMeshComponent* staticMeshComponent = (StaticMeshComponent*)assetSelectionComponent;
 			std::vector<std::string> materialPaths = SceneParser::GetStaticMeshComponentMaterialPaths(staticMeshComponent);
 
-			StaticMesh* mesh = GetStaticMeshLOD0(staticMeshComponent);
+			StaticMeshLOD* mesh = GetStaticMeshLOD0(staticMeshComponent);
 			const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
 
 			if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
@@ -1414,7 +1414,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 	}
 	case DetailsAssetSelectionTarget::SkeletalMesh:
 	{
-		SkeletalMeshContainer* newSkeletalMeshContainer = engine->GetResourceManager()->GetContent<SkeletalMeshContainer>(normalizedPath);
+		SkeletalMesh* newSkeletalMeshContainer = engine->GetResourceManager()->GetContent<SkeletalMesh>(normalizedPath);
 		if (newSkeletalMeshContainer)
 		{
 			for (void* assetSelectionComponent : assetSelectionComponents)
@@ -1439,7 +1439,7 @@ void DetailsPanel::OnAssetSelected(const std::string& path)
 			SkeletalMeshComponent* skeletalMeshComponent = (SkeletalMeshComponent*)assetSelectionComponent;
 			std::vector<std::string> materialPaths = SceneParser::GetSkeletalMeshComponentMaterialPaths(skeletalMeshComponent);
 
-			SkeletalMesh* mesh = GetSkeletalMeshLOD0(skeletalMeshComponent);
+			SkeletalMeshLOD* mesh = GetSkeletalMeshLOD0(skeletalMeshComponent);
 			const size_t subMeshCount = mesh ? mesh->GetSubMeshes().size() : 0;
 
 			if (assetSelectionSubMeshIndex_ >= 0 && assetSelectionSubMeshIndex_ < static_cast<int>(subMeshCount))
@@ -2351,7 +2351,7 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				[](StaticMeshComponent* staticMeshComponent)
 				{
 					StaticMeshInstance* meshInstance = staticMeshComponent->GetMeshInstance();
-					StaticMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+					StaticMesh* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
 					return meshContainer ? ToDisplayContentPath(meshContainer->GetPath()) : std::string();
 				});
 
@@ -2396,7 +2396,7 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				[](SkeletalMeshComponent* skeletalMeshComponent)
 				{
 					SkeletalMeshInstance* meshInstance = skeletalMeshComponent->GetMeshInstance();
-					SkeletalMeshContainer* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+					SkeletalMesh* meshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
 					return meshContainer ? ToDisplayContentPath(meshContainer->GetPath()) : std::string();
 				});
 
@@ -2771,7 +2771,7 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				movingTriangleMeshCollisionComponents,
 				[](MovingTriangleMeshCollisionComponent* component)
 				{
-					const StaticMesh* mesh = component->GetMesh();
+					const StaticMeshLOD* mesh = component->GetMesh();
 					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
 				});
 		}
@@ -2784,7 +2784,7 @@ void DetailsPanel::DrawMultipleObjectDetails()
 				nonMovingTriangleMeshCollisionComponents,
 				[](NonMovingTriangleMeshCollisionComponent* component)
 				{
-					const StaticMesh* mesh = component->GetMesh();
+					const StaticMeshLOD* mesh = component->GetMesh();
 					return mesh ? ToDisplayContentPath(mesh->GetPath()) : std::string();
 				});
 		}
@@ -3188,8 +3188,8 @@ void DetailsPanel::DrawStaticMeshComponentDetails(StaticMeshComponent* staticMes
 
 	ImGui::SameLine();
 	StaticMeshInstance* staticMeshInstance = staticMeshComponent->GetMeshInstance();
-	StaticMeshContainer* staticMeshContainer = staticMeshInstance ? staticMeshInstance->GetMesh() : nullptr;
-	StaticMesh* staticMesh = staticMeshContainer ? staticMeshContainer->GetLOD(0) : nullptr;
+	StaticMesh* staticMeshContainer = staticMeshInstance ? staticMeshInstance->GetMesh() : nullptr;
+	StaticMeshLOD* staticMesh = staticMeshContainer ? staticMeshContainer->GetLOD(0) : nullptr;
 	ImGui::Text(staticMeshContainer ? staticMeshContainer->GetPath().substr(ContentDir.size()).c_str() : "");
 
 	std::string specialName = std::string("Select asset") + specialPostfix;
@@ -3274,8 +3274,8 @@ void DetailsPanel::DrawSkeletalMeshComponentDetails(SkeletalMeshComponent* skele
 
 	ImGui::SameLine();
 	SkeletalMeshInstance* skeletalMeshInstance = skeletalMeshComponent->GetMeshInstance();
-	SkeletalMeshContainer* skeletalMeshContainer = skeletalMeshInstance ? skeletalMeshInstance->GetMesh() : nullptr;
-	SkeletalMesh* skeletalMesh = skeletalMeshContainer ? skeletalMeshContainer->GetLOD(0) : nullptr;
+	SkeletalMesh* skeletalMeshContainer = skeletalMeshInstance ? skeletalMeshInstance->GetMesh() : nullptr;
+	SkeletalMeshLOD* skeletalMesh = skeletalMeshContainer ? skeletalMeshContainer->GetLOD(0) : nullptr;
 	ImGui::Text(skeletalMeshContainer ? skeletalMeshContainer->GetPath().substr(ContentDir.size()).c_str() : "");
 
 	std::string specialName = std::string("Select asset") + specialPostfix;
@@ -3655,7 +3655,7 @@ void DetailsPanel::DrawMovingTriangleMeshCollisionComponentDetails(MovingTriangl
 	ImGui::Text("Mesh: ");
 
 	ImGui::SameLine();
-	const StaticMesh* mesh = movingTriangleMeshCollisionComponent->GetMesh();
+	const StaticMeshLOD* mesh = movingTriangleMeshCollisionComponent->GetMesh();
 	ImGui::Text(mesh ? mesh->GetPath().substr(ContentDir.size()).c_str() : "");
 }
 
@@ -3665,7 +3665,7 @@ void DetailsPanel::DrawNonMovingTriangleMeshCollisionComponentDetails(NonMovingT
 	ImGui::Text("Mesh: ");
 
 	ImGui::SameLine();
-	const StaticMesh* mesh = nonMovingTriangleMeshCollisionComponent->GetMesh();
+	const StaticMeshLOD* mesh = nonMovingTriangleMeshCollisionComponent->GetMesh();
 	ImGui::Text(mesh ? mesh->GetPath().substr(ContentDir.size()).c_str() : "");
 
 }

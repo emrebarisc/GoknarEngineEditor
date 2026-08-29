@@ -104,6 +104,15 @@ function(goknar_configure_editor_game_project_sources OUT_PROJECT_SOURCES OUT_RE
 
             set(HEADER_HAS_CANDIDATE FALSE)
             foreach(CLASS_DECLARATION ${CLASS_DECLARATIONS})
+                string(FIND "${PROJECT_HEADER_CONTENT}" "${CLASS_DECLARATION}" CLASS_DECLARATION_OFFSET)
+                if(CLASS_DECLARATION_OFFSET GREATER 0)
+                    string(SUBSTRING "${PROJECT_HEADER_CONTENT}" 0 ${CLASS_DECLARATION_OFFSET} CLASS_DECLARATION_PREFIX)
+                    string(REGEX MATCH "template[ \t\r\n]*<[^;{}]*>[ \t\r\n]*$" PRECEDING_TEMPLATE_DECLARATION "${CLASS_DECLARATION_PREFIX}")
+                    if(PRECEDING_TEMPLATE_DECLARATION)
+                        continue()
+                    endif()
+                endif()
+
                 string(REGEX REPLACE "^.*(class|struct)[ \t\r\n]+" "" CLASS_TAIL "${CLASS_DECLARATION}")
                 string(REGEX REPLACE "^GOKNAR_API[ \t\r\n]+" "" CLASS_TAIL "${CLASS_TAIL}")
                 string(REGEX REPLACE "^[ \t\r\n]+" "" CLASS_TAIL "${CLASS_TAIL}")

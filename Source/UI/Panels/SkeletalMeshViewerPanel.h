@@ -2,11 +2,11 @@
 
 #include "MeshAssetViewerPanelBase.h"
 
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 
 class MaterialInstance;
 class SkeletalMeshComponent;
-class SkeletalMeshUnit;
+class SkeletalMeshGeometry;
 
 class SkeletalMeshViewerPanel : public MeshAssetViewerPanelBase
 {
@@ -14,7 +14,7 @@ public:
 	explicit SkeletalMeshViewerPanel(EditorHUD* hud);
 	~SkeletalMeshViewerPanel() override;
 
-	void SetTargetSkeletalMesh(SkeletalMeshContainer* skeletalMeshContainer);
+	void SetTargetSkeletalMesh(SkeletalMesh* skeletalMeshContainer);
 
 private:
 	bool HasCurrentMesh() const override;
@@ -50,15 +50,15 @@ private:
 	void ClearMaterialSlotVisualizerMaterial();
 	void CapturePreviewSourceMaterialsIfNeeded();
 	void RestorePreviewSourceMaterials();
-	SkeletalMeshUnit* GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const;
-	SkeletalMeshUnit* GetSubMesh(size_t subMeshIndex) const;
+	SkeletalMeshGeometry* GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const;
+	SkeletalMeshGeometry* GetSubMesh(size_t subMeshIndex) const;
 	Material* GetPreviewSourceMaterial(size_t subMeshIndex) const;
-	Material* GetPreviewDefaultMaterial(SkeletalMeshUnit* subMesh) const;
-	Material* GetMaterialSlotVisualizerMaterial(SkeletalMeshUnit* subMesh) const;
+	Material* GetPreviewDefaultMaterial(SkeletalMeshGeometry* subMesh) const;
+	Material* GetMaterialSlotVisualizerMaterial(SkeletalMeshGeometry* subMesh) const;
 
 	SkeletalMeshComponent* skeletalMeshComponent_{ nullptr };
-	SkeletalMeshContainer* targetSkeletalMeshContainer_{ nullptr };
-	SkeletalMesh* targetSkeletalMesh_{ nullptr };
+	SkeletalMesh* targetSkeletalMeshContainer_{ nullptr };
+	SkeletalMeshLOD* targetSkeletalMesh_{ nullptr };
 	mutable Material* previewDefaultMaterial_{ nullptr };
 	mutable Material* materialSlotVisualizerMaterial_{ nullptr };
 	std::vector<Material*> previewSourceMaterials_{};

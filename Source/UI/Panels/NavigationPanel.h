@@ -7,7 +7,7 @@
 #include "Goknar/Navigation/NavigationTree.h"
 #include "Goknar/Navigation/NavigationTypes.h"
 #include "Goknar/Navigation/PathFinder.h"
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 #include "UI/Panels/EditorPanel.h"
 
 class Material;
@@ -124,10 +124,10 @@ private:
 	Vector3 dragStartGizmoOrigin_{ Vector3::ZeroVector };
 	float dragStartAxisParameter_{ 0.f };
 
-	StaticMeshContainer* triangleMesh_{ nullptr };
-	StaticMeshContainer* lineMesh_{ nullptr };
-	StaticMeshContainer* cornerSphereMesh_{ nullptr };
-	StaticMeshContainer* gizmoArrowMesh_{ nullptr };
+	StaticMesh* triangleMesh_{ nullptr };
+	StaticMesh* lineMesh_{ nullptr };
+	StaticMesh* cornerSphereMesh_{ nullptr };
+	StaticMesh* gizmoArrowMesh_{ nullptr };
 	std::vector<Material*> triangleSourceMaterials_;
 	std::vector<Material*> lineSourceMaterials_;
 	std::vector<Material*> cornerSphereSourceMaterials_;

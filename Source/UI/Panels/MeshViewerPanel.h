@@ -2,10 +2,10 @@
 
 #include "MeshAssetViewerPanelBase.h"
 
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 
 class MaterialInstance;
-class MeshUnit;
+class MeshGeometry;
 class StaticMeshComponent;
 
 class MeshViewerPanel : public MeshAssetViewerPanelBase
@@ -14,7 +14,7 @@ public:
 	explicit MeshViewerPanel(EditorHUD* hud);
 	~MeshViewerPanel() override;
 
-	void SetTargetStaticMesh(StaticMeshContainer* staticMeshContainer);
+	void SetTargetStaticMesh(StaticMesh* staticMeshContainer);
 
 private:
 	bool HasCurrentMesh() const override;
@@ -46,14 +46,14 @@ private:
 	void ClearPreviewMaterialOverrides();
 	void ClearPreviewDefaultMaterial();
 	void ClearMaterialSlotVisualizerMaterial();
-	MeshUnit* GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const;
-	MeshUnit* GetSubMesh(size_t subMeshIndex) const;
-	Material* GetPreviewDefaultMaterial(MeshUnit* subMesh) const;
-	Material* GetMaterialSlotVisualizerMaterial(MeshUnit* subMesh) const;
+	MeshGeometry* GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const;
+	MeshGeometry* GetSubMesh(size_t subMeshIndex) const;
+	Material* GetPreviewDefaultMaterial(MeshGeometry* subMesh) const;
+	Material* GetMaterialSlotVisualizerMaterial(MeshGeometry* subMesh) const;
 
 	StaticMeshComponent* staticMeshComponent_{ nullptr };
-	StaticMeshContainer* targetStaticMeshContainer_{ nullptr };
-	StaticMesh* targetStaticMesh_{ nullptr };
+	StaticMesh* targetStaticMeshContainer_{ nullptr };
+	StaticMeshLOD* targetStaticMesh_{ nullptr };
 	mutable Material* previewDefaultMaterial_{ nullptr };
 	mutable Material* materialSlotVisualizerMaterial_{ nullptr };
 };

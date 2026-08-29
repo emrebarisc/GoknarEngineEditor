@@ -6,7 +6,7 @@
 #include "Goknar/Components/SkeletalMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
-#include "Goknar/Model/MeshContainer.h"
+#include "Goknar/Model/Mesh.h"
 #include "Goknar/Model/SkeletalMesh.h"
 #include "Goknar/Model/SkeletalMeshInstance.h"
 #include "Goknar/Renderer/Renderer.h"
@@ -15,19 +15,19 @@ namespace
 {
 	constexpr unsigned int SkeletalMeshViewerRenderMask = 0x40000000;
 
-	bool HasSkeletalMeshSelection(const SkeletalMesh* skeletalMesh)
+	bool HasSkeletalMeshSelection(const SkeletalMeshLOD* skeletalMesh)
 	{
 		return skeletalMesh && !skeletalMesh->GetSubMeshes().empty();
 	}
 
-	bool IsSkeletalMeshReadyForPreview(const SkeletalMesh* skeletalMesh)
+	bool IsSkeletalMeshReadyForPreview(const SkeletalMeshLOD* skeletalMesh)
 	{
 		if (!HasSkeletalMeshSelection(skeletalMesh))
 		{
 			return false;
 		}
 
-		for (const SkeletalMeshUnit* subMesh : skeletalMesh->GetSubMeshes())
+		for (const SkeletalMeshGeometry* subMesh : skeletalMesh->GetSubMeshes())
 		{
 			if (!subMesh || subMesh->GetVertexCount() == 0 || subMesh->GetFaceCount() == 0)
 			{
@@ -62,7 +62,7 @@ SkeletalMeshViewerPanel::~SkeletalMeshViewerPanel()
 	ClearMaterialSlotVisualizerMaterial();
 }
 
-void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMeshContainer* skeletalMeshContainer)
+void SkeletalMeshViewerPanel::SetTargetSkeletalMesh(SkeletalMesh* skeletalMeshContainer)
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
@@ -176,19 +176,19 @@ size_t SkeletalMeshViewerPanel::GetSubMeshCount() const
 
 std::string SkeletalMeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
 {
-	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetName() : "";
 }
 
 size_t SkeletalMeshViewerPanel::GetSubMeshVertexCount(size_t subMeshIndex) const
 {
-	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetVertexCount() : 0;
 }
 
 size_t SkeletalMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 {
-	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetFaceCount() : 0;
 }
 
@@ -199,19 +199,19 @@ size_t SkeletalMeshViewerPanel::GetLODSubMeshCount(size_t LODIndex) const
 		return 0;
 	}
 
-	SkeletalMesh* LODMesh = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
+	SkeletalMeshLOD* LODMesh = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
 	return LODMesh ? LODMesh->GetSubMeshes().size() : 0;
 }
 
 std::string SkeletalMeshViewerPanel::GetLODSubMeshName(size_t LODIndex, size_t subMeshIndex) const
 {
-	SkeletalMeshUnit* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
+	SkeletalMeshGeometry* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
 	return subMesh ? subMesh->GetName() : "";
 }
 
 bool SkeletalMeshViewerPanel::RebuildMaterial(size_t LODIndex, size_t subMeshIndex, const std::string& materialPath)
 {
-	SkeletalMeshUnit* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
+	SkeletalMeshGeometry* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
 	if (!targetSkeletalMeshContainer_ || !subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
@@ -243,7 +243,7 @@ MaterialInstance* SkeletalMeshViewerPanel::CreatePreviewMaterialInstance(size_t 
 		return nullptr;
 	}
 
-	SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	Material* material = GetPreviewSourceMaterial(subMeshIndex);
 	if (!material && subMesh)
 	{
@@ -298,7 +298,7 @@ void SkeletalMeshViewerPanel::SetPreviewMaterial(size_t subMeshIndex, MaterialIn
 
 	meshInstance->SetMaterial(static_cast<int>(subMeshIndex), materialInstance);
 
-	if (SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex))
+	if (SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex))
 	{
 		Material* parentMaterial = materialInstance ? materialInstance->GetParentMaterial() : nullptr;
 		subMesh->SetMaterial(parentMaterial ? parentMaterial : GetPreviewSourceMaterial(subMeshIndex));
@@ -339,7 +339,7 @@ void SkeletalMeshViewerPanel::InitializeCurrentMeshMaterials()
 		return;
 	}
 
-	for (SkeletalMeshUnit* subMesh : targetSkeletalMesh_->GetSubMeshes())
+	for (SkeletalMeshGeometry* subMesh : targetSkeletalMesh_->GetSubMeshes())
 	{
 		InitializeMaterialForSubMesh(subMesh);
 	}
@@ -373,7 +373,7 @@ void SkeletalMeshViewerPanel::DrawAdditionalSidePanelContent()
 		return;
 	}
 
-	SkeletalMesh* animationMesh = targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetLOD(0) : targetSkeletalMesh_;
+	SkeletalMeshLOD* animationMesh = targetSkeletalMeshContainer_ ? targetSkeletalMeshContainer_->GetLOD(0) : targetSkeletalMesh_;
 	if (!animationMesh)
 	{
 		ImGui::TextDisabled("No animations found.");
@@ -410,8 +410,8 @@ void SkeletalMeshViewerPanel::ClearPreviewMaterialOverrides()
 	}
 
 	SkeletalMeshInstance* meshInstance = skeletalMeshComponent_->GetMeshInstance();
-	SkeletalMeshContainer* currentMeshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
-	SkeletalMesh* currentMesh = currentMeshContainer ? currentMeshContainer->GetLOD(0) : nullptr;
+	SkeletalMesh* currentMeshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+	SkeletalMeshLOD* currentMesh = currentMeshContainer ? currentMeshContainer->GetLOD(0) : nullptr;
 	if (!meshInstance || !currentMesh)
 	{
 		return;
@@ -447,7 +447,7 @@ void SkeletalMeshViewerPanel::CapturePreviewSourceMaterialsIfNeeded()
 	previewSourceMaterials_.resize(subMeshCount, nullptr);
 	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount; ++subMeshIndex)
 	{
-		SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex);
+		SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 		previewSourceMaterials_[subMeshIndex] = subMesh ? subMesh->GetMaterial() : nullptr;
 	}
 
@@ -464,7 +464,7 @@ void SkeletalMeshViewerPanel::RestorePreviewSourceMaterials()
 	const size_t subMeshCount = targetSkeletalMesh_->GetSubMeshes().size();
 	for (size_t subMeshIndex = 0; subMeshIndex < subMeshCount && subMeshIndex < previewSourceMaterials_.size(); ++subMeshIndex)
 	{
-		if (SkeletalMeshUnit* subMesh = GetSubMesh(subMeshIndex))
+		if (SkeletalMeshGeometry* subMesh = GetSubMesh(subMeshIndex))
 		{
 			subMesh->SetMaterial(previewSourceMaterials_[subMeshIndex]);
 		}
@@ -473,14 +473,14 @@ void SkeletalMeshViewerPanel::RestorePreviewSourceMaterials()
 	previewMaterialsApplied_ = false;
 }
 
-SkeletalMeshUnit* SkeletalMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const
+SkeletalMeshGeometry* SkeletalMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const
 {
 	if (!targetSkeletalMeshContainer_ || GetLODCount() <= LODIndex)
 	{
 		return nullptr;
 	}
 
-	SkeletalMesh* LODMesh = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
+	SkeletalMeshLOD* LODMesh = targetSkeletalMeshContainer_->GetLOD((int)LODIndex);
 	if (!LODMesh || subMeshIndex >= LODMesh->GetSubMeshes().size())
 	{
 		return nullptr;
@@ -489,7 +489,7 @@ SkeletalMeshUnit* SkeletalMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t
 	return LODMesh->GetSubMeshes()[subMeshIndex];
 }
 
-SkeletalMeshUnit* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
+SkeletalMeshGeometry* SkeletalMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetSkeletalMesh_ || subMeshIndex >= targetSkeletalMesh_->GetSubMeshes().size())
 	{
@@ -509,7 +509,7 @@ Material* SkeletalMeshViewerPanel::GetPreviewSourceMaterial(size_t subMeshIndex)
 	return nullptr;
 }
 
-Material* SkeletalMeshViewerPanel::GetPreviewDefaultMaterial(SkeletalMeshUnit* subMesh) const
+Material* SkeletalMeshViewerPanel::GetPreviewDefaultMaterial(SkeletalMeshGeometry* subMesh) const
 {
 	if (!previewDefaultMaterial_)
 	{
@@ -519,7 +519,7 @@ Material* SkeletalMeshViewerPanel::GetPreviewDefaultMaterial(SkeletalMeshUnit* s
 	return previewDefaultMaterial_;
 }
 
-Material* SkeletalMeshViewerPanel::GetMaterialSlotVisualizerMaterial(SkeletalMeshUnit* subMesh) const
+Material* SkeletalMeshViewerPanel::GetMaterialSlotVisualizerMaterial(SkeletalMeshGeometry* subMesh) const
 {
 	if (!materialSlotVisualizerMaterial_)
 	{

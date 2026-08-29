@@ -4,8 +4,8 @@
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Materials/Material.h"
 #include "Goknar/Materials/MaterialInstance.h"
-#include "Goknar/Model/MeshContainer.h"
-#include "Goknar/Model/MeshUnit.h"
+#include "Goknar/Model/Mesh.h"
+#include "Goknar/Model/MeshGeometry.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
 #include "Goknar/Renderer/Renderer.h"
@@ -14,19 +14,19 @@ namespace
 {
 	constexpr unsigned int StaticMeshViewerRenderMask = 0x10000000;
 
-	bool HasStaticMeshSelection(const StaticMesh* staticMesh)
+	bool HasStaticMeshSelection(const StaticMeshLOD* staticMesh)
 	{
 		return staticMesh && !staticMesh->GetSubMeshes().empty();
 	}
 
-	bool IsStaticMeshReadyForPreview(const StaticMesh* staticMesh)
+	bool IsStaticMeshReadyForPreview(const StaticMeshLOD* staticMesh)
 	{
 		if (!HasStaticMeshSelection(staticMesh))
 		{
 			return false;
 		}
 
-		for (const MeshUnit* subMesh : staticMesh->GetSubMeshes())
+		for (const MeshGeometry* subMesh : staticMesh->GetSubMeshes())
 		{
 			if (!subMesh || subMesh->GetVertexCount() == 0 || subMesh->GetFaceCount() == 0)
 			{
@@ -61,7 +61,7 @@ StaticMeshViewerPanel::~StaticMeshViewerPanel()
 	ClearMaterialSlotVisualizerMaterial();
 }
 
-void StaticMeshViewerPanel::SetTargetStaticMesh(StaticMeshContainer* staticMeshContainer)
+void StaticMeshViewerPanel::SetTargetStaticMesh(StaticMesh* staticMeshContainer)
 {
 	ClearPreviewMaterialOverrides();
 	ClearPreviewDefaultMaterial();
@@ -175,19 +175,19 @@ size_t StaticMeshViewerPanel::GetSubMeshCount() const
 
 std::string StaticMeshViewerPanel::GetSubMeshName(size_t subMeshIndex) const
 {
-	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	MeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetName() : "";
 }
 
 size_t StaticMeshViewerPanel::GetSubMeshVertexCount(size_t subMeshIndex) const
 {
-	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	MeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetVertexCount() : 0;
 }
 
 size_t StaticMeshViewerPanel::GetSubMeshFaceCount(size_t subMeshIndex) const
 {
-	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	MeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	return subMesh ? subMesh->GetFaceCount() : 0;
 }
 
@@ -198,19 +198,19 @@ size_t StaticMeshViewerPanel::GetLODSubMeshCount(size_t LODIndex) const
 		return 0;
 	}
 
-	StaticMesh* LODMesh = targetStaticMeshContainer_->GetLOD((int)LODIndex);
+	StaticMeshLOD* LODMesh = targetStaticMeshContainer_->GetLOD((int)LODIndex);
 	return LODMesh ? LODMesh->GetSubMeshes().size() : 0;
 }
 
 std::string StaticMeshViewerPanel::GetLODSubMeshName(size_t LODIndex, size_t subMeshIndex) const
 {
-	MeshUnit* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
+	MeshGeometry* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
 	return subMesh ? subMesh->GetName() : "";
 }
 
 bool StaticMeshViewerPanel::RebuildMaterial(size_t LODIndex, size_t subMeshIndex, const std::string& materialPath)
 {
-	MeshUnit* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
+	MeshGeometry* subMesh = GetLODSubMesh(LODIndex, subMeshIndex);
 	if (!targetStaticMeshContainer_ || !subMesh || !DoesMaterialAssetExist(materialPath))
 	{
 		return false;
@@ -231,7 +231,7 @@ MaterialInstance* StaticMeshViewerPanel::CreatePreviewMaterialInstance(size_t su
 		return nullptr;
 	}
 
-	MeshUnit* subMesh = GetSubMesh(subMeshIndex);
+	MeshGeometry* subMesh = GetSubMesh(subMeshIndex);
 	Material* material = subMesh ? subMesh->GetMaterial() : nullptr;
 	if (IsMaterialSlotVisualizerEnabled())
 	{
@@ -292,7 +292,7 @@ void StaticMeshViewerPanel::InitializeCurrentMeshMaterials()
 		return;
 	}
 
-	for (MeshUnit* subMesh : targetStaticMesh_->GetSubMeshes())
+	for (MeshGeometry* subMesh : targetStaticMesh_->GetSubMeshes())
 	{
 		InitializeMaterialForSubMesh(subMesh);
 	}
@@ -323,8 +323,8 @@ void StaticMeshViewerPanel::ClearPreviewMaterialOverrides()
 	}
 
 	StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance();
-	StaticMeshContainer* currentMeshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
-	StaticMesh* currentMesh = currentMeshContainer ? currentMeshContainer->GetLOD(0) : nullptr;
+	StaticMesh* currentMeshContainer = meshInstance ? meshInstance->GetMesh() : nullptr;
+	StaticMeshLOD* currentMesh = currentMeshContainer ? currentMeshContainer->GetLOD(0) : nullptr;
 	if (!meshInstance || !currentMesh)
 	{
 		return;
@@ -346,14 +346,14 @@ void StaticMeshViewerPanel::ClearMaterialSlotVisualizerMaterial()
 	DestroyPreviewDefaultMaterial(materialSlotVisualizerMaterial_);
 }
 
-MeshUnit* StaticMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const
+MeshGeometry* StaticMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t subMeshIndex) const
 {
 	if (!targetStaticMeshContainer_ || GetLODCount() <= LODIndex)
 	{
 		return nullptr;
 	}
 
-	StaticMesh* LODMesh = targetStaticMeshContainer_->GetLOD((int)LODIndex);
+	StaticMeshLOD* LODMesh = targetStaticMeshContainer_->GetLOD((int)LODIndex);
 	if (!LODMesh || subMeshIndex >= LODMesh->GetSubMeshes().size())
 	{
 		return nullptr;
@@ -362,7 +362,7 @@ MeshUnit* StaticMeshViewerPanel::GetLODSubMesh(size_t LODIndex, size_t subMeshIn
 	return LODMesh->GetSubMeshes()[subMeshIndex];
 }
 
-MeshUnit* StaticMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
+MeshGeometry* StaticMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 {
 	if (!targetStaticMesh_ || subMeshIndex >= targetStaticMesh_->GetSubMeshes().size())
 	{
@@ -372,7 +372,7 @@ MeshUnit* StaticMeshViewerPanel::GetSubMesh(size_t subMeshIndex) const
 	return targetStaticMesh_->GetSubMeshes()[subMeshIndex];
 }
 
-Material* StaticMeshViewerPanel::GetPreviewDefaultMaterial(MeshUnit* subMesh) const
+Material* StaticMeshViewerPanel::GetPreviewDefaultMaterial(MeshGeometry* subMesh) const
 {
 	if (!previewDefaultMaterial_)
 	{
@@ -382,7 +382,7 @@ Material* StaticMeshViewerPanel::GetPreviewDefaultMaterial(MeshUnit* subMesh) co
 	return previewDefaultMaterial_;
 }
 
-Material* StaticMeshViewerPanel::GetMaterialSlotVisualizerMaterial(MeshUnit* subMesh) const
+Material* StaticMeshViewerPanel::GetMaterialSlotVisualizerMaterial(MeshGeometry* subMesh) const
 {
 	if (!materialSlotVisualizerMaterial_)
 	{
