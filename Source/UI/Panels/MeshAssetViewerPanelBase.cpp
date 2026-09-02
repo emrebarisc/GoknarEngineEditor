@@ -29,6 +29,7 @@
 #include "UI/EditorHUD.h"
 #include "UI/EditorUtils.h"
 #include "UI/Panels/AssetSelectorPanel.h"
+#include "UI/Panels/ShaderEditor/ShaderEditorPanel.h"
 
 namespace
 {
@@ -888,7 +889,27 @@ void MeshAssetViewerPanelBase::DrawLODMaterialSelector(size_t LODIndex, size_t s
 
 	materialPaths.resize(std::max(materialPaths.size(), subMeshIndex + 1));
 	const std::string& materialPath = materialPaths[subMeshIndex];
-	ImGui::TextWrapped("%s", materialPath.empty() ? "Grid default material (unset)" : materialPath.c_str());
+	if (materialPath.empty())
+	{
+		ImGui::TextDisabled("Grid default material (unset)");
+	}
+	else
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.42f, 0.72f, 1.0f, 1.0f));
+		ImGui::TextWrapped("%s", materialPath.c_str());
+		ImGui::PopStyleColor();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+			ImGui::SetTooltip("Open in Shader Editor");
+		}
+
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+		{
+			OpenMaterialInShaderEditor(materialPath);
+		}
+	}
 
 	if (ImGui::Button("Select Asset"))
 	{
@@ -901,6 +922,26 @@ void MeshAssetViewerPanelBase::DrawLODMaterialSelector(size_t LODIndex, size_t s
 	}
 
 	ImGui::PopID();
+}
+
+void MeshAssetViewerPanelBase::OpenMaterialInShaderEditor(const std::string& materialPath)
+{
+	const std::string relativeMaterialPath = EditorAssetPathUtils::ToContentRelativePath(materialPath);
+	if (relativeMaterialPath.empty() || !DoesMaterialAssetExist(relativeMaterialPath))
+	{
+		return;
+	}
+
+	ShaderEditorPanel* shaderEditorPanel = hud_ ? hud_->GetPanel<ShaderEditorPanel>() : nullptr;
+	if (!shaderEditorPanel)
+	{
+		return;
+	}
+
+	const std::filesystem::path absoluteMaterialPath =
+		std::filesystem::path(EditorAssetPathUtils::GetContentRootPath()) / relativeMaterialPath;
+	shaderEditorPanel->OnMaterialOpened(absoluteMaterialPath.lexically_normal().generic_string());
+	shaderEditorPanel->SetIsOpen(true);
 }
 
 void MeshAssetViewerPanelBase::DrawEmptyViewportMessage(const char* message)

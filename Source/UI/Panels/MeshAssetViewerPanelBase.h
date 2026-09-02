@@ -77,6 +77,7 @@ private:
 	void DrawLODSettings();
 	void DrawLODMaterialSelector(size_t LODIndex, size_t subMeshIndex, std::vector<std::string>& materialPaths);
 	void DrawEmptyViewportMessage(const char* message);
+	void OpenMaterialInShaderEditor(const std::string& materialPath);
 	void ResetCameraToCurrentMesh();
 	void RefreshPreviewMaterialOverrides();
 	void ReloadCurrentLODMaterialPaths();
