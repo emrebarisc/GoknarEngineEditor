@@ -20,6 +20,7 @@
 class RenderTarget;
 class MeshViewerCameraObject;
 class ObjectBase;
+class StaticMesh;
 class StaticMeshComponent;
 class Texture;
 
@@ -109,6 +110,14 @@ private:
     void DrawPreview();
     void DrawMaterialProperties();
     void DrawMaterialFunctionProperties();
+    void SetPreviewStaticMesh(StaticMesh* staticMesh, const std::string& meshPath, bool refreshRenderData);
+    bool SetPreviewMeshFromEditorContent(const char* meshPath, bool refreshRenderData);
+    void ResetPreviewMeshToDefault(bool refreshRenderData);
+    void OnPreviewMeshSelected(const std::string& path);
+    void ClearPreviewMaterialOverrides();
+    void ApplyActiveMaterialToPreviewMesh();
+    void RefreshPreviewRenderData();
+    void ResetPreviewCameraToMesh();
 
     ShaderNode SpawnNode(const std::string& category, const std::string& name, ImVec2 pos);
     ShaderNode CreateMaterialVariableAccessorNode(const ShaderNode& declarationNode, bool createSetter, ImVec2 pos);
@@ -149,6 +158,9 @@ private:
     ObjectBase* viewedObject_{ nullptr };
 
     StaticMeshComponent* staticMeshComponent_{ nullptr };
+    StaticMesh* previewStaticMesh_{ nullptr };
+    std::string previewMeshPath_{};
+    std::string previewMeshStatusMessage_{};
 
     EditorHUD* editorHUD_{ nullptr };
 

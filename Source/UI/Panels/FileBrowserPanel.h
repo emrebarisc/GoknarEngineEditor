@@ -22,6 +22,7 @@ public:
 	virtual void Draw() override;
 
 private:
+	void DrawFilterBar();
 	void DrawGrid();
 	void DrawFolderTree(Folder* folder);
 
@@ -58,6 +59,7 @@ private:
 	unsigned int observedFileTreeVersion_{ 0 };
 	std::future<void> asyncCMakeRebuildResult_;
 	float thumbnailSize_{ 48.0f };
+	EditorAssetType assetFilter_{ EditorAssetType::None };
 
 	// Operation states
 	bool isRenaming_{ false };
@@ -73,4 +75,5 @@ private:
 	PendingAssetCreationType pendingAssetCreationType_{ PendingAssetCreationType::None };
 	char renameBuffer_[256]{ 0 };
 	char creationNameBuffer_[256]{ 0 };
+	char searchBuffer_[256]{ 0 };
 };

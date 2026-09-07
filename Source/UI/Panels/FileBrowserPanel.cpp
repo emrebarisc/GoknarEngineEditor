@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <cstring>
+#include <vector>
 
 #include "imgui.h"
 #include "tinyxml2.h"
@@ -41,6 +42,41 @@
 
 namespace
 {
+	struct BrowserFileItem
+	{
+		std::string assetPath;
+	};
+
+	struct ThumbnailDrawData
+	{
+		ImTextureID textureID{ ImTextureID_Invalid };
+		ImVec2 uv0{ 0.0f, 0.0f };
+		ImVec2 uv1{ 1.0f, 1.0f };
+	};
+
+	struct AssetFilterOption
+	{
+		EditorAssetType type;
+		const char* label;
+	};
+
+	const AssetFilterOption AssetFilterOptions[] =
+	{
+		{ EditorAssetType::None, "All Assets" },
+		{ EditorAssetType::Material, "Material" },
+		{ EditorAssetType::MaterialFunction, "Material Function" },
+		{ EditorAssetType::Texture, "Texture" },
+		{ EditorAssetType::StaticMesh, "Static Mesh" },
+		{ EditorAssetType::SkeletalMesh, "Skeletal Mesh" },
+		{ EditorAssetType::AnimationGraph, "Animation Graph" },
+		{ EditorAssetType::NavigationTree, "Navigation Tree" },
+		{ EditorAssetType::Audio, "Audio" },
+		{ EditorAssetType::Scene, "Scene" },
+		{ EditorAssetType::HeaderFile, "Header" },
+		{ EditorAssetType::SourceFile, "Source" },
+		{ EditorAssetType::Unknown, "Unknown" },
+	};
+
 	bool StartsWith(const std::string& value, const std::string& prefix)
 	{
 		return value.size() >= prefix.size() && value.compare(0, prefix.size(), prefix) == 0;
@@ -157,6 +193,136 @@ namespace
 				texture->GetAtlasUOffset() + uv.x * texture->GetAtlasUScale(),
 				texture->GetAtlasVOffset() + uv.y * texture->GetAtlasVScale()) :
 			uv;
+	}
+
+	const char* GetAssetFilterLabel(EditorAssetType assetType)
+	{
+		for (const AssetFilterOption& option : AssetFilterOptions)
+		{
+			if (option.type == assetType)
+			{
+				return option.label;
+			}
+		}
+
+		return "All Assets";
+	}
+
+	bool MatchesSearchQuery(const std::string& value, const std::string& lowerSearchQuery)
+	{
+		return lowerSearchQuery.empty() || ToLower(value).find(lowerSearchQuery) != std::string::npos;
+	}
+
+	bool MatchesAssetFilter(EditorAssetType assetType, EditorAssetType assetFilter)
+	{
+		return assetFilter == EditorAssetType::None || assetType == assetFilter;
+	}
+
+	bool FileMatchesBrowserFilters(const std::string& assetPath, const std::string& lowerSearchQuery, EditorAssetType assetFilter)
+	{
+		EditorContext* context = EditorContext::Get();
+		if (!MatchesAssetFilter(context->GetAssetType(assetPath), assetFilter))
+		{
+			return false;
+		}
+
+		return MatchesSearchQuery(assetPath, lowerSearchQuery);
+	}
+
+	bool FolderContainsMatchingItems(const Folder* folder, const std::string& lowerSearchQuery, EditorAssetType assetFilter)
+	{
+		if (!folder)
+		{
+			return false;
+		}
+
+		if (assetFilter == EditorAssetType::None && MatchesSearchQuery(folder->path, lowerSearchQuery))
+		{
+			return true;
+		}
+
+		for (const std::string& file : folder->files)
+		{
+			if (FileMatchesBrowserFilters(folder->path + file, lowerSearchQuery, assetFilter))
+			{
+				return true;
+			}
+		}
+
+		for (const Folder* subFolder : folder->subFolders)
+		{
+			if (FolderContainsMatchingItems(subFolder, lowerSearchQuery, assetFilter))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void CollectMatchingFiles(const Folder* folder, const std::string& lowerSearchQuery, EditorAssetType assetFilter, std::vector<BrowserFileItem>& matchingFiles)
+	{
+		if (!folder)
+		{
+			return;
+		}
+
+		for (const std::string& file : folder->files)
+		{
+			const std::string assetPath = folder->path + file;
+			if (FileMatchesBrowserFilters(assetPath, lowerSearchQuery, assetFilter))
+			{
+				matchingFiles.push_back({ assetPath });
+			}
+		}
+
+		for (const Folder* subFolder : folder->subFolders)
+		{
+			CollectMatchingFiles(subFolder, lowerSearchQuery, assetFilter, matchingFiles);
+		}
+	}
+
+	std::string GetDisplayPathRelativeToFolder(const std::string& assetPath, const std::string& folderPath)
+	{
+		if (!folderPath.empty() && StartsWith(assetPath, folderPath))
+		{
+			return assetPath.substr(folderPath.size());
+		}
+
+		return assetPath;
+	}
+
+	bool TryGetTextureThumbnail(const std::string& fileFullPath, ThumbnailDrawData& thumbnail)
+	{
+		const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
+		if (contentRelativePath.empty())
+		{
+			return false;
+		}
+
+		Image* image = engine->GetResourceManager()->GetContent<Image>(contentRelativePath);
+		if (!image)
+		{
+			return false;
+		}
+
+		if (!image->GetGeneratedTexture())
+		{
+			image->PreInit();
+			image->Init();
+			image->PostInit();
+		}
+
+		Texture* texture = image->GetGeneratedTexture();
+		if (!texture || texture->GetRendererTextureId() == 0)
+		{
+			return false;
+		}
+
+		thumbnail.textureID = (ImTextureID)(intptr_t)texture->GetRendererTextureId();
+		thumbnail.uv0 = RemapTextureUV(texture, ImVec2(0.0f, 0.0f));
+		thumbnail.uv1 = RemapTextureUV(texture, ImVec2(1.0f, 1.0f));
+		return true;
 	}
 
 	bool IsContentDirectory(const std::string& path)
@@ -383,6 +549,8 @@ void FileBrowserPanel::Draw()
 		}
 		ImGui::Text("Path: %s", currentFolder_->path.c_str());
 		ImGui::Separator();
+		DrawFilterBar();
+		ImGui::Separator();
 
 		float footerHeight = 25.0f;
 		ImGui::BeginChild("GridRegion", ImVec2(0, -footerHeight));
@@ -604,6 +772,46 @@ void FileBrowserPanel::DrawFolderTree(Folder* folder)
 	}
 }
 
+void FileBrowserPanel::DrawFilterBar()
+{
+	const float availableWidth = ImGui::GetContentRegionAvail().x;
+	const float searchWidth = (std::max)(140.0f, availableWidth - 310.0f);
+
+	ImGui::SetNextItemWidth(searchWidth);
+	ImGui::InputTextWithHint("##AssetSearch", "Search assets", searchBuffer_, sizeof(searchBuffer_));
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(180.0f);
+	if (ImGui::BeginCombo("##AssetTypeFilter", GetAssetFilterLabel(assetFilter_)))
+	{
+		for (const AssetFilterOption& option : AssetFilterOptions)
+		{
+			const bool isSelected = assetFilter_ == option.type;
+			if (ImGui::Selectable(option.label, isSelected))
+			{
+				assetFilter_ = option.type;
+			}
+
+			if (isSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+	const bool hasActiveFilter = searchBuffer_[0] != '\0' || assetFilter_ != EditorAssetType::None;
+	ImGui::BeginDisabled(!hasActiveFilter);
+	if (ImGui::Button("Clear"))
+	{
+		searchBuffer_[0] = '\0';
+		assetFilter_ = EditorAssetType::None;
+	}
+	ImGui::EndDisabled();
+}
+
 void FileBrowserPanel::DrawGrid()
 {
 	if (!currentFolder_)
@@ -631,138 +839,189 @@ void FileBrowserPanel::DrawGrid()
 
 	auto GetUV0 = [&](float x, float y) { return RemapTextureUV(uiTexture, ImVec2(x / atlasSize, y / atlasSize)); };
 	auto GetUV1 = [&](float x, float y) { return RemapTextureUV(uiTexture, ImVec2((x + spriteSize) / atlasSize, (y + spriteSize) / atlasSize)); };
+	const std::string lowerSearchQuery = ToLower(searchBuffer_);
+	const bool isSearchActive = !lowerSearchQuery.empty();
+	EditorContext* context = EditorContext::Get();
+	int drawnItemCount = 0;
 
-	if (ImGui::BeginTable("FileGrid", columns))
+	auto DrawFolderItem = [&](Folder* folder)
 	{
-		for (Folder* sub : currentFolder_->subFolders)
+		ImGui::TableNextColumn();
+		ImGui::PushID(folder->path.c_str());
+
+		ImVec2 fUv0 = GetUV0(0.0f, 128.0f);
+		ImVec2 fUv1 = GetUV1(0.0f, 128.0f);
+
+		ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1);
+		if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
 		{
-			ImGui::TableNextColumn();
-			ImGui::PushID(sub->name.c_str());
-
-			ImVec2 fUv0 = GetUV0(0.0f, 128.0f);
-			ImVec2 fUv1 = GetUV1(0.0f, 128.0f);
-
-			ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1);
-			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
-			{
-				SetCurrentFolder(sub);
-			}
-
-			// Interactions
-			std::string subFullPath = GetAbsoluteProjectPath(sub->path);
-			HandleDragDropSource(subFullPath, "FOLDER_PAYLOAD");
-			HandleDragDropTarget(subFullPath);
-			HandleContextMenu(subFullPath, sub->name, true);
-
-			ImGui::TextWrapped("%s", sub->name.c_str());
-			ImGui::PopID();
+			SetCurrentFolder(folder);
 		}
 
-		for (const std::string& file : currentFolder_->files)
+		const std::string folderFullPath = GetAbsoluteProjectPath(folder->path);
+		HandleDragDropSource(folderFullPath, "FOLDER_PAYLOAD");
+		HandleDragDropTarget(folderFullPath);
+		HandleContextMenu(folderFullPath, folder->name, true);
+
+		ImGui::TextWrapped("%s", folder->name.c_str());
+		ImGui::PopID();
+		++drawnItemCount;
+	};
+
+	auto DrawFileItem = [&](const std::string& assetPath, const std::string& displayName)
+	{
+		ImGui::TableNextColumn();
+		ImGui::PushID(assetPath.c_str());
+
+		const std::string fileName = std::filesystem::path(assetPath).filename().generic_string();
+		const std::string fileFullPath = GetAbsoluteProjectPath(assetPath);
+		const EditorAssetType assetType = context->GetAssetType(assetPath);
+		ResourceType resourceType = ResourceManagerUtils::GetResourceType(assetPath);
+
+		ThumbnailDrawData thumbnail;
+		thumbnail.textureID = atlasID;
+		thumbnail.uv0 = GetUV0(0.0f, 0.0f);
+		thumbnail.uv1 = GetUV1(0.0f, 0.0f);
+
+		if (resourceType == ResourceType::Image || assetType == EditorAssetType::Texture)
 		{
-			ImGui::TableNextColumn();
-			ImGui::PushID(file.c_str());
+			thumbnail.uv0 = GetUV0(128.0f, 0.0f);
+			thumbnail.uv1 = GetUV1(128.0f, 0.0f);
 
-			ResourceType resourceType = ResourceManagerUtils::GetResourceType(file);
-
-			ImVec2 uv0 = GetUV0(0.0f, 0.0f);
-			ImVec2 uv1 = GetUV0(0.0f, 0.0f);
-
-			if (resourceType == ResourceType::Image)
+			ThumbnailDrawData textureThumbnail;
+			if (TryGetTextureThumbnail(fileFullPath, textureThumbnail))
 			{
-				uv0 = GetUV0(128.0f, 0.0f);
-				uv1 = GetUV1(128.0f, 0.0f);
+				thumbnail = textureThumbnail;
+			}
+		}
+		else if (resourceType == ResourceType::Model)
+		{
+			thumbnail.uv0 = GetUV0(256.0f, 0.0f);
+			thumbnail.uv1 = GetUV1(256.0f, 0.0f);
+		}
+		else
+		{
+			if (IsHeaderFile(fileName))
+			{
+				thumbnail.uv0 = GetUV0(766.f, 0.0f);
+				thumbnail.uv1 = GetUV1(766.f, 0.0f);
+			}
+			else if (IsSourceFile(fileName))
+			{
+				thumbnail.uv0 = GetUV0(896.f, 0.0f);
+				thumbnail.uv1 = GetUV1(896.f, 0.0f);
+			}
+		}
+
+		ImGui::ImageButton("##file", thumbnail.textureID, { thumbnailSize_, thumbnailSize_ }, thumbnail.uv0, thumbnail.uv1);
+		if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+		{
+			const std::string assetFileType = TryGetGameAssetFileType(fileFullPath);
+			if (assetFileType == "Scene" || assetType == EditorAssetType::Scene)
+			{
+				RequestOpenScene(fileFullPath);
+			}
+			else if (!assetFileType.empty())
+			{
+				OpenAssetFile(fileFullPath);
+			}
+			else if (resourceType == ResourceType::Image || assetType == EditorAssetType::Texture)
+			{
+				Image* image = engine->GetResourceManager()->GetContent<Image>(EditorAssetPathUtils::ToContentRelativePath(fileFullPath));
+				if (image)
+				{
+					ImageViewerPanel* viewer = (ImageViewerPanel*)hud_->GetPanel<ImageViewerPanel>();
+					if (viewer)
+					{
+						viewer->SetTargetImage(image);
+						viewer->SetIsOpen(true);
+					}
+				}
 			}
 			else if (resourceType == ResourceType::Model)
 			{
-				uv0 = GetUV0(256.0f, 0.0f);
-				uv1 = GetUV1(256.0f, 0.0f);
+				const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
+				if (SkeletalMesh* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
+				{
+					SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
+					if (viewer)
+					{
+						viewer->SetTargetSkeletalMesh(skeletalMesh);
+						viewer->SetIsOpen(true);
+					}
+				}
+				else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
+				{
+					StaticMeshViewerPanel* viewer = (StaticMeshViewerPanel*)hud_->GetPanel<StaticMeshViewerPanel>();
+					if (viewer)
+					{
+						viewer->SetTargetStaticMesh(staticMesh);
+						viewer->SetIsOpen(true);
+					}
+				}
 			}
 			else
 			{
-				if (IsHeaderFile(file))
+				if (IsSourceCodeFile(fileName))
 				{
-					uv0 = GetUV0(766.f, 0.0f);
-					uv1 = GetUV1(766.f, 0.0f);
-				}
-				else if (IsSourceFile(file))
-				{
-					uv0 = GetUV0(896.f, 0.0f);
-					uv1 = GetUV1(896.f, 0.0f);
+					EditorSourceCodeUtils::OpenSourceFile(fileFullPath);
 				}
 			}
+		}
 
-			ImGui::ImageButton("##file", atlasID, { thumbnailSize_, thumbnailSize_ }, uv0, uv1);
-			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+		HandleDragDropSource(fileFullPath, "FILE_PAYLOAD");
+		HandleContextMenu(fileFullPath, fileName, false);
+
+		ImGui::TextWrapped("%s", displayName.c_str());
+		if (displayName != fileName && ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", assetPath.c_str());
+		}
+
+		ImGui::PopID();
+		++drawnItemCount;
+	};
+
+	if (ImGui::BeginTable("FileGrid", columns))
+	{
+		if (!isSearchActive)
+		{
+			for (Folder* sub : currentFolder_->subFolders)
 			{
-				std::string fileFullPath = GetAbsoluteProjectPath(currentFolder_->path + file);
-				const std::string assetFileType = TryGetGameAssetFileType(fileFullPath);
-				const EditorAssetType assetType = EditorContext::Get()->GetAssetType(currentFolder_->path + file);
-				if (assetFileType == "Scene" || assetType == EditorAssetType::Scene)
+				if (assetFilter_ != EditorAssetType::None && !FolderContainsMatchingItems(sub, lowerSearchQuery, assetFilter_))
 				{
-					RequestOpenScene(fileFullPath);
+					continue;
 				}
-				else if (!assetFileType.empty())
-				{
-					OpenAssetFile(fileFullPath);
-				}
-				else if (resourceType == ResourceType::Image)
-				{
-					int idx = 0;
-					while (Image* img = engine->GetResourceManager()->GetResourceContainer()->GetImage(idx++))
-					{
-						if (img->GetPath().find(file) != std::string::npos)
-						{
-							ImageViewerPanel* viewer = (ImageViewerPanel*)hud_->GetPanel<ImageViewerPanel>();
-							if (viewer)
-							{
-								viewer->SetTargetImage(img);
-								viewer->SetIsOpen(true);
-							}
-							break;
-						}
-					}
-				}
-				else if (resourceType == ResourceType::Model)
-				{
-					const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
-					if (SkeletalMesh* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
-					{
-						SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
-						if (viewer)
-						{
-							viewer->SetTargetSkeletalMesh(skeletalMesh);
-							viewer->SetIsOpen(true);
-						}
-					}
-					else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
-					{
-						StaticMeshViewerPanel* viewer = (StaticMeshViewerPanel*)hud_->GetPanel<StaticMeshViewerPanel>();
-						if (viewer)
-						{
-							viewer->SetTargetStaticMesh(staticMesh);
-							viewer->SetIsOpen(true);
-						}
-					}
-				}
-				else
-				{
-					if (IsSourceCodeFile(file))
-					{
-						EditorSourceCodeUtils::OpenSourceFile(fileFullPath);
-					}
-				}
+
+				DrawFolderItem(sub);
 			}
 
-			// Interactions
-			std::string fileFullPath = GetAbsoluteProjectPath(currentFolder_->path + file);
-			HandleDragDropSource(fileFullPath, "FILE_PAYLOAD");
-			HandleContextMenu(fileFullPath, file, false);
+			for (const std::string& file : currentFolder_->files)
+			{
+				const std::string assetPath = currentFolder_->path + file;
+				if (!FileMatchesBrowserFilters(assetPath, lowerSearchQuery, assetFilter_))
+				{
+					continue;
+				}
 
-			ImGui::TextWrapped("%s", file.c_str());
-			ImGui::PopID();
+				DrawFileItem(assetPath, file);
+			}
+		}
+		else
+		{
+			std::vector<BrowserFileItem> matchingFiles;
+			CollectMatchingFiles(currentFolder_, lowerSearchQuery, assetFilter_, matchingFiles);
+			for (const BrowserFileItem& matchingFile : matchingFiles)
+			{
+				DrawFileItem(matchingFile.assetPath, GetDisplayPathRelativeToFolder(matchingFile.assetPath, currentFolder_->path));
+			}
 		}
 		ImGui::EndTable();
+	}
+
+	if (drawnItemCount == 0)
+	{
+		ImGui::TextDisabled("No matching assets");
 	}
 }
 

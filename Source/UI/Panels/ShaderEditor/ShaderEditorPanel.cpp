@@ -17,11 +17,14 @@
 #include "Goknar/Log.h"
 
 #include "Goknar/Renderer/RenderTarget.h"
+#include "Goknar/Renderer/Renderer.h"
 #include "Goknar/Renderer/Texture.h"
 #include "Goknar/Components/StaticMeshComponent.h"
 #include "Goknar/Components/CameraComponent.h"
 #include "Goknar/Camera.h"
+#include "Goknar/ObjectBase.h"
 #include "Goknar/Model/Mesh.h"
+#include "Goknar/Model/MeshGeometry.h"
 #include "Goknar/Model/StaticMesh.h"
 #include "Goknar/Model/StaticMeshInstance.h"
 #include "Goknar/Engine.h"
@@ -54,6 +57,49 @@ namespace
 	constexpr const char* kWorldRotationGetterNodeName = "World Rotation";
 	constexpr const char* kWorldScalingGetterNodeName = "World Scaling";
 	constexpr int kMaxMaterialArraySize = 64;
+	constexpr const char* kDefaultShaderPreviewMeshPath = "Meshes/SM_MaterialSphere.fbx";
+	constexpr const char* kCubeShaderPreviewMeshPath = "Meshes/SM_UnitCube.fbx";
+	constexpr const char* kPlaneShaderPreviewMeshPath = "Meshes/SM_UnitPlane.fbx";
+
+	bool IsStaticMeshReadyForShaderPreview(StaticMesh* staticMesh)
+	{
+		if (!staticMesh || staticMesh->GetLODCount() == 0)
+		{
+			return false;
+		}
+
+		StaticMeshLOD* staticMeshLOD = staticMesh->GetLOD(0);
+		if (!staticMeshLOD || staticMeshLOD->GetSubMeshes().empty())
+		{
+			return false;
+		}
+
+		for (const MeshGeometry* subMesh : staticMeshLOD->GetSubMeshes())
+		{
+			if (!subMesh || subMesh->GetVertexCount() == 0 || subMesh->GetFaceCount() == 0)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	std::string NormalizePreviewMeshPath(const std::string& meshPath)
+	{
+		const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(meshPath);
+		return contentRelativePath.empty() ? meshPath : contentRelativePath;
+	}
+
+	std::string GetStaticMeshPreviewPath(StaticMesh* staticMesh, const std::string& fallbackPath)
+	{
+		if (!fallbackPath.empty())
+		{
+			return NormalizePreviewMeshPath(fallbackPath);
+		}
+
+		return staticMesh ? NormalizePreviewMeshPath(staticMesh->GetPath()) : "";
+	}
 
 	float DistanceSquared(const ImVec2& a, const ImVec2& b)
 	{
@@ -284,6 +330,30 @@ namespace
 		}
 
 		return SanitizeIdentifier(baseName);
+	}
+
+	std::string BuildTextureSamplerBaseName(const std::string& texturePath, Image* image)
+	{
+		if (!image)
+		{
+			return BuildTextureSamplerBaseName(texturePath);
+		}
+
+		std::string imageName = image->GetName();
+		if (imageName.empty())
+		{
+			imageName = BuildTextureSamplerBaseName(texturePath);
+			image->SetName(imageName);
+			return imageName;
+		}
+
+		std::string samplerName = SanitizeIdentifier(imageName);
+		if (!samplerName.empty() && std::isdigit(static_cast<unsigned char>(imageName.front())))
+		{
+			image->SetName(samplerName);
+		}
+
+		return samplerName;
 	}
 
 	bool LooksLikeTextureAssetPath(const std::string& value)
@@ -940,13 +1010,9 @@ ShaderEditorPanel::ShaderEditorPanel(EditorHUD* hud)
 
 	staticMeshComponent_ = viewedObject_->AddSubComponent<StaticMeshComponent>();
 	staticMeshComponent_->GetMeshInstance()->SetRenderMask(SHADER_EDITOR_RENDER_MASK);
+	staticMeshComponent_->GetMeshInstance()->SetIsCastingShadow(false);
 
-	StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>("Meshes/SM_MaterialSphere.fbx");
-	if (previewMesh)
-	{
-		staticMeshComponent_->SetMesh(previewMesh);
-		staticMeshComponent_->SetIsActive(true);
-	}
+	ResetPreviewMeshToDefault(false);
 
 	isOpen_ = false;
 }
@@ -966,7 +1032,143 @@ void ShaderEditorPanel::Init()
 	renderTarget_->Init();
 	renderTarget_->SetFrameSize(previewSize_);
 
-	cameraObject_->GetController()->ResetViewWithBoundingBox(viewedObject_, staticMeshComponent_->GetMeshInstance()->GetMesh()->GetAABB());
+	ResetPreviewCameraToMesh();
+}
+
+void ShaderEditorPanel::SetPreviewStaticMesh(StaticMesh* staticMesh, const std::string& meshPath, bool refreshRenderData)
+{
+	if (!staticMeshComponent_)
+	{
+		return;
+	}
+
+	ClearPreviewMaterialOverrides();
+	previewStaticMesh_ = staticMesh;
+	previewMeshPath_ = GetStaticMeshPreviewPath(staticMesh, meshPath);
+	previewMeshStatusMessage_.clear();
+
+	if (!IsStaticMeshReadyForShaderPreview(staticMesh))
+	{
+		staticMeshComponent_->SetIsActive(false);
+		previewMeshStatusMessage_ = previewMeshPath_.empty() ?
+			"No preview mesh selected." :
+			"Selected mesh is not ready to preview.";
+		return;
+	}
+
+	staticMeshComponent_->SetMesh(staticMesh);
+	staticMeshComponent_->SetIsActive(true);
+
+	if (StaticMeshInstance* meshInstance = staticMeshComponent_->GetMeshInstance())
+	{
+		meshInstance->SetRenderMask(SHADER_EDITOR_RENDER_MASK);
+		meshInstance->SetIsCastingShadow(false);
+		meshInstance->SetForcedLODIndex(-1);
+	}
+
+	ApplyActiveMaterialToPreviewMesh();
+
+	if (refreshRenderData)
+	{
+		RefreshPreviewRenderData();
+		ResetPreviewCameraToMesh();
+	}
+}
+
+bool ShaderEditorPanel::SetPreviewMeshFromEditorContent(const char* meshPath, bool refreshRenderData)
+{
+	StaticMesh* previewMesh = EditorUtils::GetEditorContent<StaticMesh>(meshPath);
+	if (!previewMesh)
+	{
+		if (!previewStaticMesh_)
+		{
+			SetPreviewStaticMesh(nullptr, "", refreshRenderData);
+		}
+
+		previewMeshStatusMessage_ = "Preview mesh preset is missing.";
+		GOKNAR_INFO("ShaderEditorPanel: Preview mesh preset '%s' could not be loaded.", meshPath ? meshPath : "");
+		return false;
+	}
+
+	SetPreviewStaticMesh(previewMesh, meshPath ? meshPath : "", refreshRenderData);
+	return true;
+}
+
+void ShaderEditorPanel::ResetPreviewMeshToDefault(bool refreshRenderData)
+{
+	SetPreviewMeshFromEditorContent(kDefaultShaderPreviewMeshPath, refreshRenderData);
+}
+
+void ShaderEditorPanel::OnPreviewMeshSelected(const std::string& path)
+{
+	const std::string normalizedPath = EditorAssetPathUtils::ToContentRelativePath(path);
+	StaticMesh* selectedMesh = engine && engine->GetResourceManager() ?
+		engine->GetResourceManager()->GetContent<StaticMesh>(normalizedPath) :
+		nullptr;
+
+	if (selectedMesh)
+	{
+		SetPreviewStaticMesh(selectedMesh, normalizedPath, true);
+	}
+	else
+	{
+		previewMeshStatusMessage_ = "Failed to load selected static mesh.";
+		GOKNAR_INFO("ShaderEditorPanel: Failed to load selected preview mesh '%s'.", normalizedPath.c_str());
+	}
+
+	EditorContext::Get()->assetSelectorFilter = EditorAssetType::None;
+}
+
+void ShaderEditorPanel::ClearPreviewMaterialOverrides()
+{
+	StaticMeshInstance* meshInstance = staticMeshComponent_ ? staticMeshComponent_->GetMeshInstance() : nullptr;
+	if (!meshInstance || !meshInstance->GetMesh())
+	{
+		return;
+	}
+
+	const size_t materialCount = meshInstance->GetMaterials().size();
+	for (size_t materialIndex = 0; materialIndex < materialCount; ++materialIndex)
+	{
+		meshInstance->SetMaterial(static_cast<int>(materialIndex), nullptr);
+	}
+}
+
+void ShaderEditorPanel::ApplyActiveMaterialToPreviewMesh()
+{
+	StaticMeshInstance* meshInstance = staticMeshComponent_ ? staticMeshComponent_->GetMeshInstance() : nullptr;
+	if (!activeMaterial_ || !staticMeshComponent_ || !staticMeshComponent_->GetIsActive() || !meshInstance || !meshInstance->GetMesh())
+	{
+		return;
+	}
+
+	const size_t materialCount = meshInstance->GetMaterials().size();
+	for (size_t materialIndex = 0; materialIndex < materialCount; ++materialIndex)
+	{
+		meshInstance->SetMaterial(static_cast<int>(materialIndex), MaterialInstance::Create(activeMaterial_));
+	}
+}
+
+void ShaderEditorPanel::RefreshPreviewRenderData()
+{
+	StaticMeshInstance* meshInstance = staticMeshComponent_ ? staticMeshComponent_->GetMeshInstance() : nullptr;
+	if (!engine || !engine->GetRenderer() || !meshInstance || !meshInstance->GetMesh())
+	{
+		return;
+	}
+
+	engine->GetRenderer()->RemoveStaticMeshInstance(meshInstance);
+	engine->GetRenderer()->AddStaticMeshInstance(meshInstance);
+}
+
+void ShaderEditorPanel::ResetPreviewCameraToMesh()
+{
+	if (!cameraObject_ || !cameraObject_->GetController() || !viewedObject_ || !IsStaticMeshReadyForShaderPreview(previewStaticMesh_))
+	{
+		return;
+	}
+
+	cameraObject_->GetController()->ResetViewWithBoundingBox(viewedObject_, previewStaticMesh_->GetAABB());
 }
 
 void ShaderEditorPanel::ResetInteractionState()
@@ -1111,6 +1313,7 @@ void ShaderEditorPanel::RefreshTextureBindingsFromNodes()
 
 		const std::string texturePath = node.stringData;
 		const bool useTextureAtlas = node.useTextureAtlas;
+		Image* image = engine && engine->GetResourceManager() ? engine->GetResourceManager()->GetContent<Image>(texturePath) : nullptr;
 		const bool alreadyTracked =
 			std::any_of(
 				refreshedTextures.begin(),
@@ -1124,7 +1327,7 @@ void ShaderEditorPanel::RefreshTextureBindingsFromNodes()
 			continue;
 		}
 
-		std::string baseSamplerName = BuildTextureSamplerBaseName(texturePath);
+		std::string baseSamplerName = BuildTextureSamplerBaseName(texturePath, image);
 		if (!useTextureAtlas)
 		{
 			baseSamplerName += "_Standalone";
@@ -1782,10 +1985,8 @@ void ShaderEditorPanel::RebuildActiveMaterialFromGraph()
 	activeMaterial_->Init();
 	activeMaterial_->PostInit();
 
-	if (staticMeshComponent_->GetMeshInstance())
-	{
-		staticMeshComponent_->GetMeshInstance()->SetMaterial(0, MaterialInstance::Create(activeMaterial_));
-	}
+	ApplyActiveMaterialToPreviewMesh();
+	RefreshPreviewRenderData();
 }
 
 void ShaderEditorPanel::Draw()
@@ -2265,6 +2466,43 @@ void ShaderEditorPanel::DrawPreview()
 	cameraObject_->GetController()->SetIsActive(isHovered);
 
 	EditorUtils::DrawWorldAxis(cameraObject_->GetCameraComponent()->GetCamera());
+
+	if (ImGui::SmallButton("sphere"))
+	{
+		ResetPreviewMeshToDefault(true);
+	}
+
+	ImGui::SameLine();
+	if (ImGui::SmallButton("cube"))
+	{
+		SetPreviewMeshFromEditorContent(kCubeShaderPreviewMeshPath, true);
+	}
+
+	ImGui::SameLine();
+	if (ImGui::SmallButton("plane"))
+	{
+		SetPreviewMeshFromEditorContent(kPlaneShaderPreviewMeshPath, true);
+	}
+
+	ImGui::SameLine();
+	if (ImGui::SmallButton("mesh"))
+	{
+		EditorContext::Get()->assetSelectorFilter = EditorAssetType::StaticMesh;
+		AssetSelectorPanel::SetMultiSelectionEnabled(false);
+		AssetSelectorPanel::OnAssetSelected =
+			Delegate<void(const std::string&)>::Create<ShaderEditorPanel, &ShaderEditorPanel::OnPreviewMeshSelected>(this);
+		editorHUD_->ShowPanel<AssetSelectorPanel>();
+	}
+
+	if (!previewMeshPath_.empty() && ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("%s", previewMeshPath_.c_str());
+	}
+
+	if (!previewMeshStatusMessage_.empty())
+	{
+		ImGui::TextDisabled("%s", previewMeshStatusMessage_.c_str());
+	}
 
 	ImGui::Separator();
 }
