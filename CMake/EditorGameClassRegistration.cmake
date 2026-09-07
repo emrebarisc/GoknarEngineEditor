@@ -104,9 +104,26 @@ function(goknar_configure_editor_game_project_sources OUT_PROJECT_SOURCES OUT_RE
 
             set(HEADER_HAS_CANDIDATE FALSE)
             foreach(CLASS_DECLARATION ${CLASS_DECLARATIONS})
+                set(CLASS_DECLARATION_PREFIX "")
                 string(FIND "${PROJECT_HEADER_CONTENT}" "${CLASS_DECLARATION}" CLASS_DECLARATION_OFFSET)
                 if(CLASS_DECLARATION_OFFSET GREATER 0)
                     string(SUBSTRING "${PROJECT_HEADER_CONTENT}" 0 ${CLASS_DECLARATION_OFFSET} CLASS_DECLARATION_PREFIX)
+                endif()
+
+                string(REGEX MATCH "(^|[^A-Za-z0-9_])enum[ \t\r\n]+$" PRECEDING_ENUM_DECLARATION "${CLASS_DECLARATION_PREFIX}")
+                if(PRECEDING_ENUM_DECLARATION)
+                    continue()
+                endif()
+
+                string(REGEX MATCHALL "\\{" CLASS_DECLARATION_PREFIX_OPEN_BRACES "${CLASS_DECLARATION_PREFIX}")
+                string(REGEX MATCHALL "\\}" CLASS_DECLARATION_PREFIX_CLOSE_BRACES "${CLASS_DECLARATION_PREFIX}")
+                list(LENGTH CLASS_DECLARATION_PREFIX_OPEN_BRACES CLASS_DECLARATION_PREFIX_OPEN_BRACE_COUNT)
+                list(LENGTH CLASS_DECLARATION_PREFIX_CLOSE_BRACES CLASS_DECLARATION_PREFIX_CLOSE_BRACE_COUNT)
+                if(NOT CLASS_DECLARATION_PREFIX_OPEN_BRACE_COUNT EQUAL CLASS_DECLARATION_PREFIX_CLOSE_BRACE_COUNT)
+                    continue()
+                endif()
+
+                if(CLASS_DECLARATION_OFFSET GREATER 0)
                     string(REGEX MATCH "template[ \t\r\n]*<[^;{}]*>[ \t\r\n]*$" PRECEDING_TEMPLATE_DECLARATION "${CLASS_DECLARATION_PREFIX}")
                     if(PRECEDING_TEMPLATE_DECLARATION)
                         continue()
