@@ -42,6 +42,8 @@
 
 namespace
 {
+	bool IsFBXImportPending = false;
+
 	struct BrowserFileItem
 	{
 		std::string assetPath;
@@ -845,142 +847,142 @@ void FileBrowserPanel::DrawGrid()
 	int drawnItemCount = 0;
 
 	auto DrawFolderItem = [&](Folder* folder)
-	{
-		ImGui::TableNextColumn();
-		ImGui::PushID(folder->path.c_str());
-
-		ImVec2 fUv0 = GetUV0(0.0f, 128.0f);
-		ImVec2 fUv1 = GetUV1(0.0f, 128.0f);
-
-		ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1);
-		if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
 		{
-			SetCurrentFolder(folder);
-		}
+			ImGui::TableNextColumn();
+			ImGui::PushID(folder->path.c_str());
 
-		const std::string folderFullPath = GetAbsoluteProjectPath(folder->path);
-		HandleDragDropSource(folderFullPath, "FOLDER_PAYLOAD");
-		HandleDragDropTarget(folderFullPath);
-		HandleContextMenu(folderFullPath, folder->name, true);
+			ImVec2 fUv0 = GetUV0(0.0f, 128.0f);
+			ImVec2 fUv1 = GetUV1(0.0f, 128.0f);
 
-		ImGui::TextWrapped("%s", folder->name.c_str());
-		ImGui::PopID();
-		++drawnItemCount;
-	};
+			ImGui::ImageButton("##folder", atlasID, { thumbnailSize_, thumbnailSize_ }, fUv0, fUv1);
+			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+			{
+				SetCurrentFolder(folder);
+			}
+
+			const std::string folderFullPath = GetAbsoluteProjectPath(folder->path);
+			HandleDragDropSource(folderFullPath, "FOLDER_PAYLOAD");
+			HandleDragDropTarget(folderFullPath);
+			HandleContextMenu(folderFullPath, folder->name, true);
+
+			ImGui::TextWrapped("%s", folder->name.c_str());
+			ImGui::PopID();
+			++drawnItemCount;
+		};
 
 	auto DrawFileItem = [&](const std::string& assetPath, const std::string& displayName)
-	{
-		ImGui::TableNextColumn();
-		ImGui::PushID(assetPath.c_str());
-
-		const std::string fileName = std::filesystem::path(assetPath).filename().generic_string();
-		const std::string fileFullPath = GetAbsoluteProjectPath(assetPath);
-		const EditorAssetType assetType = context->GetAssetType(assetPath);
-		ResourceType resourceType = ResourceManagerUtils::GetResourceType(assetPath);
-
-		ThumbnailDrawData thumbnail;
-		thumbnail.textureID = atlasID;
-		thumbnail.uv0 = GetUV0(0.0f, 0.0f);
-		thumbnail.uv1 = GetUV1(0.0f, 0.0f);
-
-		if (resourceType == ResourceType::Image || assetType == EditorAssetType::Texture)
 		{
-			thumbnail.uv0 = GetUV0(128.0f, 0.0f);
-			thumbnail.uv1 = GetUV1(128.0f, 0.0f);
+			ImGui::TableNextColumn();
+			ImGui::PushID(assetPath.c_str());
 
-			ThumbnailDrawData textureThumbnail;
-			if (TryGetTextureThumbnail(fileFullPath, textureThumbnail))
-			{
-				thumbnail = textureThumbnail;
-			}
-		}
-		else if (resourceType == ResourceType::Model)
-		{
-			thumbnail.uv0 = GetUV0(256.0f, 0.0f);
-			thumbnail.uv1 = GetUV1(256.0f, 0.0f);
-		}
-		else
-		{
-			if (IsHeaderFile(fileName))
-			{
-				thumbnail.uv0 = GetUV0(766.f, 0.0f);
-				thumbnail.uv1 = GetUV1(766.f, 0.0f);
-			}
-			else if (IsSourceFile(fileName))
-			{
-				thumbnail.uv0 = GetUV0(896.f, 0.0f);
-				thumbnail.uv1 = GetUV1(896.f, 0.0f);
-			}
-		}
+			const std::string fileName = std::filesystem::path(assetPath).filename().generic_string();
+			const std::string fileFullPath = GetAbsoluteProjectPath(assetPath);
+			const EditorAssetType assetType = context->GetAssetType(assetPath);
+			ResourceType resourceType = ResourceManagerUtils::GetResourceType(assetPath);
 
-		ImGui::ImageButton("##file", thumbnail.textureID, { thumbnailSize_, thumbnailSize_ }, thumbnail.uv0, thumbnail.uv1);
-		if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
-		{
-			const std::string assetFileType = TryGetGameAssetFileType(fileFullPath);
-			if (assetFileType == "Scene" || assetType == EditorAssetType::Scene)
+			ThumbnailDrawData thumbnail;
+			thumbnail.textureID = atlasID;
+			thumbnail.uv0 = GetUV0(0.0f, 0.0f);
+			thumbnail.uv1 = GetUV1(0.0f, 0.0f);
+
+			if (resourceType == ResourceType::Image || assetType == EditorAssetType::Texture)
 			{
-				RequestOpenScene(fileFullPath);
-			}
-			else if (!assetFileType.empty())
-			{
-				OpenAssetFile(fileFullPath);
-			}
-			else if (resourceType == ResourceType::Image || assetType == EditorAssetType::Texture)
-			{
-				Image* image = engine->GetResourceManager()->GetContent<Image>(EditorAssetPathUtils::ToContentRelativePath(fileFullPath));
-				if (image)
+				thumbnail.uv0 = GetUV0(128.0f, 0.0f);
+				thumbnail.uv1 = GetUV1(128.0f, 0.0f);
+
+				ThumbnailDrawData textureThumbnail;
+				if (TryGetTextureThumbnail(fileFullPath, textureThumbnail))
 				{
-					ImageViewerPanel* viewer = (ImageViewerPanel*)hud_->GetPanel<ImageViewerPanel>();
-					if (viewer)
-					{
-						viewer->SetTargetImage(image);
-						viewer->SetIsOpen(true);
-					}
+					thumbnail = textureThumbnail;
 				}
 			}
 			else if (resourceType == ResourceType::Model)
 			{
-				const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
-				if (SkeletalMesh* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
-				{
-					SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
-					if (viewer)
-					{
-						viewer->SetTargetSkeletalMesh(skeletalMesh);
-						viewer->SetIsOpen(true);
-					}
-				}
-				else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
-				{
-					StaticMeshViewerPanel* viewer = (StaticMeshViewerPanel*)hud_->GetPanel<StaticMeshViewerPanel>();
-					if (viewer)
-					{
-						viewer->SetTargetStaticMesh(staticMesh);
-						viewer->SetIsOpen(true);
-					}
-				}
+				thumbnail.uv0 = GetUV0(256.0f, 0.0f);
+				thumbnail.uv1 = GetUV1(256.0f, 0.0f);
 			}
 			else
 			{
-				if (IsSourceCodeFile(fileName))
+				if (IsHeaderFile(fileName))
 				{
-					EditorSourceCodeUtils::OpenSourceFile(fileFullPath);
+					thumbnail.uv0 = GetUV0(766.f, 0.0f);
+					thumbnail.uv1 = GetUV1(766.f, 0.0f);
+				}
+				else if (IsSourceFile(fileName))
+				{
+					thumbnail.uv0 = GetUV0(896.f, 0.0f);
+					thumbnail.uv1 = GetUV1(896.f, 0.0f);
 				}
 			}
-		}
 
-		HandleDragDropSource(fileFullPath, "FILE_PAYLOAD");
-		HandleContextMenu(fileFullPath, fileName, false);
+			ImGui::ImageButton("##file", thumbnail.textureID, { thumbnailSize_, thumbnailSize_ }, thumbnail.uv0, thumbnail.uv1);
+			if (hud_->WasLastItemDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+			{
+				const std::string assetFileType = TryGetGameAssetFileType(fileFullPath);
+				if (assetFileType == "Scene" || assetType == EditorAssetType::Scene)
+				{
+					RequestOpenScene(fileFullPath);
+				}
+				else if (!assetFileType.empty())
+				{
+					OpenAssetFile(fileFullPath);
+				}
+				else if (resourceType == ResourceType::Image || assetType == EditorAssetType::Texture)
+				{
+					Image* image = engine->GetResourceManager()->GetContent<Image>(EditorAssetPathUtils::ToContentRelativePath(fileFullPath));
+					if (image)
+					{
+						ImageViewerPanel* viewer = (ImageViewerPanel*)hud_->GetPanel<ImageViewerPanel>();
+						if (viewer)
+						{
+							viewer->SetTargetImage(image);
+							viewer->SetIsOpen(true);
+						}
+					}
+				}
+				else if (resourceType == ResourceType::Model)
+				{
+					const std::string contentRelativePath = EditorAssetPathUtils::ToContentRelativePath(fileFullPath);
+					if (SkeletalMesh* skeletalMesh = engine->GetResourceManager()->GetContent<SkeletalMesh>(contentRelativePath))
+					{
+						SkeletalMeshViewerPanel* viewer = (SkeletalMeshViewerPanel*)hud_->GetPanel<SkeletalMeshViewerPanel>();
+						if (viewer)
+						{
+							viewer->SetTargetSkeletalMesh(skeletalMesh);
+							viewer->SetIsOpen(true);
+						}
+					}
+					else if (StaticMesh* staticMesh = engine->GetResourceManager()->GetContent<StaticMesh>(contentRelativePath))
+					{
+						StaticMeshViewerPanel* viewer = (StaticMeshViewerPanel*)hud_->GetPanel<StaticMeshViewerPanel>();
+						if (viewer)
+						{
+							viewer->SetTargetStaticMesh(staticMesh);
+							viewer->SetIsOpen(true);
+						}
+					}
+				}
+				else
+				{
+					if (IsSourceCodeFile(fileName))
+					{
+						EditorSourceCodeUtils::OpenSourceFile(fileFullPath);
+					}
+				}
+			}
 
-		ImGui::TextWrapped("%s", displayName.c_str());
-		if (displayName != fileName && ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("%s", assetPath.c_str());
-		}
+			HandleDragDropSource(fileFullPath, "FILE_PAYLOAD");
+			HandleContextMenu(fileFullPath, fileName, false);
 
-		ImGui::PopID();
-		++drawnItemCount;
-	};
+			ImGui::TextWrapped("%s", displayName.c_str());
+			if (displayName != fileName && ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", assetPath.c_str());
+			}
+
+			ImGui::PopID();
+			++drawnItemCount;
+		};
 
 	if (ImGui::BeginTable("FileGrid", columns))
 	{
@@ -1173,13 +1175,21 @@ void FileBrowserPanel::DrawCreateContentMenu(const std::string& targetDirectory)
 
 	if (isContentDirectory && ImGui::BeginMenu("Import"))
 	{
+		if (ImGui::MenuItem("FBX File"))
+		{
+			IsFBXImportPending = true;
+			OpenImportFileSelector(targetDirectory);
+		}
+
 		if (ImGui::MenuItem("File"))
 		{
+			IsFBXImportPending = false;
 			OpenImportFileSelector(targetDirectory);
 		}
 
 		if (ImGui::MenuItem("Folder"))
 		{
+			IsFBXImportPending = false;
 			OpenImportDirectorySelector(targetDirectory);
 		}
 
@@ -1235,11 +1245,51 @@ void FileBrowserPanel::ImportFileSystemItem(const std::string& source)
 {
 	if (pendingImportDirectory_.empty())
 	{
+		IsFBXImportPending = false;
 		return;
 	}
 
-	MoveFileSystemItem(source, pendingImportDirectory_);
+	const std::string targetDirectory = pendingImportDirectory_;
 	pendingImportDirectory_.clear();
+
+	if (IsFBXImportPending)
+	{
+		IsFBXImportPending = false;
+
+		if (GetLowerExtension(source) != "fbx")
+		{
+			return;
+		}
+
+		try
+		{
+			const std::filesystem::path sourcePath(source);
+			if (!std::filesystem::is_regular_file(sourcePath))
+			{
+				return;
+			}
+
+			const std::filesystem::path destinationPath =
+				std::filesystem::path(targetDirectory) / sourcePath.filename();
+
+			if (std::filesystem::exists(destinationPath))
+			{
+				return;
+			}
+
+			if (CopyFileSystemItem(sourcePath, destinationPath))
+			{
+				needsRefresh_ = true;
+			}
+		}
+		catch (...)
+		{
+		}
+
+		return;
+	}
+
+	MoveFileSystemItem(source, targetDirectory);
 }
 
 void FileBrowserPanel::OpenAssetFile(const std::string& filePath)

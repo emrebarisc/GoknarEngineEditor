@@ -1,0 +1,181 @@
+diff --git a/Source/UI/Panels/FileBrowserPanel.h b/Source/UI/Panels/FileBrowserPanel.h
+--- a/Source/UI/Panels/FileBrowserPanel.h
++++ b/Source/UI/Panels/FileBrowserPanel.h
+@@ -30,6 +30,8 @@
+ 	void DrawCreateContentMenu(const std::string& targetDirectory);
+ 	void OpenClassCreationPanel(const std::string& initialDirectory);
++	void OpenImportFBXFileSelector(const std::string& targetDirectory);
+ 	void OpenImportFileSelector(const std::string& targetDirectory);
+ 	void OpenImportDirectorySelector(const std::string& targetDirectory);
++	void ImportFBXFileSystemItem(const std::string& source);
+ 	void ImportFileSystemItem(const std::string& source);
+ 	void OpenAssetFile(const std::string& filePath);
+diff --git a/Source/UI/Panels/FileBrowserPanel.cpp b/Source/UI/Panels/FileBrowserPanel.cpp
+--- a/Source/UI/Panels/FileBrowserPanel.cpp
++++ b/Source/UI/Panels/FileBrowserPanel.cpp
+@@ -849,5 +849,9 @@
+ 	if (isContentDirectory && ImGui::BeginMenu("Import"))
+ 	{
++		if (ImGui::MenuItem("FBX File"))
++		{
++			OpenImportFBXFileSelector(targetDirectory);
++		}
+ 		if (ImGui::MenuItem("File"))
+ 		{
+ 			OpenImportFileSelector(targetDirectory);
+@@ -876,4 +880,15 @@
+ 		hud_->ShowPanel<ClassCreationPanel>();
+ 	}
+ }
++void FileBrowserPanel::OpenImportFBXFileSelector(const std::string& targetDirectory)
++{
++	if (SystemFileBrowserPanel* systemFileBrowserPanel = hud_->GetPanel<SystemFileBrowserPanel>())
++	{
++		pendingImportDirectory_ = EnsureTrailingSlash(targetDirectory);
++		systemFileBrowserPanel->OpenFileSelector(
++			Delegate<void(const std::string&)>::Create<FileBrowserPanel, &FileBrowserPanel::ImportFBXFileSystemItem>(this),
++			std::vector<std::string>{ "fbx" });
++		hud_->ShowPanel<SystemFileBrowserPanel>();
++	}
++}
+ void FileBrowserPanel::OpenImportFileSelector(const std::string& targetDirectory)
+@@ -904,4 +919,38 @@
+ 	MoveFileSystemItem(source, pendingImportDirectory_);
+ 	pendingImportDirectory_.clear();
+ }
++void FileBrowserPanel::ImportFBXFileSystemItem(const std::string& source)
++{
++	if (pendingImportDirectory_.empty())
++	{
++		return;
++	}
++
++	const std::filesystem::path sourcePath = std::filesystem::path(source).lexically_normal();
++	const std::filesystem::path destinationPath =
++		(std::filesystem::path(pendingImportDirectory_) / sourcePath.filename()).lexically_normal();
++	pendingImportDirectory_.clear();
++
++	if (GetLowerExtension(sourcePath.string()) != "fbx" || sourcePath == destinationPath)
++	{
++		return;
++	}
++
++	std::error_code errorCode;
++	if (!std::filesystem::is_regular_file(sourcePath, errorCode) || errorCode)
++	{
++		return;
++	}
++
++	if (std::filesystem::exists(destinationPath, errorCode) || errorCode)
++	{
++		return;
++	}
++
++	std::filesystem::copy_file(sourcePath, destinationPath, std::filesystem::copy_options::none, errorCode);
++	if (!errorCode)
++	{
++		needsRefresh_ = true;
++	}
++}
+ void FileBrowserPanel::OpenAssetFile(const std::string& filePath)
+diff --git a/Source/UI/Panels/SystemFileBrowserPanel.h b/Source/UI/Panels/SystemFileBrowserPanel.h
+--- a/Source/UI/Panels/SystemFileBrowserPanel.h
++++ b/Source/UI/Panels/SystemFileBrowserPanel.h
+@@ -3,5 +3,6 @@
+ #include "EditorPanel.h"
+ #include "Goknar/Delegates/Delegate.h"
+ #include <string>
++#include <vector>
+ 
+ enum class FileBrowserMode
+@@ -45,6 +46,17 @@
+ 	void OpenFileSelector(const Delegate<void(const std::string&)>& callback)
+ 	{
+ 		ClearBrowsingRootPath();
++		allowedFileExtensions_.clear();
++		selectedItem_.clear();
++		mode_ = FileBrowserMode::OpenFile;
++		onSelectionCallback_ = callback;
++		SetIsOpen(true);
++	}
++
++	void OpenFileSelector(const Delegate<void(const std::string&)>& callback, const std::vector<std::string>& allowedFileExtensions)
++	{
++		ClearBrowsingRootPath();
++		allowedFileExtensions_ = allowedFileExtensions;
+ 		selectedItem_.clear();
+ 		mode_ = FileBrowserMode::OpenFile;
+ 		onSelectionCallback_ = callback;
+@@ -60,6 +72,7 @@
+ 	{
+ 		SetBrowsingRootPath(browsingRootPath);
+ 		SetCurrentPath(initialDirectory);
++		allowedFileExtensions_.clear();
+ 		selectedItem_.clear();
+ 		mode_ = FileBrowserMode::OpenFile;
+ 		onSelectionCallback_ = callback;
+@@ -118,5 +131,6 @@
+ 	std::string selectedItem_;
+ 	std::string saveFileName_;
+ 	std::string browsingRootPath_;
++	std::vector<std::string> allowedFileExtensions_;
+ 
+ 	FileBrowserMode mode_{ FileBrowserMode::OpenDirectory };
+diff --git a/Source/UI/Panels/SystemFileBrowserPanel.cpp b/Source/UI/Panels/SystemFileBrowserPanel.cpp
+--- a/Source/UI/Panels/SystemFileBrowserPanel.cpp
++++ b/Source/UI/Panels/SystemFileBrowserPanel.cpp
+@@ -1,6 +1,8 @@
+ #include "SystemFileBrowserPanel.h"
+ 
+ #include "imgui.h"
++#include <algorithm>
++#include <cctype>
+ #include <filesystem>
+ #include <cstring>
+ #include "UI/EditorHUD.h"
+@@ -25,4 +27,33 @@
+ 		}
+ 		return path + "/";
+ 	}
++
++	std::string NormalizeExtension(std::string extension)
++	{
++		if (!extension.empty() && extension.front() == '.')
++		{
++			extension.erase(extension.begin());
++		}
++
++		std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char character)
++		{
++			return static_cast<char>(std::tolower(character));
++		});
++
++		return extension;
++	}
++
++	bool IsFileExtensionAllowed(const std::filesystem::path& path, const std::vector<std::string>& allowedFileExtensions)
++	{
++		if (allowedFileExtensions.empty())
++		{
++			return true;
++		}
++
++		const std::string extension = NormalizeExtension(path.extension().string());
++		return std::any_of(allowedFileExtensions.begin(), allowedFileExtensions.end(), [&extension](const std::string& allowedExtension)
++		{
++			return NormalizeExtension(allowedExtension) == extension;
++		});
++	}
+ }
+@@ -169,6 +200,10 @@
+ 				else
+ 				{
+-					if (mode_ == FileBrowserMode::OpenFile || mode_ == FileBrowserMode::SaveFile)
++					if (mode_ == FileBrowserMode::OpenFile && !IsFileExtensionAllowed(path, allowedFileExtensions_))
++					{
++						ImGui::TextDisabled("%s", filenameString.c_str());
++					}
++					else if (mode_ == FileBrowserMode::OpenFile || mode_ == FileBrowserMode::SaveFile)
+ 					{
+ 						bool isSelected = (selectedItem_ == path.string());
+ 						if (ImGui::Selectable(filenameString.c_str(), isSelected))
