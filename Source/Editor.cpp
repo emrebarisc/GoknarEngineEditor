@@ -107,6 +107,8 @@ Editor::Editor() : Application()
 
 	editorHUD_ = new EditorHUD();
 	editorHUD_->SetName("__Editor__HUD");
+
+	engine->SetTimeScale(0.f);
 }
 
 Editor::~Editor()
